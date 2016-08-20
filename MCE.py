@@ -420,7 +420,7 @@ def mce_help() :
 	-extr : Lordkag's UEFI Strip mode\n\
 	-false : Uses loose patterns (false positives)\n\
 	-file : Appends filename to New or Bad microcodes\n\
-	-cont : Converts Intel container (dat,inc,h,txt) to binary\n\
+	-cont : Converts Intel containers (dat,inc,h,txt) to binary\n\
 	-mass : Scans all files of a given directory\n\
 	-pdb : Writes DB entries to file\
 	")
@@ -500,6 +500,11 @@ if param.mass_scan :
 else :
 	source = sys.argv[1:]
 
+# Check if DB exists
+if not os.path.isfile(db_path) :
+	print(col_red + "\nError, MCE.dat file is missing!\n" + col_end)
+	mce_exit(1)
+	
 for in_file in source :
 
 	# MC Variables
