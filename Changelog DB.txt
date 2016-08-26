@@ -1,0 +1,9 @@
+r2
+
+cpu000906E9_plat22_ver00000034_date10-07-2016
+cpu00050663_plat10_ver0700000C_date24-05-2016
+cpu000306C3_plat32_ver00000021_date10-05-2016
+
+r1
+
+Initial Microcode Repository Database release

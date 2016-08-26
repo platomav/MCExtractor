@@ -1,0 +1,9 @@
+v1.0.1
+
+Intel containers are now extracted in one step
+Fixed missing AMD loose pattern (-false)
+Updated Microcode Repository Database to r2
+
+v1.0.0
+
+Initial MC Extractor release

@@ -1,9 +1,10 @@
 '''
-MC Extractor v1.0.0
+MC Extractor v1.0.1.0
+Copyright (C) 2016 Plato Mavropoulos
 Based on UEFIStrip v7.8.2 by Lordkag
 '''
 
-title = 'MC Extractor v1.0.0'
+title = 'MC Extractor v1.0.1'
 
 import sys
 import re
@@ -12,6 +13,7 @@ import zlib
 import ctypes
 import inspect
 import colorama
+import tempfile
 import binascii
 import datetime
 import traceback
@@ -286,6 +288,23 @@ class VIA_MC_Header(ctypes.LittleEndianStructure) :
 		print("Total Size:                        0x%0.2X" % self.TotalSize)
 		print("Name:                              %s"      % (self.Name).decode('utf-8'))
 		print("Unknown:                           %0.8X"   % self.Unknown)
+
+def mce_help() :
+	print("\nUsage: MCE.exe [FilePath] <Options>\n\n\
+<Options>\n\n\
+	-? : Displays MCE's help & usage screen\n\
+	-skip : Skips MCE's options intro screen\n\
+	-mass : Scans all files of a given directory\n\
+	-info : Displays microcode header(s)\n\
+	-false : Uses loose patterns (false positives)\n\
+	-padd : Keeps padding of AMD microcodes\n\
+	-extr : Lordkag's UEFI Strip mode\n\
+	-file : Appends filename to New or Bad microcodes\n\
+	-cont : Extracts Intel containers (dat,inc,h,txt)\n\
+	-exc : Pauses after unexpected python exceptions (debugging)\n\
+	-pdb : Writes input DB entries to file\
+	")
+	mce_exit(0)
 		
 def mce_exit(code) :
 	if not param.mce_extr : wait_user = input("\nPress enter to exit")
@@ -410,22 +429,6 @@ def amd_padd(padd_bgn, max_padd, amd_size, ibv_size, com_size) :
 	
 	return mc_len
 	
-def mce_help() :
-	print("\nUsage: MCE.exe [FilePath] <Options>\n\n\
-<Options>\n\n\
-	-? : Displays MCE's help & usage screen\n\
-	-skip : Skips MCE's options intro screen\n\
-	-info : Displays microcode header(s)\n\
-	-padd : Keeps padding of AMD microcodes\n\
-	-extr : Lordkag's UEFI Strip mode\n\
-	-false : Uses loose patterns (false positives)\n\
-	-file : Appends filename to New or Bad microcodes\n\
-	-cont : Converts Intel containers (dat,inc,h,txt) to binary\n\
-	-mass : Scans all files of a given directory\n\
-	-pdb : Writes DB entries to file\
-	")
-	mce_exit(0)
-	
 # MCE Version Header
 def mce_hdr() :
 	db_rev = "None"
@@ -442,6 +445,23 @@ def mce_hdr() :
 	print("\n-------[ %s ]-------" % title)
 	print("            Database  %s" % db_rev)
 
+def init_file(in_file,orig_file,temp) :
+	mc_file_name = ''
+	if not os.path.isfile(in_file) :
+		if any(p in in_file for p in param.all) : return ('continue','continue')
+		print(col_red + "\nError" + col_end + ", file %s was not found!\n" % in_file)
+		mce_exit(1)
+
+	with open(in_file, 'rb') as work_file : reading = work_file.read()
+	
+	if not temp :
+		if not param.mce_extr : print("\nFile: %s\n" % os.path.basename(in_file))
+		if param.print_file : mc_file_name = '__%s' % os.path.basename(in_file)
+	else :
+		if param.print_file : mc_file_name = '__%s' % os.path.basename(orig_file)
+	
+	return (reading,mc_file_name)
+	
 def mass_scan(f_path) :
 	mass_files = []
 	for root, dirs, files in os.walk(f_path, topdown=False):
@@ -509,31 +529,23 @@ for in_file in source :
 
 	# MC Variables
 	mc_nr = 0
-	unk_size = False
 	type_conv = ''
-	mc_file_name = ''
+	unk_size = False
+	temp_file = None
 	mc_bgn_list_a = []
 	match_list_i = []
 	match_list_a = []
 	match_list_v = []
 	mc_conv_data = bytearray()
 	
-	if not os.path.isfile(in_file) :
-		if any(p in in_file for p in param.all) : continue # Next input file
-		print(col_red + "\nError" + col_end + ", file %s was not found!\n" % in_file)
-		mce_exit(1)
-
-	with open(in_file, 'rb') as work_file : reading = work_file.read()
+	reading,mc_file_name = init_file(in_file,in_file,False)
+	if reading == 'continue' : continue # Input is parameter, next file
 	
-	if not param.mce_extr : print("\nFile: %s\n" % os.path.basename(in_file))
-	
-	if param.print_file : mc_file_name = '__%s' % os.path.basename(in_file)
-	
-	# Convert Intel containers (.dat , .inc , .h) to .bin
+	# Convert Intel containers (.dat , .inc , .h , .txt) to .bin
 	if param.conv_cont :
 		mc_f_ex = open(in_file, "r")
-		in_name = os.path.splitext(os.path.basename(in_file))[0]
-		op_name = mce_dir + "\\" + in_name + '.bin'
+		
+		temp_file = tempfile.NamedTemporaryFile(mode='ab',delete=False) # No auto delete for use at init_file
 		
 		try :
 			for line in mc_f_ex :
@@ -563,15 +575,14 @@ for in_file in source :
 						mc_conv_data += bytes.fromhex('%0.8X' % wlp)
 			
 			if type_conv == '' : raise
-			
-			if os.path.isfile(op_name) : os.remove(op_name)
 		
-			with open(op_name, 'ab') as file: file.write(mc_conv_data)
+			temp_file.write(mc_conv_data)
+			
+			reading,mc_file_name = init_file(temp_file.name,in_file,True)
+			if reading == 'continue' : continue
 		
 		except :
-			print(col_red + 'Error converting Intel container!' + col_end)
-		
-		continue
+			print(col_red + 'Error converting Intel container!\n' + col_end)
 	
 	# Intel Microcodes
 	
@@ -583,7 +594,7 @@ for in_file in source :
 		# HeaderRev 01, LoaderRev 01, ProcesFlags xx00*3
 		pat_icpu = re.compile(br'\x01\x00{3}.{4}[\x00-\x99](((\x19|\x20)[\x01-\x31][\x01-\x12])|(\x18\x07\x00)).{8}\x01\x00{3}.\x00{3}', re.DOTALL)
 	else :
-		# HeaderRev 01-02, No Date Check, LoaderRev 01-02, ProcesFlags xxxx00*2, Reserved xx*12
+		# HeaderRev 01-02, LoaderRev 01-02, ProcesFlags xxxx00*2, Reserved xx*12
 		pat_icpu = re.compile(br'(\x01|\x02)\x00{3}.{4}[\x00-\x99](((\x19|\x20)[\x01-\x31][\x01-\x12])|(\x18\x07\x00)).{8}(\x01|\x02)\x00{3}.{2}\x00{2}', re.DOTALL)
 	
 	match_list_i += pat_icpu.finditer(reading)
@@ -704,12 +715,14 @@ for in_file in source :
 	# CPUID 610F21 = 61 + 0F + 21  = (1 + 4) + (2 + 5) + (3 + 6) = 6+F + 12 + 01 = 15 + 12 + 01 = MU 151201
 	# MU 151201 = 15 + 12 + 01 = 6+F + 12 + 01 = (1 + 3 + 5) + (2 + 4 + 6) = 610 + F21 = CPUID 610F21
 	
+	# General UEFI patterns, should be robust
+	pat_acpu_1 = re.compile(br'\x24\x55\x43\x4F\x44\x45((\x56\x53)|(\x32\x4B)|(\x34\x4B))') # $UCODEVS, $UCODE2K, $UCODE4K
+	match_list_a += pat_acpu_1.finditer(reading)
+	
 	if not param.exp_check :
-		# General known patterns, should be robust (1 UEFI, 2 CPUID = 6, 3 CPUID != 6)
-		pat_acpu_1 = re.compile(br'\x24\x55\x43\x4F\x44\x45((\x56\x53)|(\x32\x4B)|(\x34\x4B))') # $UCODEVS, $UCODE2K, $UCODE4K
+		# General non-UEFI patterns, should be robust (2 -> CPUID = 6 , 3 -> CPUID != 6)
 		pat_acpu_2 = re.compile(br'[\x00-\x99]\x20[\x01-\x31][\x01-\x13].{4}\x02\x80.{18}(\x00|\x01)\x00{3}', re.DOTALL) # 2000 & up
 		pat_acpu_3 = re.compile(br'(([\x00-\x99](\x19|\x20)[\x01-\x31][\x01-\x12])|(\x11\x20\x09\x13)).{4}(\x00|\x01|\x03)\x80.{18}(\x00|\x01)\xAA{3}', re.DOTALL)
-		match_list_a += pat_acpu_1.finditer(reading)
 		match_list_a += pat_acpu_2.finditer(reading)
 		match_list_a += pat_acpu_3.finditer(reading)
 	else :
@@ -961,5 +974,9 @@ for in_file in source :
 			mc_path = auto_name (mc_extract, name_root, "_nr", "bin")[1]
 			
 			with open(mc_path, 'wb') as mc_file : mc_file.write(mc_data)
+
+if temp_file is not None :
+	temp_file.close()
+	os.remove(temp_file.name)
 
 mce_exit(0)
