@@ -1,10 +1,10 @@
 '''
-MC Extractor v1.0.1.0
+MC Extractor v1.0.2.1
 Copyright (C) 2016 Plato Mavropoulos
 Based on UEFIStrip v7.8.2 by Lordkag
 '''
 
-title = 'MC Extractor v1.0.1'
+title = 'MC Extractor v1.0.2 Dev 1'
 
 import sys
 import re
@@ -975,8 +975,8 @@ for in_file in source :
 			
 			with open(mc_path, 'wb') as mc_file : mc_file.write(mc_data)
 
-if temp_file is not None :
-	temp_file.close()
-	os.remove(temp_file.name)
+	if temp_file is not None :
+		temp_file.close()
+		os.remove(temp_file.name)
 
 mce_exit(0)
