@@ -1,6 +1,8 @@
 # MCExtractor
 Intel, AMD &amp; VIA Microcode Extraction Tool
 
+[Official MC Extractor forum thread](http://www.win-raid.com/t2199f16-MC-Extractor-Intel-AMD-amp-VIA-Microcode-Extraction-Tool.html#msg30320)
+
 ##**A. About MC Extractor**
 
 MC Extractor is a tool that can extract Intel, AMD and VIA processor microcode binaries. It can be used to identify what microcodes your BIOS/SPI holds, verify their integrity, show details about them, check if they exist at the microcode repository etc.
@@ -61,6 +63,4 @@ During operation, MC Extractor may encounter some issues related to rare circums
 
 ##**C. Download MC Extractor**
 
-MC Extractor is developed and tested under Windows and currently Windows XP - Windows 10 operating systems are supported. Since the Microcode Repository Database is updated more frequently compared to the main program, a separate DB release is provided.
-
-Pre-built binaries can be downloaded from the [official MC Extractor forum thread](http://www.win-raid.com/t2199f16-MC-Extractor-Intel-AMD-amp-VIA-Microcode-Extraction-Tool.html#msg30320).
+MC Extractor is developed and tested under Windows and currently Windows XP - Windows 10 operating systems are supported. Linux and macOS support is planned for the future. Since the Microcode Repository Database is updated more frequently compared to the main program, a separate DB release is provided.
