@@ -1,10 +1,10 @@
 '''
-MC Extractor v1.0.2.1
+MC Extractor v1.0.2.0
 Copyright (C) 2016 Plato Mavropoulos
 Based on UEFIStrip v7.8.2 by Lordkag
 '''
 
-title = 'MC Extractor v1.0.2 Dev 1'
+title = 'MC Extractor v1.0.2'
 
 import sys
 import re
