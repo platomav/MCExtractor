@@ -1,3 +1,8 @@
+v1.0.2
+
+Fixed issue that caused no deletion of temporary files
+Updated Microcode Repository Database to r3
+
 v1.0.1
 
 Intel containers are now extracted in one step
