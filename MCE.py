@@ -1,10 +1,10 @@
 '''
-MC Extractor v1.0.2.0
+MC Extractor v1.0.3.0
 Copyright (C) 2016 Plato Mavropoulos
 Based on UEFIStrip v7.8.2 by Lordkag
 '''
 
-title = 'MC Extractor v1.0.2'
+title = 'MC Extractor v1.0.3'
 
 import sys
 import re
@@ -447,20 +447,30 @@ def mce_hdr() :
 
 def init_file(in_file,orig_file,temp) :
 	mc_file_name = ''
+	
 	if not os.path.isfile(in_file) :
 		if any(p in in_file for p in param.all) : return ('continue','continue')
-		print(col_red + "\nError" + col_end + ", file %s was not found!\n" % in_file)
-		mce_exit(1)
+		
+		print(col_red + "\nError" + col_end + ", file %s was not found!\n" % ascii(in_file))
+		
+		if not param.mass_scan : mce_exit(1)
+		else : return ('continue','continue')
 
 	with open(in_file, 'rb') as work_file : reading = work_file.read()
 	
 	if not temp :
-		if not param.mce_extr : print("\nFile: %s\n" % os.path.basename(in_file))
+		if not param.mce_extr : print("\nFile: %s\n" % ascii(os.path.basename(in_file)))
 		if param.print_file : mc_file_name = '__%s' % os.path.basename(in_file)
 	else :
 		if param.print_file : mc_file_name = '__%s' % os.path.basename(orig_file)
 	
 	return (reading,mc_file_name)
+
+# Force string to be printed as ASCII, ignore errors
+def ascii(string) :
+	# Input string is bare and only for printing (no open(), no Colorama etc)
+	ascii_str = (str((string).encode('ascii', 'ignore'))).strip("b'")
+	return ascii_str
 	
 def mass_scan(f_path) :
 	mass_files = []
@@ -490,18 +500,36 @@ else : win32console.SetConsoleTitle(title) # Set console window title
 if not param.skip_intro :
 	mce_hdr()
 
-	print("\nWelcome to Intel, AMD & VIA Microcode Extractor\n\nPress Enter to skip or input -? to list options\n")
+	print("\nWelcome to Intel, AMD & VIA Microcode Extractor\n")
 
 	arg_num = len(sys.argv)
 
-	if arg_num == 2 : print("\nFile:       " + col_green + "%s" % os.path.basename(sys.argv[1]) + col_end)
-	elif arg_num > 2 : print("\nFiles:       " + col_yellow + "Multiple" + col_end)
-	else : print("\nFile:       " + col_magenta + "None" + col_end)
+	if arg_num == 2 :
+		print("Press Enter to skip or input -? to list options\n")
+		print("\nFile:       " + col_green + "%s" % ascii(os.path.basename(sys.argv[1])) + col_end)
+	elif arg_num > 2 :
+		print("Press Enter to skip or input -? to list options\n")
+		print("\nFiles:       " + col_yellow + "Multiple" + col_end)
+	else :
+		print('Input a filename or "filepath" or press Enter to list options\n')
+		print("\nFile:       " + col_magenta + "None" + col_end)
 
 	input_var = input('\nOption(s):  ')
 
+	# Anything quoted ("") is taken as one (file paths etc)
+	input_var = re.split(''' (?=(?:[^'"]|'[^']*'|"[^"]*")*$)''', input_var.strip())
+	
 	# Get MCE Parameters based on given Options
-	param = MCE_Param(input_var.strip().split())
+	param = MCE_Param(input_var)
+	
+	# Non valid parameters are treated as files
+	if input_var[0] != "" :
+		for i in input_var:
+			if i not in param.all :
+				(sys.argv).append(i.strip('"'))
+	
+	# Re-enumerate parameter input
+	arg_num = len(sys.argv)
 	
 	os.system('cls')
 
@@ -518,7 +546,7 @@ if param.mass_scan :
 	in_path = input('\nType the full folder path : ')
 	source = mass_scan(in_path)
 else :
-	source = sys.argv[1:]
+	source = sys.argv[1:] # Skip script/executable
 
 # Check if DB exists
 if not os.path.isfile(db_path) :
