@@ -1,10 +1,10 @@
 '''
-MC Extractor v1.0.3.0
+MC Extractor v1.1.0.1
 Copyright (C) 2016 Plato Mavropoulos
 Based on UEFIStrip v7.8.2 by Lordkag
 '''
 
-title = 'MC Extractor v1.0.3'
+title = 'MC Extractor v1.1.0 Dev 1'
 
 import sys
 import re
@@ -573,7 +573,7 @@ for in_file in source :
 	if param.conv_cont :
 		mc_f_ex = open(in_file, "r")
 		
-		temp_file = tempfile.NamedTemporaryFile(mode='ab',delete=False) # No auto delete for use at init_file
+		temp_file = tempfile.NamedTemporaryFile(mode='ab', delete=False) # No auto delete for use at init_file
 		
 		try :
 			for line in mc_f_ex :
@@ -620,10 +620,10 @@ for in_file in source :
 	if not param.exp_check :
 		# Intel 64 and IA-32 Architectures Software Developer's Manual [325462, 06/2016] (Vol 3A, Ch 9.11.1, Page 2954)
 		# HeaderRev 01, LoaderRev 01, ProcesFlags xx00*3
-		pat_icpu = re.compile(br'\x01\x00{3}.{4}[\x00-\x99](((\x19|\x20)[\x01-\x31][\x01-\x12])|(\x18\x07\x00)).{8}\x01\x00{3}.\x00{3}', re.DOTALL)
+		pat_icpu = re.compile(br'\x01\x00{3}.{4}[\x00-\x99](([\x19-\x20][\x01-\x31][\x01-\x12])|(\x18\x07\x00)).{8}\x01\x00{3}.\x00{3}', re.DOTALL)
 	else :
 		# HeaderRev 01-02, LoaderRev 01-02, ProcesFlags xxxx00*2, Reserved xx*12
-		pat_icpu = re.compile(br'(\x01|\x02)\x00{3}.{4}[\x00-\x99](((\x19|\x20)[\x01-\x31][\x01-\x12])|(\x18\x07\x00)).{8}(\x01|\x02)\x00{3}.{2}\x00{2}', re.DOTALL)
+		pat_icpu = re.compile(br'(\x01|\x02)\x00{3}.{4}[\x00-\x99](([\x19-\x20][\x01-\x31][\x01-\x12])|(\x18\x07\x00)).{8}(\x01|\x02)\x00{3}.{2}\x00{2}', re.DOTALL)
 	
 	match_list_i += pat_icpu.finditer(reading)
 	
@@ -743,20 +743,19 @@ for in_file in source :
 	# CPUID 610F21 = 61 + 0F + 21  = (1 + 4) + (2 + 5) + (3 + 6) = 6+F + 12 + 01 = 15 + 12 + 01 = MU 151201
 	# MU 151201 = 15 + 12 + 01 = 6+F + 12 + 01 = (1 + 3 + 5) + (2 + 4 + 6) = 610 + F21 = CPUID 610F21
 	
-	# General UEFI patterns, should be robust
+	# UEFI patterns
 	pat_acpu_1 = re.compile(br'\x24\x55\x43\x4F\x44\x45((\x56\x53)|(\x32\x4B)|(\x34\x4B))') # $UCODEVS, $UCODE2K, $UCODE4K
 	match_list_a += pat_acpu_1.finditer(reading)
 	
+	# 1st MC from 1999 (K7), 2000 due to K7 Erratum and performance
 	if not param.exp_check :
-		# General non-UEFI patterns, should be robust (2 -> CPUID = 6 , 3 -> CPUID != 6)
-		pat_acpu_2 = re.compile(br'[\x00-\x99]\x20[\x01-\x31][\x01-\x13].{4}\x02\x80.{18}(\x00|\x01)\x00{3}', re.DOTALL) # 2000 & up
-		pat_acpu_3 = re.compile(br'(([\x00-\x99](\x19|\x20)[\x01-\x31][\x01-\x12])|(\x11\x20\x09\x13)).{4}(\x00|\x01|\x03)\x80.{18}(\x00|\x01)\xAA{3}', re.DOTALL)
+		# BIOS pattern
+		pat_acpu_2 = re.compile(br'[\x00-\x18]\x20[\x01-\x31][\x01-\x13].{4}[\x00-\x03]\x80.{18}[\x00-\x01](\xAA|\x00){3}', re.DOTALL)
 		match_list_a += pat_acpu_2.finditer(reading)
-		match_list_a += pat_acpu_3.finditer(reading)
 	else :
 		# Data Rev 00-09, Reserved AA or 00, API 00-09
-		pat_acpu_4 = re.compile(br'(([\x00-\x99](\x19|\x20)[\x01-\x31][\x01-\x13])|(\x11\x20\x09\x13)).{4}[\x00-\x09]\x80.{18}[\x00-\x09](\x00{3}|\xAA{3})', re.DOTALL)
-		match_list_a += pat_acpu_4.finditer(reading)
+		pat_acpu_3 = re.compile(br'[\x00-\x18]\x20[\x01-\x31][\x01-\x13].{4}[\x00-\x09]\x80.{18}[\x00-\x09](\xAA|\x00){3}', re.DOTALL)
+		match_list_a += pat_acpu_3.finditer(reading)
 	
 	for match_ucode in match_list_a :
 		
@@ -792,17 +791,13 @@ for in_file in source :
 		nbsb_rev_id = '%0.2X' % mc_hdr.NbRevId + '%0.2X' % mc_hdr.SbRevId
 		
 		full_date = "%s-%s-%s" % (day, month, year)
-		
+
 		# Remove false results, based on Date
-		try:
-			date_chk = datetime.datetime.strptime(full_date, '%d-%m-%Y')
-			if date_chk.year > 2016 or date_chk.year < 1997 : raise DateErr('WrongDate') # 1st MC from 1999 (K7), 1997 for safety
-		except :
-			if full_date == '09-13-2011' and patch == '03000027' : pass # Drunk employee #2, Happy 13th month from AMD!
-			else :
-				print(col_magenta + "\nWarning: Skipped microcode at 0x%0.2X, invalid Date of %s!\n" % (mc_bgn, full_date) + col_end)
-				continue
-				
+		if full_date == '09-13-2011' and patch == '03000027' : pass # Drunk employee #2, Happy 13th month from AMD!
+		elif month == '13' or year > '2016' :
+			print(col_magenta + "\nWarning: Skipped microcode at 0x%0.2X, invalid Date of %s!\n" % (mc_bgn, full_date) + col_end)
+			continue
+		
 		# Remove false results, based on VEN_IDs
 		if (nb_id != '0'*8 and '1002' not in nb_id[4:8] and '1022' not in nb_id[4:8]) \
 		or (sb_id != '0'*8 and '1002' not in sb_id[4:8] and '1022' not in sb_id[4:8]) :
