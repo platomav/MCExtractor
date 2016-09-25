@@ -1,3 +1,8 @@
+v1.1.0
+
+Major performance improvement, up to x10 times faster
+Updated Microcode Repository Database to r5
+
 v1.0.3
 
 Added ability to type input filename or filepath at Intro
