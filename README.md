@@ -28,7 +28,7 @@ MC Extractor is a tool that can extract Intel, AMD and VIA processor microcode b
 
 ####**A2. Microcode Repository Database**
 
-MC Extractor's main goal is to allow users to quickly extract, determine & report new microcode versions without the use of special tools (MMTool) or Hex Editors. To do that effectively, a database had to be built. The [URL=]Intel, AMD & VIA Microcode Repositories[/URL] is a collection of every Intel, AMD and VIA microcode I have found. It's existence is very important for MC Extractor as it allows me to find new types of microcode, compare releases for similarities, check for updated binaries etc. Bundled with MC Extractor there's a file called MCE.dat which is required for the program to run. It includes all the Microcodes that are available at the Repository thread. This accommodates two actions: a) Check whether the imported microcode is up to date and b) Help find new Microcode releases sooner by reporting them.
+MC Extractor's main goal is to allow users to quickly extract, determine & report new microcode versions without the use of special tools (MMTool) or Hex Editors. To do that effectively, a database had to be built. It's existence is very important for MC Extractor as it allows me to find new types of microcode, compare releases for similarities, check for updated binaries etc. Bundled with MC Extractor there's a file called MCE.dat which is required for the program to run. It includes all the Microcodes that are available at the Repository thread. This accommodates two actions: a) Check whether the imported microcode is up to date and b) Help find new Microcode releases sooner by reporting them.
 
 ####**A3. Sources and Inspiration**
 
@@ -63,4 +63,4 @@ During operation, MC Extractor may encounter some issues related to rare circums
 
 ##**C. Download MC Extractor**
 
-MC Extractor is developed and tested under Windows and currently Windows XP - Windows 10 operating systems are supported. Linux and macOS support is planned for the future. Since the Microcode Repository Database is updated more frequently compared to the main program, a separate DB release is provided.
+MC Extractor is developed and tested under Windows and currently Windows XP - Windows 10 operating systems are supported. Since the Microcode Repository Database is updated more frequently compared to the main program, a separate DB release is provided.
