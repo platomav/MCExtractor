@@ -55,7 +55,7 @@ There are various parameters which enhance or modify the default behavior of MC 
 * -file : Appends filename to New or Bad microcodes
 * -cont : Converts Intel container (dat,inc,h,txt) to binary
 * -mass : Scans all files of a given directory
-* -pdb : Writes DB entries to file
+* -pdb : Writes DB entries to file 
 
 ####**B3. MC Extractor Error Control**
 
