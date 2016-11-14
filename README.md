@@ -63,4 +63,20 @@ During operation, MC Extractor may encounter some issues related to rare circums
 
 ##**C. Download MC Extractor**
 
-MC Extractor is developed and tested under Windows and currently Windows XP - Windows 10 operating systems are supported. Since the Microcode Repository Database is updated more frequently compared to the main program, a separate DB release is provided.
+MC Extractor is developed under Windows using Python 3.x. Since the Engine Firmware Repository Database is updated more frequently compared to the main program, a separate DB release is provided when needed.
+
+####**C1. Compatibility**
+
+MC Extractor has been tested to be compatible with Windows XP up to Windows 10 operating systems. It is built and executed using Python 3.4. Any latter v3.x releases might work depending on whether MCE's prerequisites are also compatible. The script is frozen using Py2Exe.
+
+####**C2. Code Prerequisites**
+
+To run MC Extractor, you need to have the following python modules installed:
+
+* [Colorama](https://pypi.python.org/pypi/colorama)
+* [PyWin32](https://sourceforge.net/projects/pywin32/files/pywin32/)
+
+To freeze MC Extractor, you can use whatever you like. The following are verified to work:
+
+* [Py2Exe](https://pypi.python.org/pypi/py2exe)
+* [PyInstaller](https://pypi.python.org/pypi/PyInstaller/)
