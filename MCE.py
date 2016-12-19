@@ -1,10 +1,11 @@
-'''
-MC Extractor v1.1.0.0
+"""
+MC Extractor
+Intel, AMD & VIA Microcode Extractor
 Copyright (C) 2016 Plato Mavropoulos
 Based on UEFIStrip v7.8.2 by Lordkag
-'''
+"""
 
-title = 'MC Extractor v1.1.0'
+title = 'MC Extractor v1.1.2'
 
 import sys
 import re
@@ -33,7 +34,7 @@ uint32_t = ctypes.c_uint
 uint64_t = ctypes.c_uint64
 
 class MCE_Param :
-    
+
 	def __init__(self,source) :
 	
 		self.all = ['-?','-skip','-info','-pdb','-padd','-file','-false','-extr','-exc','-cont','-mass']
@@ -83,8 +84,8 @@ class Intel_MC_Header(ctypes.LittleEndianStructure) :
 		("Reserved2",                 uint32_t),  # 28
 		("Reserved3",                 uint32_t),  # 2C
 		# 30
-    ]
-    
+	]
+
 	def mc_print(self) :
 		
 		full_date  = "%0.2X/%0.2X/%0.4X" % (self.Day, self.Month, self.Year)
@@ -129,22 +130,22 @@ class Intel_MC_Header_Extra(ctypes.LittleEndianStructure) :
 		("RSAPublicKey",              uint32_t*64), # 80
 		("RSAExponent",               uint32_t),    # 180
 		# 184
-    ]
-    
+	]
+
 	def mc_print_extra(self) :
 		
 		full_date  = "%0.2X/%0.2X/%0.4X" % (self.Day, self.Month, self.Year)
 		
-		Unknown5 = " ".join("%0.8X" % val for val in self.Unknown5)
-		if re.match('(0{8} ){6}0{8}', Unknown5) : Unknown5 = '00 * 28'
+		unknown5 = " ".join("%0.8X" % val for val in self.unknown5)
+		if re.match('(0{8} ){6}0{8}', unknown5) : unknown5 = '00 * 28'
 		
-		Unknown8 = " ".join("%0.8X" % val for val in self.Unknown8)
-		if re.match('(0{8} ){4}0{8}', Unknown8) : Unknown8 = '00 * 20'
+		unknown8 = " ".join("%0.8X" % val for val in self.unknown8)
+		if re.match('(0{8} ){4}0{8}', unknown8) : unknown8 = '00 * 20'
 		
-		Unknown9 = " ".join("%0.8X" % val for val in self.Unknown9)
+		unknown9 = " ".join("%0.8X" % val for val in self.unknown9)
 		RSAPublicKey = " ".join("%0.8X" % val for val in self.RSAPublicKey)
 		
-		UpdateSize = (self.UpdateSize)*4
+		UpdateSize = self.UpdateSize * 4
 		
 		print("")
 		print("-----------------Intel Extra Header-----------------\n")
@@ -158,11 +159,11 @@ class Intel_MC_Header_Extra(ctypes.LittleEndianStructure) :
 		print("Update Size:                       0x%0.2X"   % UpdateSize)
 		print("Loader Revision:                   %0.8X"     % self.LoaderRevision)
 		print("Processor Signature:               %0.8X"     % self.ProcessorSignature)
-		print("Unknown 5:                         %s"        % Unknown5)
+		print("Unknown 5:                         %s"        % unknown5)
 		print("Unknown 6:                         %0.8X"     % self.Unknown6)
 		print("Unknown 7:                         %0.8X"     % self.Unknown7)
-		print("Unknown 8:                         %s"        % Unknown8)
-		print("Unknown 9:                         %s [...]"  % Unknown9[:8])
+		print("Unknown 8:                         %s"        % unknown8)
+		print("Unknown 9:                         %s [...]"  % unknown9[:8])
 		print("RSA Public Key:                    %s [...]"  % RSAPublicKey[:8])
 		print("RSA Exponent:                      %0.8X"     % self.RSAExponent)
 
@@ -175,8 +176,8 @@ class Intel_MC_Header_Extended(ctypes.LittleEndianStructure) :
 		("Reserved2",                 uint32_t),  # 0C
 		("Reserved3",                 uint32_t),  # 10
 		# 14
-    ]
-    
+	]
+
 	def mc_print_extended(self) :
 		
 		if self.Reserved1 == self.Reserved2 == self.Reserved3 == 0 :
@@ -197,8 +198,8 @@ class Intel_MC_Header_Extended_Field(ctypes.LittleEndianStructure) :
 		("ProcessorFlags",            uint32_t),  # 04
 		("Checksum",                  uint16_t),  # 08
 		# 0C
-    ]
-    
+	]
+
 	def mc_print_extended_field(self) :
 		
 		print("")
@@ -225,8 +226,8 @@ class AMD_MC_Header(ctypes.LittleEndianStructure) :
 		("Reserved",                  uint8_t * 3),   # 1D 000000 or AAAAAA (Pattern)
 		("MatchReg",                  uint32_t * 8),  # 20 Not always present
 		# 40
-    ]
-    
+	]
+
 	def mc_print(self) :
 		
 		full_date = "%0.2X/%0.2X/%0.4X" % (self.Date >> 16 & 0xFF, self.Date >> 24, self.Date & 0xFFFF)
@@ -270,14 +271,14 @@ class VIA_MC_Header(ctypes.LittleEndianStructure) :
 		("Name",                      char*8),    # 24
 		("Unknown",                   uint32_t),  # 2C
 		# 30
-    ]
-    
+	]
+
 	def mc_print(self) :
 		
 		full_date  = "%0.2d/%0.2d/%0.4d" % (self.Day, self.Month, self.Year)
 		
 		print("-----------------VIA Header-----------------\n")
-		print("Signature:                         %s"      % (self.Signature).decode('utf-8'))
+		print("Signature:                         %s" 	   % self.Signature.decode('utf-8'))
 		print("Update Revision:                   %0.8X"   % self.UpdateRevision)
 		print("Date (d/m/y):                      %s"      % full_date)
 		print("Processor Signature:               %0.8X"   % self.ProcessorSignature)
@@ -286,7 +287,7 @@ class VIA_MC_Header(ctypes.LittleEndianStructure) :
 		print("Reserved:                          %0.8X"   % self.Reserved)
 		print("Data Size:                         0x%0.2X" % self.DataSize)
 		print("Total Size:                        0x%0.2X" % self.TotalSize)
-		print("Name:                              %s"      % (self.Name).decode('utf-8'))
+		print("Name:                              %s"      % self.Name.decode('utf-8'))
 		print("Unknown:                           %0.8X"   % self.Unknown)
 
 def mce_help() :
@@ -307,7 +308,7 @@ def mce_help() :
 	mce_exit(0)
 		
 def mce_exit(code) :
-	if not param.mce_extr : wait_user = input("\nPress enter to exit")
+	if not param.mce_extr : input("\nPress enter to exit")
 	colorama.deinit() # Stop Colorama
 	sys.exit(code)
 
@@ -330,7 +331,7 @@ def get_script_dir(follow_symlinks=True) :
 		path = inspect.getabsfile(get_script_dir)
 	if follow_symlinks :
 		path = os.path.realpath(path)
-    
+
 	return os.path.dirname(path)
 
 # https://stackoverflow.com/a/781074
@@ -340,7 +341,7 @@ def show_exception_and_exit(exc_type, exc_value, tb) :
 	sys.exit(-1)
 	
 def adler32(data) :
-    return zlib.adler32(data) & 0xFFFFFFFF
+	return zlib.adler32(data) & 0xFFFFFFFF
 	
 def checksum32(data) :
 	
@@ -449,27 +450,27 @@ def init_file(in_file,orig_file,temp) :
 	mc_file_name = ''
 	
 	if not os.path.isfile(in_file) :
-		if any(p in in_file for p in param.all) : return ('continue','continue')
+		if any(p in in_file for p in param.all) : return 'continue', 'continue'
 		
-		print(col_red + "\nError" + col_end + ", file %s was not found!\n" % ascii(in_file))
+		print(col_red + "\nError" + col_end + ", file %s was not found!\n" % force_ascii(in_file))
 		
 		if not param.mass_scan : mce_exit(1)
-		else : return ('continue','continue')
+		else : return 'continue', 'continue'
 
 	with open(in_file, 'rb') as work_file : reading = work_file.read()
 	
 	if not temp :
-		if not param.mce_extr : print("\nFile: %s\n" % ascii(os.path.basename(in_file)))
+		if not param.mce_extr : print("\nFile: %s\n" % force_ascii(os.path.basename(in_file)))
 		if param.print_file : mc_file_name = '__%s' % os.path.basename(in_file)
 	else :
 		if param.print_file : mc_file_name = '__%s' % os.path.basename(orig_file)
 	
-	return (reading,mc_file_name)
+	return reading, mc_file_name
 
 # Force string to be printed as ASCII, ignore errors
-def ascii(string) :
+def force_ascii(string) :
 	# Input string is bare and only for printing (no open(), no Colorama etc)
-	ascii_str = (str((string).encode('ascii', 'ignore'))).strip("b'")
+	ascii_str = (str(string.encode('ascii', 'ignore'))).strip("b'")
 	return ascii_str
 	
 def mass_scan(f_path) :
@@ -506,7 +507,7 @@ if not param.skip_intro :
 
 	if arg_num == 2 :
 		print("Press Enter to skip or input -? to list options\n")
-		print("\nFile:       " + col_green + "%s" % ascii(os.path.basename(sys.argv[1])) + col_end)
+		print("\nFile:       " + col_green + "%s" % force_ascii(os.path.basename(sys.argv[1])) + col_end)
 	elif arg_num > 2 :
 		print("Press Enter to skip or input -? to list options\n")
 		print("\nFiles:       " + col_yellow + "Multiple" + col_end)
@@ -526,7 +527,7 @@ if not param.skip_intro :
 	if input_var[0] != "" :
 		for i in input_var:
 			if i not in param.all :
-				(sys.argv).append(i.strip('"'))
+				sys.argv.append(i.strip('"'))
 	
 	# Re-enumerate parameter input
 	arg_num = len(sys.argv)
@@ -602,7 +603,7 @@ for in_file in source :
 						wlp = int.from_bytes(binascii.unhexlify(wlp), 'little')
 						mc_conv_data += bytes.fromhex('%0.8X' % wlp)
 			
-			if type_conv == '' : raise
+			if type_conv == '' : raise Exception('')
 		
 			temp_file.write(mc_conv_data)
 			
@@ -629,6 +630,7 @@ for in_file in source :
 	
 	for match_ucode in match_list_i :
 		
+		# noinspection PyRedeclaration
 		(mc_bgn, end_mc_match) = match_ucode.span()
 		
 		mc_hdr = get_struct(reading, mc_bgn, Intel_MC_Header)
@@ -659,21 +661,21 @@ for in_file in source :
 		# Remove false results, based on date
 		try :
 			date_chk = datetime.datetime.strptime(full_date, '%d-%m-%Y')
-			if date_chk.year > 2016 or date_chk.year < 1993 : raise DateErr('WrongDate') # 1st MC from 1995 (P6), 1993 for safety
+			if date_chk.year > 2016 or date_chk.year < 1993 : raise Exception('WrongDate') # 1st MC from 1995 (P6), 1993 for safety
 		except :
 			if full_date == '07-00-1896' and patch == '000000D1' : pass # Drunk employee #1, Happy 0th month from 19th century Intel!
 			else :
-				print(col_magenta + "\nWarning: Skipped microcode at 0x%0.2X, invalid Date of %s!\n" % (mc_bgn, full_date) + col_end)
+				print(col_magenta + "\nWarning: Skipped Intel microcode at 0x%0.2X, invalid Date of %s!\n" % (mc_bgn, full_date) + col_end)
 				continue
 		
 		# Remove false results, based on Reserved field
 		if res_field != 0 :
-			print(col_magenta + "\nWarning: Skipped microcode at 0x%0.2X, Reserved field not empty!\n" % (mc_bgn) + col_end)
+			print(col_magenta + "\nWarning: Skipped Intel microcode at 0x%0.2X, Reserved field not empty!\n" % mc_bgn + col_end)
 			continue
 			
 		# Remove false results, based on data
 		if reading[mc_bgn + 0x90:mc_bgn + 0x94] == b'\x00' * 4 : # 0x90 is either encrypted data (old MC) or RSA PKEY (Extra Header)
-			print(col_magenta + "\nWarning: Skipped microcode at 0x%0.2X, null data at 0x90!\n" % (mc_bgn) + col_end)
+			print(col_magenta + "\nWarning: Skipped Intel microcode at 0x%0.2X, null data at 0x90!\n" % mc_bgn + col_end)
 			continue
 		
 		# Print the Header(s)
@@ -689,9 +691,9 @@ for in_file in source :
 				mc_hdr_extended = get_struct(reading, mc_extended_off, Intel_MC_Header_Extended)
 				mc_hdr_extended.mc_print_extended()
 				
-				mc_extended_field_off = mc_ext_off + 0x14
+				mc_extended_field_off = mc_extended_off + 0x14
 				
-				for idx in range(mc_hdr_ext.ExtendedSignatureCount) :
+				for idx in range(Intel_MC_Header_Extended.ExtendedSignatureCount) :
 					
 					mc_hdr_extended_field = get_struct(reading, mc_extended_field_off, Intel_MC_Header_Extended_Field)
 					mc_hdr_extended_field.mc_print_extended_field()
@@ -759,6 +761,7 @@ for in_file in source :
 	
 	for match_ucode in match_list_a :
 		
+		# noinspection PyRedeclaration
 		(mc_bgn, end_mc_match) = match_ucode.span()
 		
 		if reading[mc_bgn:mc_bgn + 6] == b'$UCODE' : mc_bgn += 8
@@ -795,23 +798,23 @@ for in_file in source :
 		# Remove false results, based on Date
 		if full_date == '09-13-2011' and patch == '03000027' : pass # Drunk employee #2, Happy 13th month from AMD!
 		elif month == '13' or year > '2016' :
-			print(col_magenta + "\nWarning: Skipped microcode at 0x%0.2X, invalid Date of %s!\n" % (mc_bgn, full_date) + col_end)
+			print(col_magenta + "\nWarning: Skipped AMD microcode at 0x%0.2X, invalid Date of %s!\n" % (mc_bgn, full_date) + col_end)
 			continue
 		
 		# Remove false results, based on VEN_IDs
 		if (nb_id != '0'*8 and '1002' not in nb_id[4:8] and '1022' not in nb_id[4:8]) \
 		or (sb_id != '0'*8 and '1002' not in sb_id[4:8] and '1022' not in sb_id[4:8]) :
-			print(col_magenta + "\nWarning: Skipped microcode at 0x%0.2X, invalid VEN_IDs of %s,%s!\n" % (mc_bgn, nb_id[4:8], sb_id[4:8]) + col_end)
+			print(col_magenta + "\nWarning: Skipped AMD microcode at 0x%0.2X, invalid VEN_IDs of %s,%s!\n" % (mc_bgn, nb_id[4:8], sb_id[4:8]) + col_end)
 			continue
 		
 		# Remove false results, based on Data Length
 		if data_len not in ['10','20','00'] :
-			print(col_magenta + "\nWarning: Skipped microcode at 0x%0.2X, Data Length not standard!\n" % (mc_bgn) + col_end)
+			print(col_magenta + "\nWarning: Skipped AMD microcode at 0x%0.2X, Data Length not standard!\n" % mc_bgn + col_end)
 			continue
 		
 		# Remove false results, based on data
 		if reading[mc_bgn + 0x40:mc_bgn + 0x44] == b'\x00' * 4 : # 0x40 has non-null data
-			print(col_magenta + "\nWarning: Skipped microcode at 0x%0.2X, null data at 0x40!\n" % (mc_bgn) + col_end)
+			print(col_magenta + "\nWarning: Skipped AMD microcode at 0x%0.2X, null data at 0x40!\n" % mc_bgn + col_end)
 			continue
 		
 		# Print the Header
@@ -924,6 +927,7 @@ for in_file in source :
 	
 	for match_ucode in match_list_v :
 		
+		# noinspection PyRedeclaration
 		(mc_bgn, end_mc_match) = match_ucode.span()
 		
 		mc_hdr = get_struct(reading, mc_bgn, VIA_MC_Header)
@@ -951,10 +955,10 @@ for in_file in source :
 		# Remove false results, based on date
 		try :
 			date_chk = datetime.datetime.strptime(full_date, '%d-%m-%Y')
-			if date_chk.year > 2016 or date_chk.year < 2006 : raise DateErr('WrongDate') # 1st MC from 2008 (Nano), 2006 for safety
+			if date_chk.year > 2016 or date_chk.year < 2006 : raise Exception('WrongDate') # 1st MC from 2008 (Nano), 2006 for safety
 		except :
 			# VIA is sober? No drunk employee #3 ???
-			print(col_magenta + "\nWarning: Skipped microcode at 0x%0.2X, invalid Date of %s!\n" % (mc_bgn, full_date) + col_end)
+			print(col_magenta + "\nWarning: Skipped VIA microcode at 0x%0.2X, invalid Date of %s!\n" % (mc_bgn, full_date) + col_end)
 			continue
 		
 		# Print the Header(s)

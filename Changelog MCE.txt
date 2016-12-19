@@ -1,3 +1,10 @@
+v1.1.2
+
+Fixed crash at Intel Extended Microcode Header analysis
+Fixed various code issues and errors under rare cases
+Improved "Skipped Microcode" text with Intel,AMD,VIA
+Updated Microcode Repository Database to r12
+
 v1.1.0
 
 Major performance improvement, up to x10 times faster
