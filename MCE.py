@@ -1,15 +1,15 @@
 """
 MC Extractor
 Intel, AMD & VIA Microcode Extractor
-Copyright (C) 2016 Plato Mavropoulos
+Copyright (C) 2016-2017 Plato Mavropoulos
 Based on UEFIStrip v7.8.2 by Lordkag
 """
 
-title = 'MC Extractor v1.1.2'
+title = 'MC Extractor v1.1.3'
 
-import sys
-import re
 import os
+import re
+import sys
 import zlib
 import ctypes
 import inspect
@@ -37,7 +37,7 @@ class MCE_Param :
 
 	def __init__(self,source) :
 	
-		self.all = ['-?','-skip','-info','-pdb','-padd','-file','-false','-extr','-exc','-cont','-mass']
+		self.all = ['-?','-skip','-info','-pdb','-padd','-file','-false','-extr','-cont','-mass']
 		
 		self.help_scr = False
 		self.build_db = False
@@ -47,7 +47,6 @@ class MCE_Param :
 		self.exp_check = False
 		self.print_file = False
 		self.mce_extr = False
-		self.exc_pause = False
 		self.conv_cont = False
 		self.mass_scan = False
 		
@@ -60,7 +59,6 @@ class MCE_Param :
 			if i == '-padd' : self.pad_check = True
 			if i == '-false' : self.exp_check = True
 			if i == '-file' : self.print_file = True
-			if i == '-exc' : self.exc_pause = True
 			if i == '-cont' : self.conv_cont = True
 			if i == '-mass' : self.mass_scan = True
 			
@@ -136,13 +134,13 @@ class Intel_MC_Header_Extra(ctypes.LittleEndianStructure) :
 		
 		full_date  = "%0.2X/%0.2X/%0.4X" % (self.Day, self.Month, self.Year)
 		
-		unknown5 = " ".join("%0.8X" % val for val in self.unknown5)
-		if re.match('(0{8} ){6}0{8}', unknown5) : unknown5 = '00 * 28'
+		Unknown5 = " ".join("%0.8X" % val for val in self.Unknown5)
+		if re.match('(0{8} ){6}0{8}', Unknown5) : Unknown5 = '00 * 28'
 		
-		unknown8 = " ".join("%0.8X" % val for val in self.unknown8)
-		if re.match('(0{8} ){4}0{8}', unknown8) : unknown8 = '00 * 20'
+		Unknown8 = " ".join("%0.8X" % val for val in self.Unknown8)
+		if re.match('(0{8} ){4}0{8}', Unknown8) : Unknown8 = '00 * 20'
 		
-		unknown9 = " ".join("%0.8X" % val for val in self.unknown9)
+		Unknown9 = " ".join("%0.8X" % val for val in self.Unknown9)
 		RSAPublicKey = " ".join("%0.8X" % val for val in self.RSAPublicKey)
 		
 		UpdateSize = self.UpdateSize * 4
@@ -159,11 +157,11 @@ class Intel_MC_Header_Extra(ctypes.LittleEndianStructure) :
 		print("Update Size:                       0x%0.2X"   % UpdateSize)
 		print("Loader Revision:                   %0.8X"     % self.LoaderRevision)
 		print("Processor Signature:               %0.8X"     % self.ProcessorSignature)
-		print("Unknown 5:                         %s"        % unknown5)
+		print("Unknown 5:                         %s"        % Unknown5)
 		print("Unknown 6:                         %0.8X"     % self.Unknown6)
 		print("Unknown 7:                         %0.8X"     % self.Unknown7)
-		print("Unknown 8:                         %s"        % unknown8)
-		print("Unknown 9:                         %s [...]"  % unknown9[:8])
+		print("Unknown 8:                         %s"        % Unknown8)
+		print("Unknown 9:                         %s [...]"  % Unknown9[:8])
 		print("RSA Public Key:                    %s [...]"  % RSAPublicKey[:8])
 		print("RSA Exponent:                      %0.8X"     % self.RSAExponent)
 
@@ -293,8 +291,8 @@ class VIA_MC_Header(ctypes.LittleEndianStructure) :
 def mce_help() :
 	print("\nUsage: MCE.exe [FilePath] <Options>\n\n\
 <Options>\n\n\
-	-? : Displays MCE's help & usage screen\n\
-	-skip : Skips MCE's options intro screen\n\
+	-? : Displays help & usage screen\n\
+	-skip : Skips options intro screen\n\
 	-mass : Scans all files of a given directory\n\
 	-info : Displays microcode header(s)\n\
 	-false : Uses loose patterns (false positives)\n\
@@ -302,7 +300,6 @@ def mce_help() :
 	-extr : Lordkag's UEFI Strip mode\n\
 	-file : Appends filename to New or Bad microcodes\n\
 	-cont : Extracts Intel containers (dat,inc,h,txt)\n\
-	-exc : Pauses after unexpected python exceptions (debugging)\n\
 	-pdb : Writes input DB entries to file\
 	")
 	mce_exit(0)
@@ -336,15 +333,16 @@ def get_script_dir(follow_symlinks=True) :
 
 # https://stackoverflow.com/a/781074
 def show_exception_and_exit(exc_type, exc_value, tb) :
+	print(col_red + '\nError: MCE just crashed, please report the following:\n')
 	traceback.print_exception(exc_type, exc_value, tb)
-	input("\nPress enter key to exit")
+	input(col_end + "\nPress enter to exit")
+	colorama.deinit() # Stop Colorama
 	sys.exit(-1)
 	
 def adler32(data) :
 	return zlib.adler32(data) & 0xFFFFFFFF
 	
 def checksum32(data) :
-	
 	if not data :
 		print("Empty data\n")
 		return 0
@@ -407,14 +405,14 @@ def has_duplicate(file_path, file_data) :
 	
 	return False
 
-def get_struct(str_, off, struct):
+# Taken from Igor Skochinsky's me_unpack
+def get_struct(str_, off, struct) :
 	my_struct = struct()
 	struct_len = ctypes.sizeof(my_struct)
 	str_data = str_[off:off + struct_len]
 	fit_len = min(len(str_data), struct_len)
 	
-	if fit_len < struct_len:
-		raise Exception(col_red + "\nError, cannot read struct: %d bytes available but %d required!\n" % (fit_len, struct_len) + col_end)
+	if fit_len < struct_len: raise Exception(col_red + "\nError: cannot read %d bytes struct, expected %d!\n" % (fit_len, struct_len) + col_end)
 	
 	ctypes.memmove(ctypes.addressof(my_struct), str_data, fit_len)
 	
@@ -495,8 +493,11 @@ param = MCE_Param(sys.argv)
 arg_num = len(sys.argv)
 
 # Actions for MCE but not UEFIStrip
-if param.mce_extr : pass
-else : win32console.SetConsoleTitle(title) # Set console window title
+if param.mce_extr :
+	pass
+else :
+	sys.excepthook = show_exception_and_exit # Pause after any unexpected python exception
+	win32console.SetConsoleTitle(title) # Set console window title
 
 if not param.skip_intro :
 	mce_hdr()
@@ -540,9 +541,6 @@ if (arg_num < 2 and not param.help_scr and not param.mass_scan) or param.help_sc
 	mce_help()
 	mce_exit(0)
 
-# Pause after any unexpected python exception
-if param.exc_pause : sys.excepthook = show_exception_and_exit
-
 if param.mass_scan :
 	in_path = input('\nType the full folder path : ')
 	source = mass_scan(in_path)
@@ -561,10 +559,10 @@ for in_file in source :
 	type_conv = ''
 	unk_size = False
 	temp_file = None
-	mc_bgn_list_a = []
 	match_list_i = []
 	match_list_a = []
 	match_list_v = []
+	mc_bgn_list_a = []
 	mc_conv_data = bytearray()
 	
 	reading,mc_file_name = init_file(in_file,in_file,False)
@@ -661,7 +659,7 @@ for in_file in source :
 		# Remove false results, based on date
 		try :
 			date_chk = datetime.datetime.strptime(full_date, '%d-%m-%Y')
-			if date_chk.year > 2016 or date_chk.year < 1993 : raise Exception('WrongDate') # 1st MC from 1995 (P6), 1993 for safety
+			if date_chk.year > 2017 or date_chk.year < 1993 : raise Exception('WrongDate') # 1st MC from 1995 (P6), 1993 for safety
 		except :
 			if full_date == '07-00-1896' and patch == '000000D1' : pass # Drunk employee #1, Happy 0th month from 19th century Intel!
 			else :
@@ -797,7 +795,7 @@ for in_file in source :
 
 		# Remove false results, based on Date
 		if full_date == '09-13-2011' and patch == '03000027' : pass # Drunk employee #2, Happy 13th month from AMD!
-		elif month == '13' or year > '2016' :
+		elif month == '13' or year > '2017' :
 			print(col_magenta + "\nWarning: Skipped AMD microcode at 0x%0.2X, invalid Date of %s!\n" % (mc_bgn, full_date) + col_end)
 			continue
 		
@@ -955,7 +953,7 @@ for in_file in source :
 		# Remove false results, based on date
 		try :
 			date_chk = datetime.datetime.strptime(full_date, '%d-%m-%Y')
-			if date_chk.year > 2016 or date_chk.year < 2006 : raise Exception('WrongDate') # 1st MC from 2008 (Nano), 2006 for safety
+			if date_chk.year > 2017 or date_chk.year < 2006 : raise Exception('WrongDate') # 1st MC from 2008 (Nano), 2006 for safety
 		except :
 			# VIA is sober? No drunk employee #3 ???
 			print(col_magenta + "\nWarning: Skipped VIA microcode at 0x%0.2X, invalid Date of %s!\n" % (mc_bgn, full_date) + col_end)

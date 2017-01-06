@@ -5,30 +5,31 @@ Intel, AMD &amp; VIA Microcode Extraction Tool
 
 ##**A. About MC Extractor**
 
-MC Extractor is a tool that can extract Intel, AMD and VIA processor microcode binaries. It can be used to identify what microcodes your BIOS/SPI holds, verify their integrity, show details about them, check if they exist at the microcode repository etc.
+MC Extractor is a tool which can extract Intel, AMD and VIA processor microcode binaries. It can be used to identify what microcodes your BIOS/SPI holds, verify their integrity, show details about them, check if they exist at the microcode repository etc.
 
 ####**A1. MC Extractor Features**
 
-- Supports all current & legacy Microcodes (from 1995 and onward)
-- Converts Intel Microcode containers (dat,inc,txt,h) to binary images
+- Supports all current & legacy Microcodes from 1995 and onward
+- Scans for all Intel, AMD and VIA microcodes in one run
+- Verifies all extracted microcode integrity via checksum
+- Converts Intel containers (dat,inc,txt,h) to binary images
 - Shows microcode header structure and details on demand
-- Scans for Intel, AMD and VIA microcodes in one run
-- Verifies all microcode integrity via checksum
-- Supports certain special/modded microcodes
-- Lordkag's UEFI Strip optional integration support
-- Extracts AMD microcodes with or without padding
 - Ignores most false positives based on sanity checks
-- Ability to print new database entries for manual entry
-- Extracted duplicates are ignored based on name and contents
+- Supports certain special, fixed or modded microcodes
+- Ability to extract AMD microcodes with or without padding
+- Ability to print new database entries for manual DB entry
 - Ability to use loose patterns for debugging or future proofing
-- Multiple file drag & drop, mass file within folder scanning
-- Reports unknown microcodes not found at the Microcode Repository Database
-- Shows colored text to signify the importance of notes, warnings, errors etc
-- Open Source project licensed under GNU GPL v3
+- Ability to analyze multiple files by drag & drop or by input path
+- Ability to ignore extracted duplicates based on name and contents
+- Reports all microcodes which are not found at the Microcode Repository Database
+- Features command line parameters to enhance functionality & assist research
+- Features user friendly messages & proper handling of unexpected code errors
+- Shows colored text to signify the importance of notes, warnings & errors
+- Open Source project licensed under GNU GPL v3, comment assisted code
 
 ####**A2. Microcode Repository Database**
 
-MC Extractor's main goal is to allow users to quickly extract, determine & report new microcode versions without the use of special tools (MMTool) or Hex Editors. To do that effectively, a database had to be built. It's existence is very important for MC Extractor as it allows me to find new types of microcode, compare releases for similarities, check for updated binaries etc. Bundled with MC Extractor there's a file called MCE.dat which is required for the program to run. It includes all the Microcodes that are available at the Repository thread. This accommodates two actions: a) Check whether the imported microcode is up to date and b) Help find new Microcode releases sooner by reporting them.
+MC Extractor's main goal is to allow users to quickly extract, determine & report new microcode versions without the use of special tools or Hex Editors. To do that effectively, a database had to be built. Its existence is very important for MC Extractor as it allows us to find new types of microcode, compare releases for similarities, check for updated binaries etc. Bundled with MC Extractor there's a file called MCE.dat which is required for the program to run. It includes all the Microcodes that have been found so far. This accommodates two actions: a) Check whether the imported microcode is up to date and b) Help find new Microcode releases sooner by reporting them.
 
 ####**A3. Sources and Inspiration**
 
@@ -40,30 +41,30 @@ There are two ways to use MC Extractor, MCE.exe & Command Prompt. The MCE execut
 
 ####**B1. MC Extractor Executable**
 
-To use MC Extractor, select one or multiple files and Drag & Drop them to it's executable. You can also input certain optional parameters either by running MCE directly or by first dropping one or more files to it. Keep in mind that, due to operating system limitations, there is a limit on how many files can be dropped at once. If the latter is a problem, you can always use the -mass parameter as explained below.
+To use MC Extractor, select one or multiple files and Drag & Drop them to its executable. You can also input certain optional parameters either by running MCE directly or by first dropping one or more files to it. Keep in mind that, due to operating system limitations, there is a limit on how many files can be dropped at once. If the latter is a problem, you can always use the -mass parameter as explained below.
 
 ####**B2. MC Extractor Parameters**
 
 There are various parameters which enhance or modify the default behavior of MC Extractor.
 
-* -? : Displays MCE's help & usage screen
-* -skip : Skips MCE's options intro screen
+* -? : Displays help & usage screen
+* -skip : Skips options intro screen
+* -mass : Scans all files of a given directory
 * -info : Displays microcode header(s)
+* -false : Uses loose patterns (false positives)
 * -padd : Keeps padding of AMD microcodes
 * -extr : Lordkag's UEFI Strip mode
-* -false : Uses loose patterns (false positives)
 * -file : Appends filename to New or Bad microcodes
-* -cont : Converts Intel container (dat,inc,h,txt) to binary
-* -mass : Scans all files of a given directory
-* -pdb : Writes DB entries to file 
+* -cont : Extracts Intel containers (dat,inc,h,txt)
+* -pdb : Writes input DB entries to file
 
 ####**B3. MC Extractor Error Control**
 
-During operation, MC Extractor may encounter some issues related to rare circumstances that can trigger Notes, Warnings or Errors. Notes (yellow color) provide useful information about a characteristic of this particular firmware. Warnings (purple color) notify the user of possible problems that can cause system instability. Errors (red color) are shown when something unexpected is encountered like unknown microcode sizes, failure to convert containers or find/open/read files etc.
+During operation, MC Extractor may encounter some issues that can trigger Notes, Warnings or Errors. Notes (yellow color) provide useful information about a characteristic of this particular firmware. Warnings (purple color) notify the user of possible problems that can cause system instability. Errors (red color) are shown when something unexpected is encountered like unknown microcode sizes, failure to convert containers or find/open/read files etc.
 
 ##**C. Download MC Extractor**
 
-MC Extractor is developed under Windows using Python 3.x. Since the Engine Firmware Repository Database is updated more frequently compared to the main program, a separate DB release is provided when needed.
+MC Extractor is developed under Windows using Python 3.x. Since the Microcode Repository database is updated more frequently compared to the main program, a separate release is provided when needed.
 
 ####**C1. Compatibility**
 
