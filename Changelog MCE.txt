@@ -1,3 +1,9 @@
+v1.2.0_1
+
+Added support for AMD Ryzen CPU microcodes
+Fixed AMD issue occuring after finding one MC with unknown size
+Updated Microcode Repository Database to r15_2
+
 v1.1.3
 
 Fixed crash at Intel Extra Microcode Header analysis
