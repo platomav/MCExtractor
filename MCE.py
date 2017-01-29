@@ -5,7 +5,7 @@ Copyright (C) 2016-2017 Plato Mavropoulos
 Based on UEFIStrip v7.8.2 by Lordkag
 """
 
-title = 'MC Extractor v1.1.3'
+title = 'MC Extractor v1.2.0'
 
 import os
 import re
@@ -251,6 +251,22 @@ class AMD_MC_Header(ctypes.LittleEndianStructure) :
 		print("BIOS API Rev:                      %0.2X"      % self.BiosApiRev)
 		print("Reserved:                          %s"         % reserv_str)
 		print("Match Reg:                         %s"         % matchreg_str)
+		
+class AMD_MC_Header_Extra(ctypes.LittleEndianStructure) :
+	_pack_   = 1
+	_fields_ = [
+		("Unknown1",				uint32_t * 0x40),	# 100 (20+)
+		("Unknown2",				uint32_t * 0x80),	# 300
+		("Flags",					uint32_t),			# 304
+		("PatchId",					uint32_t),			# 308
+		# 308
+	]
+
+	def mc_print(self) :
+		
+		print("\n--------------AMD Extra Header--------------\n")
+		print("Flags:                             %0.8X"	% self.Flags)
+		print("Patch Revision:                    %0.8X"	% self.PatchId)
 		
 class VIA_MC_Header(ctypes.LittleEndianStructure) :
 	_pack_   = 1
@@ -557,7 +573,6 @@ for in_file in source :
 	# MC Variables
 	mc_nr = 0
 	type_conv = ''
-	unk_size = False
 	temp_file = None
 	match_list_i = []
 	match_list_a = []
@@ -743,14 +758,14 @@ for in_file in source :
 	# CPUID 610F21 = 61 + 0F + 21  = (1 + 4) + (2 + 5) + (3 + 6) = 6+F + 12 + 01 = 15 + 12 + 01 = MU 151201
 	# MU 151201 = 15 + 12 + 01 = 6+F + 12 + 01 = (1 + 3 + 5) + (2 + 4 + 6) = 610 + F21 = CPUID 610F21
 	
-	# UEFI patterns
+	# UEFI patterns (Pre-ZEN?)
 	pat_acpu_1 = re.compile(br'\x24\x55\x43\x4F\x44\x45((\x56\x53)|(\x32\x4B)|(\x34\x4B))') # $UCODEVS, $UCODE2K, $UCODE4K
 	match_list_a += pat_acpu_1.finditer(reading)
 	
 	# 1st MC from 1999 (K7), 2000 due to K7 Erratum and performance
 	if not param.exp_check :
 		# BIOS pattern
-		pat_acpu_2 = re.compile(br'[\x00-\x18]\x20[\x01-\x31][\x01-\x13].{4}[\x00-\x03]\x80.{18}[\x00-\x01](\xAA|\x00){3}', re.DOTALL)
+		pat_acpu_2 = re.compile(br'[\x00-\x18]\x20[\x01-\x31][\x01-\x13].{4}[\x00-\x04]\x80.{18}[\x00-\x01](\xAA|\x00){3}', re.DOTALL)
 		match_list_a += pat_acpu_2.finditer(reading)
 	else :
 		# Data Rev 00-09, Reserved AA or 00, API 00-09
@@ -758,6 +773,8 @@ for in_file in source :
 		match_list_a += pat_acpu_3.finditer(reading)
 	
 	for match_ucode in match_list_a :
+		
+		unk_size = False
 		
 		# noinspection PyRedeclaration
 		(mc_bgn, end_mc_match) = match_ucode.span()
@@ -818,6 +835,10 @@ for in_file in source :
 		# Print the Header
 		if param.print_hdr :
 			mc_hdr.mc_print()
+			
+			if cpu_id[2:4] in ['80'] :
+				mc_hdr_extra = get_struct(reading, mc_bgn + 0x20, AMD_MC_Header_Extra)
+				mc_hdr_extra.mc_print()
 			continue
 		
 		if data_len == '20' : # 00, 01, 02, 10, 12, 30
@@ -855,6 +876,11 @@ for in_file in source :
 			if param.pad_check : mc_len = amd_padd(mc_bgn + mc_len_amd, 0x20, 0xD60, 0xD60, 0xD80)
 			else : mc_len = mc_len_amd
 			
+		elif cpu_id[2:4] in ['80'] :
+			mc_len_amd = 0xD00
+			if param.pad_check : mc_len = amd_padd(mc_bgn + mc_len_amd, 0x80, 0xD00, 0xD00, 0xD80)
+			else : mc_len = mc_len_amd
+			
 		else :
 			unk_size = True
 		
@@ -889,6 +915,9 @@ for in_file in source :
 		if int(cpu_id[2:4], 16) < 0x50 and (valid_chk + mc_chk) & 0xFFFFFFFF != 0 :
 			print(col_magenta + '\nWarning: This microcode is packed or badly extracted, please report it!\n' + col_end)
 			mc_path = mc_extract + "!Bad_%s%s.bin" % (mc_name,mc_file_name)
+		elif cpu_id[2:4] in ['80'] and reading[mc_bgn + mc_len - 0x80:mc_bgn + mc_len] != b'\xFF' * 0x80 :
+			print(col_magenta + '\nWarning: This Ryzen microcode size might be wrong, please report it!\n' + col_end)
+			mc_path = mc_extract + "!Zen_%s%s.bin" % (mc_name,mc_file_name)
 		elif db_search(db_entry) == 'No' :
 			print(col_yellow + "\nNote: This microcode was not found at the database, please report it!\n" + col_end)
 			mc_path = mc_extract + "!New_%s%s.bin" % (mc_name,mc_file_name)
