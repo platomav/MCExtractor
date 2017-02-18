@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 MC Extractor
 Intel, AMD & VIA Microcode Extractor
@@ -5,7 +7,7 @@ Copyright (C) 2016-2017 Plato Mavropoulos
 Based on UEFIStrip v7.8.2 by Lordkag
 """
 
-title = 'MC Extractor v1.2.0'
+title = 'MC Extractor v1.3.0'
 
 import os
 import re
@@ -18,14 +20,27 @@ import tempfile
 import binascii
 import datetime
 import traceback
-import win32console
 
 colorama.init()
-col_red = colorama.Fore.RED + colorama.Style.BRIGHT
-col_green = colorama.Fore.GREEN + colorama.Style.BRIGHT
-col_yellow = colorama.Fore.YELLOW + colorama.Style.BRIGHT
-col_magenta = colorama.Fore.MAGENTA + colorama.Style.BRIGHT
-col_end = colorama.Fore.RESET + colorama.Style.RESET_ALL
+col_r = colorama.Fore.RED + colorama.Style.BRIGHT
+col_g = colorama.Fore.GREEN + colorama.Style.BRIGHT
+col_y = colorama.Fore.YELLOW + colorama.Style.BRIGHT
+col_m = colorama.Fore.MAGENTA + colorama.Style.BRIGHT
+col_e = colorama.Fore.RESET + colorama.Style.RESET_ALL
+
+# Detect OS Platform
+mce_os = sys.platform
+if mce_os == 'win32' :
+	cl_wipe = 'cls'
+	os_dir = '\\'
+elif mce_os.startswith('linux') or mce_os == 'darwin' :
+	cl_wipe = 'clear'
+	os_dir = '//'
+else :
+	print(col_r + '\nError: ' + col_e + 'Unsupported platform: %s\n' % mce_os)
+	input('Press enter to exit')
+	colorama.deinit()
+	sys.exit(-1)
 
 char = ctypes.c_char
 uint8_t = ctypes.c_ubyte
@@ -37,7 +52,14 @@ class MCE_Param :
 
 	def __init__(self,source) :
 	
-		self.all = ['-?','-skip','-info','-pdb','-padd','-file','-false','-extr','-cont','-mass']
+		self.all = ['-?','-skip','-info','-pdb','-padd','-file','-false','-extr','-cont','-mass','-verbose']
+		
+		self.win = ['-extr'] # Windows only
+		
+		if mce_os == 'win32' :
+			self.val = self.all
+		else :
+			self.val = [item for item in self.all if item not in self.win]
 		
 		self.help_scr = False
 		self.build_db = False
@@ -49,11 +71,11 @@ class MCE_Param :
 		self.mce_extr = False
 		self.conv_cont = False
 		self.mass_scan = False
+		self.verbose = False
 		
 		for i in source :
 			if i == '-?' : self.help_scr = True
 			if i == '-skip' : self.skip_intro = True
-			if i == '-extr' : self.mce_extr = True
 			if i == '-pdb' : self.build_db = True
 			if i == '-info' : self.print_hdr = True
 			if i == '-padd' : self.pad_check = True
@@ -61,8 +83,13 @@ class MCE_Param :
 			if i == '-file' : self.print_file = True
 			if i == '-cont' : self.conv_cont = True
 			if i == '-mass' : self.mass_scan = True
+			if i == '-verbose' : self.verbose = True
+			
+			if mce_os == 'win32' : # Windows only options
+				if i == '-extr': self.mce_extr = True
 			
 		if self.mce_extr or self.mass_scan : self.skip_intro = True
+		if self.mce_extr : self.verbose = True
 
 class Intel_MC_Header(ctypes.LittleEndianStructure) :
 	_pack_   = 1
@@ -305,19 +332,23 @@ class VIA_MC_Header(ctypes.LittleEndianStructure) :
 		print("Unknown:                           %0.8X"   % self.Unknown)
 
 def mce_help() :
-	print("\nUsage: MCE.exe [FilePath] <Options>\n\n\
-<Options>\n\n\
-	-? : Displays help & usage screen\n\
-	-skip : Skips options intro screen\n\
-	-mass : Scans all files of a given directory\n\
-	-info : Displays microcode header(s)\n\
-	-false : Uses loose patterns (false positives)\n\
-	-padd : Keeps padding of AMD microcodes\n\
-	-extr : Lordkag's UEFI Strip mode\n\
-	-file : Appends filename to New or Bad microcodes\n\
-	-cont : Extracts Intel containers (dat,inc,h,txt)\n\
-	-pdb : Writes input DB entries to file\
-	")
+	
+	text = "\nUsage: MCE [FilePath] {Options}\n\n{Options}\n\n"
+	text += "-?       : Displays help & usage screen\n"
+	text += "-skip    : Skips options intro screen\n"
+	text += "-mass    : Scans all files of a given directory\n"
+	text += "-info    : Displays microcode header(s)\n"
+	text += "-false   : Uses loose patterns (false positives)\n"
+	text += "-padd    : Keeps padding of AMD microcodes\n"
+	text += "-file    : Appends filename to New or Bad microcodes\n"
+	text += "-cont    : Extracts Intel containers (dat,inc,h,txt)\n"
+	text += "-verbose : Shows skipped microcode details\n"
+	text += "-pdb     : Writes input DB entries to file"
+	
+	if mce_os == 'win32' :
+		text += "\n-extr    : Lordkag's UEFIStrip mode"
+	
+	print(text)
 	mce_exit(0)
 		
 def mce_exit(code) :
@@ -349,9 +380,9 @@ def get_script_dir(follow_symlinks=True) :
 
 # https://stackoverflow.com/a/781074
 def show_exception_and_exit(exc_type, exc_value, tb) :
-	print(col_red + '\nError: MCE just crashed, please report the following:\n')
+	print(col_r + '\nError: MCE just crashed, please report the following:\n')
 	traceback.print_exception(exc_type, exc_value, tb)
-	input(col_end + "\nPress enter to exit")
+	input(col_e + "\nPress enter to exit")
 	colorama.deinit() # Stop Colorama
 	sys.exit(-1)
 	
@@ -398,7 +429,7 @@ def has_duplicate(file_path, file_data) :
 	if not os.path.exists(file_path) : return False
 	
 	name_tail = "_nr"
-	t_folder = os.path.dirname(file_path) + "\\"
+	t_folder = os.path.dirname(file_path) + os_dir
 	baseName = os.path.basename(file_path)
 	name_root, name_ext = os.path.splitext(baseName)
 	name_ext = name_ext.lstrip(".")
@@ -428,7 +459,7 @@ def get_struct(str_, off, struct) :
 	str_data = str_[off:off + struct_len]
 	fit_len = min(len(str_data), struct_len)
 	
-	if fit_len < struct_len: raise Exception(col_red + "\nError: cannot read %d bytes struct, expected %d!\n" % (fit_len, struct_len) + col_end)
+	if fit_len < struct_len: raise Exception(col_r + "\nError: cannot read %d bytes struct, expected %d!\n" % (fit_len, struct_len) + col_e)
 	
 	ctypes.memmove(ctypes.addressof(my_struct), str_data, fit_len)
 	
@@ -464,9 +495,9 @@ def init_file(in_file,orig_file,temp) :
 	mc_file_name = ''
 	
 	if not os.path.isfile(in_file) :
-		if any(p in in_file for p in param.all) : return 'continue', 'continue'
+		if any(p in in_file for p in param.val) : return 'continue', 'continue'
 		
-		print(col_red + "\nError" + col_end + ", file %s was not found!\n" % force_ascii(in_file))
+		print(col_r + "\nError" + col_e + ": file %s was not found!\n" % force_ascii(in_file))
 		
 		if not param.mass_scan : mce_exit(1)
 		else : return 'continue', 'continue'
@@ -500,7 +531,7 @@ def mass_scan(f_path) :
 mce_dir = get_script_dir()
 
 # Set DB location
-db_path = mce_dir + "\\" + "MCE.dat"
+db_path = mce_dir + os_dir +  "MCE.dat"
 
 # Get MCE Parameters from input
 param = MCE_Param(sys.argv)
@@ -513,7 +544,7 @@ if param.mce_extr :
 	pass
 else :
 	sys.excepthook = show_exception_and_exit # Pause after any unexpected python exception
-	win32console.SetConsoleTitle(title) # Set console window title
+	if mce_os == 'win32' : ctypes.windll.kernel32.SetConsoleTitleW(title) # Set console window title
 
 if not param.skip_intro :
 	mce_hdr()
@@ -524,13 +555,13 @@ if not param.skip_intro :
 
 	if arg_num == 2 :
 		print("Press Enter to skip or input -? to list options\n")
-		print("\nFile:       " + col_green + "%s" % force_ascii(os.path.basename(sys.argv[1])) + col_end)
+		print("\nFile:       " + col_g + "%s" % force_ascii(os.path.basename(sys.argv[1])) + col_e)
 	elif arg_num > 2 :
 		print("Press Enter to skip or input -? to list options\n")
-		print("\nFiles:       " + col_yellow + "Multiple" + col_end)
+		print("\nFiles:       " + col_y + "Multiple" + col_e)
 	else :
 		print('Input a filename or "filepath" or press Enter to list options\n')
-		print("\nFile:       " + col_magenta + "None" + col_end)
+		print("\nFile:       " + col_m + "None" + col_e)
 
 	input_var = input('\nOption(s):  ')
 
@@ -543,13 +574,13 @@ if not param.skip_intro :
 	# Non valid parameters are treated as files
 	if input_var[0] != "" :
 		for i in input_var:
-			if i not in param.all :
+			if i not in param.val :
 				sys.argv.append(i.strip('"'))
 	
 	# Re-enumerate parameter input
 	arg_num = len(sys.argv)
 	
-	os.system('cls')
+	os.system(cl_wipe)
 
 	mce_hdr()
 
@@ -565,13 +596,15 @@ else :
 
 # Check if DB exists
 if not os.path.isfile(db_path) :
-	print(col_red + "\nError, MCE.dat file is missing!\n" + col_end)
+	print(col_r + "\nError: MCE.dat file is missing!\n" + col_e)
 	mce_exit(1)
 	
 for in_file in source :
 
 	# MC Variables
+	skip = 0
 	mc_nr = 0
+	total = 0
 	type_conv = ''
 	temp_file = None
 	match_list_i = []
@@ -624,7 +657,7 @@ for in_file in source :
 			if reading == 'continue' : continue
 		
 		except :
-			print(col_red + 'Error converting Intel container!\n' + col_end)
+			print(col_r + 'Error: Cannot convert Intel container!\n' + col_e)
 	
 	# Intel Microcodes
 	
@@ -640,6 +673,8 @@ for in_file in source :
 		pat_icpu = re.compile(br'(\x01|\x02)\x00{3}.{4}[\x00-\x99](([\x19-\x20][\x01-\x31][\x01-\x12])|(\x18\x07\x00)).{8}(\x01|\x02)\x00{3}.{2}\x00{2}', re.DOTALL)
 	
 	match_list_i += pat_icpu.finditer(reading)
+	
+	total += len(match_list_i)
 	
 	for match_ucode in match_list_i :
 		
@@ -678,17 +713,20 @@ for in_file in source :
 		except :
 			if full_date == '07-00-1896' and patch == '000000D1' : pass # Drunk employee #1, Happy 0th month from 19th century Intel!
 			else :
-				print(col_magenta + "\nWarning: Skipped Intel microcode at 0x%0.2X, invalid Date of %s!\n" % (mc_bgn, full_date) + col_end)
+				if param.verbose : print(col_m + "\nWarning: Skipped Intel microcode at 0x%0.2X, invalid Date of %s!\n" % (mc_bgn, full_date) + col_e)
+				skip += 1
 				continue
 		
 		# Remove false results, based on Reserved field
 		if res_field != 0 :
-			print(col_magenta + "\nWarning: Skipped Intel microcode at 0x%0.2X, Reserved field not empty!\n" % mc_bgn + col_end)
+			if param.verbose : print(col_m + "\nWarning: Skipped Intel microcode at 0x%0.2X, Reserved field not empty!\n" % mc_bgn + col_e)
+			skip += 1
 			continue
 			
 		# Remove false results, based on data
 		if reading[mc_bgn + 0x90:mc_bgn + 0x94] == b'\x00' * 4 : # 0x90 is either encrypted data (old MC) or RSA PKEY (Extra Header)
-			print(col_magenta + "\nWarning: Skipped Intel microcode at 0x%0.2X, null data at 0x90!\n" % mc_bgn + col_end)
+			if param.verbose : print(col_m + "\nWarning: Skipped Intel microcode at 0x%0.2X, null data at 0x90!\n" % mc_bgn + col_e)
+			skip += 1
 			continue
 		
 		# Print the Header(s)
@@ -717,7 +755,7 @@ for in_file in source :
 		db_entry = '%s%s%s%s%s%s%s%s' % (cpu_id, plat_db, patch, month, day, year, mc_len_db, mc_chk) # mCodeInfo compatible format
 		
 		if param.build_db :
-			with open(mce_dir + "\\" + 'MCE_DB_INTEL.txt', 'a') as db_file : db_file.write(db_entry + '\n')
+			with open(mce_dir + os_dir +  'MCE_DB_INTEL.txt', 'a') as db_file : db_file.write(db_entry + '\n')
 			continue # Next MC of input file
 		
 		mc_name = "cpu%s_plat%s_ver%s_date%s" % (cpu_id, plat_cut, patch, full_date)
@@ -730,18 +768,18 @@ for in_file in source :
 		valid_chk = checksum32(mc_data)
 		
 		# Create extraction folder
-		if '-extr' in sys.argv : mc_extract = mce_dir + "\\" + '..\Z_Extract\\CPU\\'
-		else : mc_extract = mce_dir + "\\" + 'MC_Extract\\Intel\\'
+		if '-extr' in sys.argv : mc_extract = mce_dir + os_dir +  '..\Z_Extract\\CPU\\'
+		else : mc_extract = mce_dir + os_dir + 'Extracted' + os_dir + 'Intel' + os_dir
 		if not os.path.exists(mc_extract) : os.makedirs(mc_extract)
 		
 		if valid_chk != 0 :
 			if patch == '000000FF' and cpu_id == '000506E3' and full_date == '05-01-2016' : # Someone "fixed" the modded MC checksum wrongfully
 				mc_path = mc_extract + "%s.bin" % mc_name
 			else :
-				print(col_magenta + '\nWarning: This microcode is packed or badly extracted, please report it!\n' + col_end)
+				print(col_m + '\nWarning: This microcode is packed or badly extracted, please report it!\n' + col_e)
 				mc_path = mc_extract + "!Bad_%s%s.bin" % (mc_name,mc_file_name)	
 		elif db_search(db_entry) == 'No' :
-			print(col_yellow + "\nNote: This microcode was not found at the database, please report it!\n" + col_end)
+			print(col_g + "\nNote: This microcode was not found at the database, please report it!\n" + col_e)
 			mc_path = mc_extract + "!New_%s%s.bin" % (mc_name,mc_file_name)
 		else :
 			mc_path = mc_extract + "%s.bin" % mc_name
@@ -771,6 +809,8 @@ for in_file in source :
 		# Data Rev 00-09, Reserved AA or 00, API 00-09
 		pat_acpu_3 = re.compile(br'[\x00-\x18]\x20[\x01-\x31][\x01-\x13].{4}[\x00-\x09]\x80.{18}[\x00-\x09](\xAA|\x00){3}', re.DOTALL)
 		match_list_a += pat_acpu_3.finditer(reading)
+	
+	total += len(match_list_a)
 	
 	for match_ucode in match_list_a :
 		
@@ -809,27 +849,35 @@ for in_file in source :
 		nbsb_rev_id = '%0.2X' % mc_hdr.NbRevId + '%0.2X' % mc_hdr.SbRevId
 		
 		full_date = "%s-%s-%s" % (day, month, year)
-
+		
 		# Remove false results, based on Date
-		if full_date == '09-13-2011' and patch == '03000027' : pass # Drunk employee #2, Happy 13th month from AMD!
-		elif month == '13' or year > '2017' :
-			print(col_magenta + "\nWarning: Skipped AMD microcode at 0x%0.2X, invalid Date of %s!\n" % (mc_bgn, full_date) + col_end)
-			continue
+		try :
+			date_chk = datetime.datetime.strptime(full_date, '%d-%m-%Y')
+			if date_chk.year > 2017 or date_chk.year < 2000 : raise Exception('WrongDate') # 1st MC from 1999 (K7), 2000 for K7 Erratum and performance
+		except :
+			if full_date == '09-13-2011' and patch == '03000027' : pass # Drunk employee #2, Happy 13th month from AMD!
+			else :
+				if param.verbose : print(col_m + "\nWarning: Skipped AMD microcode at 0x%0.2X, invalid Date of %s!\n" % (mc_bgn, full_date) + col_e)
+				skip += 1
+				continue
 		
 		# Remove false results, based on VEN_IDs
 		if (nb_id != '0'*8 and '1002' not in nb_id[4:8] and '1022' not in nb_id[4:8]) \
 		or (sb_id != '0'*8 and '1002' not in sb_id[4:8] and '1022' not in sb_id[4:8]) :
-			print(col_magenta + "\nWarning: Skipped AMD microcode at 0x%0.2X, invalid VEN_IDs of %s,%s!\n" % (mc_bgn, nb_id[4:8], sb_id[4:8]) + col_end)
+			if param.verbose : print(col_m + "\nWarning: Skipped AMD microcode at 0x%0.2X, invalid VEN_IDs of %s,%s!\n" % (mc_bgn, nb_id[4:8], sb_id[4:8]) + col_e)
+			skip += 1
 			continue
 		
 		# Remove false results, based on Data Length
 		if data_len not in ['10','20','00'] :
-			print(col_magenta + "\nWarning: Skipped AMD microcode at 0x%0.2X, Data Length not standard!\n" % mc_bgn + col_end)
+			if param.verbose : print(col_m + "\nWarning: Skipped AMD microcode at 0x%0.2X, Data Length not standard!\n" % mc_bgn + col_e)
+			skip += 1
 			continue
 		
 		# Remove false results, based on data
 		if reading[mc_bgn + 0x40:mc_bgn + 0x44] == b'\x00' * 4 : # 0x40 has non-null data
-			print(col_magenta + "\nWarning: Skipped AMD microcode at 0x%0.2X, null data at 0x40!\n" % mc_bgn + col_end)
+			if param.verbose : print(col_m + "\nWarning: Skipped AMD microcode at 0x%0.2X, null data at 0x40!\n" % mc_bgn + col_e)
+			skip += 1
 			continue
 		
 		# Print the Header
@@ -889,7 +937,7 @@ for in_file in source :
 		
 		if unk_size :
 			mc_len_db = '00000000'
-			print(col_red + "\n%0.2d. Error: %s not extracted at 0x%0.2X, unknown Size!\n" % (mc_nr, mc_name, mc_bgn) + col_end)
+			print(col_r + "\n%0.2d. Error: %s not extracted at 0x%0.2X, unknown Size!\n" % (mc_nr, mc_name, mc_bgn) + col_e)
 			continue
 		else :
 			mc_len_db = '%0.8X' % mc_len_amd
@@ -902,24 +950,24 @@ for in_file in source :
 		db_entry = '%s%s%s0000%s%s%s%s%s%s%s%s' % (cpu_id, nb_id, sb_id, nbsb_rev_id, patch, month, day, year, mc_len_db, mc_chk_hex, mc_file_chk)
 		
 		if param.build_db :
-			with open(mce_dir + "\\" + 'MCE_DB_AMD.txt', 'a') as db_file : db_file.write(db_entry + '\n')
+			with open(mce_dir + os_dir +  'MCE_DB_AMD.txt', 'a') as db_file : db_file.write(db_entry + '\n')
 			continue # Next MC of input file
 		
 		print("%0.2d. %s , Size 0x%X , Offset 0x%0.2X" % (mc_nr, mc_name, mc_len, mc_bgn))
 		
 		# Create extraction folder
-		if '-extr' in sys.argv : mc_extract = mce_dir + "\\" + '..\Z_Extract\\CPU\\'
-		else : mc_extract = mce_dir + "\\" + 'MC_Extract\\AMD\\'
+		if '-extr' in sys.argv : mc_extract = mce_dir + os_dir +  '..\Z_Extract\\CPU\\'
+		else : mc_extract = mce_dir + os_dir + 'Extracted' + os_dir + 'AMD' + os_dir
 		if not os.path.exists(mc_extract) : os.makedirs(mc_extract)
 		
 		if int(cpu_id[2:4], 16) < 0x50 and (valid_chk + mc_chk) & 0xFFFFFFFF != 0 :
-			print(col_magenta + '\nWarning: This microcode is packed or badly extracted, please report it!\n' + col_end)
+			print(col_m + '\nWarning: This microcode is packed or badly extracted, please report it!\n' + col_e)
 			mc_path = mc_extract + "!Bad_%s%s.bin" % (mc_name,mc_file_name)
 		elif cpu_id[2:4] in ['80'] and reading[mc_bgn + mc_len - 0x80:mc_bgn + mc_len] != b'\xFF' * 0x80 :
-			print(col_magenta + '\nWarning: This Ryzen microcode size might be wrong, please report it!\n' + col_end)
+			print(col_m + '\nWarning: This Ryzen microcode size might be wrong, please report it!\n' + col_e)
 			mc_path = mc_extract + "!Zen_%s%s.bin" % (mc_name,mc_file_name)
 		elif db_search(db_entry) == 'No' :
-			print(col_yellow + "\nNote: This microcode was not found at the database, please report it!\n" + col_end)
+			print(col_g + "\nNote: This microcode was not found at the database, please report it!\n" + col_e)
 			mc_path = mc_extract + "!New_%s%s.bin" % (mc_name,mc_file_name)
 		else :
 			mc_path = mc_extract + "%s.bin" % mc_name
@@ -930,7 +978,7 @@ for in_file in source :
 			mc_path = auto_name (mc_extract, name_root, "_nr", "bin")[1]
 			
 			with open(mc_path, 'wb') as mc_file : mc_file.write(mc_extr)
-			
+					
 	# VIA Microcodes
 	
 	# 000006F1 = VIA ???
@@ -951,6 +999,8 @@ for in_file in source :
 		pat_vcpu = re.compile(br'\x52\x52\x41\x53.{20}\xFF{4}', re.DOTALL)
 	
 	match_list_v += pat_vcpu.finditer(reading)
+	
+	total += len(match_list_v)
 	
 	for match_ucode in match_list_v :
 		
@@ -985,7 +1035,8 @@ for in_file in source :
 			if date_chk.year > 2017 or date_chk.year < 2006 : raise Exception('WrongDate') # 1st MC from 2008 (Nano), 2006 for safety
 		except :
 			# VIA is sober? No drunk employee #3 ???
-			print(col_magenta + "\nWarning: Skipped VIA microcode at 0x%0.2X, invalid Date of %s!\n" % (mc_bgn, full_date) + col_end)
+			if param.verbose : print(col_m + "\nWarning: Skipped VIA microcode at 0x%0.2X, invalid Date of %s!\n" % (mc_bgn, full_date) + col_e)
+			skip += 1
 			continue
 		
 		# Print the Header(s)
@@ -996,7 +1047,7 @@ for in_file in source :
 		db_entry = '%s%s%s%s%s%s%s%s' % (cpu_id, name, patch_db, month, day, year, mc_len_db, mc_chk)
 		
 		if param.build_db :
-			with open(mce_dir + "\\" + 'MCE_DB_VIA.txt', 'a') as db_file : db_file.write(db_entry + '\n')
+			with open(mce_dir + os_dir +  'MCE_DB_VIA.txt', 'a') as db_file : db_file.write(db_entry + '\n')
 			continue
 		
 		mc_name = "cpu%s_sig%s_ver%s_size%s_date%s" % (cpu_id, name, patch, mc_len_db, full_date)
@@ -1009,15 +1060,15 @@ for in_file in source :
 		valid_chk = checksum32(mc_data)
 		
 		# Create extraction folder
-		if '-extr' in sys.argv : mc_extract = mce_dir + "\\" + '..\Z_Extract\\CPU\\'
-		else : mc_extract = mce_dir + "\\" + 'MC_Extract\\VIA\\'
+		if '-extr' in sys.argv : mc_extract = mce_dir + os_dir +  '..\Z_Extract\\CPU\\'
+		else : mc_extract = mce_dir + os_dir + 'Extracted' + os_dir + 'VIA' + os_dir
 		if not os.path.exists(mc_extract) : os.makedirs(mc_extract)
 		
 		if valid_chk != 0 :
-			print(col_magenta + '\nWarning: This microcode is packed or badly extracted, please report it!\n' + col_end)
+			print(col_m + '\nWarning: This microcode is packed or badly extracted, please report it!\n' + col_e)
 			mc_path = mc_extract + '!Bad_%s%s.bin' % (mc_name,mc_file_name)
 		elif db_search(db_entry) == 'No' :
-			print(col_yellow + '\nNote: This microcode was not found at the database, please report it!\n' + col_end)
+			print(col_g + '\nNote: This microcode was not found at the database, please report it!\n' + col_e)
 			mc_path = mc_extract + '!New_%s%s.bin' % (mc_name,mc_file_name)
 		else :
 			mc_path = mc_extract + '%s.bin' % mc_name
@@ -1032,5 +1083,10 @@ for in_file in source :
 	if temp_file is not None :
 		temp_file.close()
 		os.remove(temp_file.name)
+		
+	if total == 0 or skip == total :
+		print('File does not contain CPU microcodes')
+		
+	if skip > 0 and not param.verbose : print(col_y + '\nNote: %s skipped microcode(s), use -verbose for details' % skip + col_e)
 
 mce_exit(0)

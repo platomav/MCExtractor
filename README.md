@@ -37,7 +37,7 @@ MC Extractor is based on a fraction of [Lordkag's](http://www.win-raid.com/u369_
 
 ##**B. How to use MC Extractor**
 
-There are two ways to use MC Extractor, MCE.exe & Command Prompt. The MCE executable allows you to drag & drop one or more firmware and view them one by one. To manually call MC Extractor, a Command Prompt can be used with -skip as parameter.
+There are two ways to use MC Extractor, MCE executable & Command Prompt. The MCE executable allows you to drag & drop one or more firmware and view them one by one. To manually call MC Extractor, a Command Prompt can be used with -skip as parameter.
 
 ####**B1. MC Extractor Executable**
 
@@ -53,31 +53,47 @@ There are various parameters which enhance or modify the default behavior of MC 
 * -info : Displays microcode header(s)
 * -false : Uses loose patterns (false positives)
 * -padd : Keeps padding of AMD microcodes
-* -extr : Lordkag's UEFI Strip mode
 * -file : Appends filename to New or Bad microcodes
 * -cont : Extracts Intel containers (dat,inc,h,txt)
 * -pdb : Writes input DB entries to file
 
+The following is Windows specific:
+
+* -extr : Lordkag's UEFI Strip mode
+
 ####**B3. MC Extractor Error Control**
 
-During operation, MC Extractor may encounter some issues that can trigger Notes, Warnings or Errors. Notes (yellow color) provide useful information about a characteristic of this particular firmware. Warnings (purple color) notify the user of possible problems that can cause system instability. Errors (red color) are shown when something unexpected is encountered like unknown microcode sizes, failure to convert containers or find/open/read files etc.
+During operation, MC Extractor may encounter some issues that can trigger Notes, Warnings or Errors. Notes (yellow color) provide useful information about a characteristic of this particular firmware. Warnings (purple color) notify the user of possible problems that can cause system instability. Errors (red color) are shown when something unexpected or problematic is encountered.
 
 ##**C. Download MC Extractor**
 
-MC Extractor is developed under Windows using Python 3.x. Since the Microcode Repository database is updated more frequently compared to the main program, a separate release is provided when needed.
+MC Extractor is developed using Python 3.x and can work under Windows, Linux and macOS operating systems. Pre-built binaries are provided for Windows only with build/freeze instructions for all three OS found below.
 
 ####**C1. Compatibility**
 
-MC Extractor has been tested to be compatible with Windows XP up to Windows 10 operating systems. It is built and executed using Python 3.4. Any latter v3.x releases might work depending on whether MCE's prerequisites are also compatible. The script is frozen using Py2Exe.
+MC Extractor has been tested to be compatible with Windows XP-10, Ubuntu 16.04 and macOS Sierra operating systems. It is expected to work at all Linux or macOS operating systems which have Python 3.x support but feel free to test it. It is executed using Python 3.4 under Windows and the built-in Python 3.5 under Linux and macOS. Any latter v3.x releases might work depending on whether MCE's prerequisites are also compatible.
 
 ####**C2. Code Prerequisites**
 
-To run MC Extractor, you need to have the following python modules installed:
+To run MC Extractor, you need to have the following 3rd party Python module installed:
 
 * [Colorama](https://pypi.python.org/pypi/colorama)
-* [PyWin32](https://sourceforge.net/projects/pywin32/files/pywin32/)
 
 To freeze MC Extractor, you can use whatever you like. The following are verified to work:
 
-* [Py2Exe](https://pypi.python.org/pypi/py2exe)
-* [PyInstaller](https://pypi.python.org/pypi/PyInstaller/)
+* [Py2exe](https://pypi.python.org/pypi/py2exe) (Windows)
+* [Py2app](https://pypi.python.org/pypi/py2app) (macOS)
+* [PyInstaller](https://pypi.python.org/pypi/PyInstaller/) (Windows/Linux/macOS)
+
+####**C3. Freeze with PyInstaller**
+
+PyInstaller can freeze MC Extractor at all three platforms, it is simple to run and gets updated often.
+
+1. Make sure you have Python 3.5 installed
+2. Use pip to install colorama module
+3. Use pip to install pyinstaller module
+4. Open a command prompt and execute:
+
+> pyinstaller --clean --noconfirm --noupx --onefile --log-level=WARN --name MCE MCE.py
+
+At dist folder you should find the final MCE executable
