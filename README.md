@@ -1,18 +1,22 @@
 # MCExtractor
 Intel, AMD &amp; VIA Microcode Extraction Tool
 
-[Official MC Extractor forum thread](http://www.win-raid.com/t2199f16-MC-Extractor-Intel-AMD-amp-VIA-Microcode-Extraction-Tool.html#msg30320)
+[MC Extractor Discussion Topic](http://www.win-raid.com/t2199f16-MC-Extractor-Intel-AMD-amp-VIA-Microcode-Extraction-Tool.html#msg30320)
+
+![](https://i.imgur.com/7fk3x01.png)
 
 ##**A. About MC Extractor**
 
-MC Extractor is a tool which can extract Intel, AMD and VIA processor microcode binaries. It can be used to identify what microcodes your BIOS/SPI holds, verify their integrity, show details about them, check if they exist at the microcode repository etc.
+MC Extractor is a tool which can extract Intel, AMD and VIA processor microcode binaries. It can be used to identify what microcodes your BIOS/SPI holds, verify their integrity, whether they are updated, show details about them, check if they exist at the microcode repository etc.
 
 ####**A1. MC Extractor Features**
 
 - Supports all current & legacy Microcodes from 1995 and onward
 - Scans for all Intel, AMD and VIA microcodes in one run
 - Verifies all extracted microcode integrity via checksum
+- Checks if all scanned microcodes are Latest or Outdated
 - Converts Intel containers (dat,inc,txt,h) to binary images
+- Searches on demand for all microcodes based on CPUID
 - Shows microcode header structure and details on demand
 - Ignores most false positives based on sanity checks
 - Supports certain special, fixed or modded microcodes
@@ -24,7 +28,7 @@ MC Extractor is a tool which can extract Intel, AMD and VIA processor microcode 
 - Reports all microcodes which are not found at the Microcode Repository Database
 - Features command line parameters to enhance functionality & assist research
 - Features user friendly messages & proper handling of unexpected code errors
-- Shows colored text to signify the importance of notes, warnings & errors
+- Shows results in nice tables with colored text to signify emphasis
 - Open Source project licensed under GNU GPL v3, comment assisted code
 
 ####**A2. Microcode Repository Database**
@@ -54,8 +58,11 @@ There are various parameters which enhance or modify the default behavior of MC 
 * -false : Uses loose patterns (false positives)
 * -padd : Keeps padding of AMD microcodes
 * -file : Appends filename to New or Bad microcodes
+* -add : Adds new input microcode to DB
 * -cont : Extracts Intel containers (dat,inc,h,txt)
+* -search : Searches for microcodes based on CPUID
 * -pdb : Writes input DB entries to file
+* -verbose : Shows all microcode details
 
 The following is Windows specific:
 
@@ -63,7 +70,7 @@ The following is Windows specific:
 
 ####**B3. MC Extractor Error Control**
 
-During operation, MC Extractor may encounter some issues that can trigger Notes, Warnings or Errors. Notes (yellow color) provide useful information about a characteristic of this particular firmware. Warnings (purple color) notify the user of possible problems that can cause system instability. Errors (red color) are shown when something unexpected or problematic is encountered.
+During operation, MC Extractor may encounter some issues that can trigger Notes, Warnings or Errors. Notes (yellow or green color) provide useful information about a characteristic of this particular firmware. Warnings (purple color) notify the user of possible problems that can cause system instability. Errors (red color) are shown when something unexpected or problematic is encountered.
 
 ##**C. Download MC Extractor**
 
@@ -71,13 +78,14 @@ MC Extractor is developed using Python 3.x and can work under Windows, Linux and
 
 ####**C1. Compatibility**
 
-MC Extractor has been tested to be compatible with Windows XP-10, Ubuntu 16.04 and macOS Sierra operating systems. It is expected to work at all Linux or macOS operating systems which have Python 3.x support but feel free to test it. It is executed using Python 3.4 under Windows and the built-in Python 3.5 under Linux and macOS. Any latter v3.x releases might work depending on whether MCE's prerequisites are also compatible.
+MC Extractor has been tested to be compatible with Windows Vista-10, Ubuntu 16.04 and macOS Sierra operating systems. It is expected to work at all Linux or macOS operating systems which have Python 3.5+ support but feel free to test it. It is executed using Python 3.6 under Windows and the built-in Python 3.5 under Linux and macOS. Any latter v3.x releases might work depending on whether MCE's prerequisites are also compatible.
 
 ####**C2. Code Prerequisites**
 
-To run MC Extractor, you need to have the following 3rd party Python module installed:
+To run MC Extractor, you need to have the following 3rd party Python modules installed:
 
 * [Colorama](https://pypi.python.org/pypi/colorama)
+* [PTable](https://github.com/kxxoling/PTable)
 
 To freeze MC Extractor, you can use whatever you like. The following are verified to work:
 
@@ -89,10 +97,11 @@ To freeze MC Extractor, you can use whatever you like. The following are verifie
 
 PyInstaller can freeze MC Extractor at all three platforms, it is simple to run and gets updated often.
 
-1. Make sure you have Python 3.5 installed
+1. Make sure you have Python 3.5+ installed
 2. Use pip to install colorama module
-3. Use pip to install pyinstaller module
-4. Open a command prompt and execute:
+3. Use pip to install PTable module
+4. Use pip to install pyinstaller module
+5. Open a command prompt and execute:
 
 > pyinstaller --clean --noconfirm --noupx --onefile --log-level=WARN --name MCE MCE.py
 

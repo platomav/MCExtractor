@@ -1,3 +1,7 @@
+r17
+
+cpu000806EA_plat80_ver00000048_date15-11-2016
+
 r16
 
 cpu000406E3_platC0_ver000000B0_date20-12-2016

@@ -1,3 +1,16 @@
+v1.4.0
+
+All results are now displayed in nice tables and colors
+Added ability to see if a microcode is Latest or Outdated
+Added parameter -add to quickly add microcode to DB
+Added parameter -search to search DB based on CPUID
+Expanded parameter -verbose to show more details
+Transitioned database to SQLite3, now obligatory
+Transitioned to Python 3.6, Windows XP dropped
+Transitioned to PyInstaller, msvcr100 not needed
+Fixed issue where filenames were missing letters
+Updated Microcode Repository Database to r17
+
 v1.3.0
 
 Added Linux and macOS support
