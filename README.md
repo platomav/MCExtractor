@@ -61,7 +61,6 @@ There are various parameters which enhance or modify the default behavior of MC 
 * -add : Adds new input microcode to DB
 * -cont : Extracts Intel containers (dat,inc,h,txt)
 * -search : Searches for microcodes based on CPUID
-* -pdb : Writes input DB entries to file
 * -verbose : Shows all microcode details
 
 The following is Windows specific:
