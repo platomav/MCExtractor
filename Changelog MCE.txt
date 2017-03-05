@@ -1,3 +1,8 @@
+v1.4.1
+
+Added Drunk AMD Employee #2, fixed Ryzen year typo
+Updated Microcode Repository Database to r18
+
 v1.4.0
 
 All results are now displayed in nice tables and colors

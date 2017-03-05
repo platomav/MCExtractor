@@ -7,7 +7,7 @@ Copyright (C) 2016-2017 Plato Mavropoulos
 Based on UEFIStrip v7.8.2 by Lordkag
 """
 
-title = 'MC Extractor v1.4.0'
+title = 'MC Extractor v1.4.1'
 
 import os
 import re
@@ -857,7 +857,7 @@ for in_file in source :
 			date_chk = datetime.datetime.strptime(full_date, '%d-%m-%Y')
 			if date_chk.year > 2017 or date_chk.year < 1993 : raise Exception('WrongDate') # 1st MC from 1995 (P6), 1993 for safety
 		except :
-			if full_date == '07-00-1896' and patch == '000000D1' : pass # Drunk employee #1, Happy 0th month from 19th century Intel!
+			if full_date == '07-00-1896' and patch == '000000D1' : pass # Drunk Intel employee #1, Happy 0th month from 19th century Intel!
 			else :
 				if param.verbose : msg_i.append(col_m + "\nWarning: Skipped Intel microcode at 0x%0.2X, invalid Date of %s!" % (mc_bgn, full_date) + col_e)
 				skip += 1
@@ -1022,14 +1022,17 @@ for in_file in source :
 		
 		nbsb_rev_id = '%0.2X' % mc_hdr.NbRevId + '%0.2X' % mc_hdr.SbRevId
 		
+		if cpu_id == '00800F11' and patch == '08001105' and year == '2016' : year = '2017' # Drunk AMD employee #2, Zen in January 2016!
+		
 		full_date = "%s-%s-%s" % (day, month, year)
 		
 		# Remove false results, based on Date
 		try :
 			date_chk = datetime.datetime.strptime(full_date, '%d-%m-%Y')
+			
 			if date_chk.year > 2017 or date_chk.year < 2000 : raise Exception('WrongDate') # 1st MC from 1999 (K7), 2000 for K7 Erratum and performance
 		except :
-			if full_date == '09-13-2011' and patch == '03000027' : pass # Drunk employee #2, Happy 13th month from AMD!
+			if full_date == '09-13-2011' and patch == '03000027' : pass # Drunk AMD employee #1, Happy 13th month from AMD!
 			else :
 				if param.verbose : msg_a.append(col_m + "\nWarning: Skipped AMD microcode at 0x%0.2X, invalid Date of %s!" % (mc_bgn, full_date) + col_e)
 				skip += 1
@@ -1240,7 +1243,7 @@ for in_file in source :
 			date_chk = datetime.datetime.strptime(full_date, '%d-%m-%Y')
 			if date_chk.year > 2017 or date_chk.year < 2006 : raise Exception('WrongDate') # 1st MC from 2008 (Nano), 2006 for safety
 		except :
-			# VIA is sober? No drunk employee #3 ???
+			# VIA is sober? No drunk VIA employee ???
 			if param.verbose : msg_v.append(col_m + "\nWarning: Skipped VIA microcode at 0x%0.2X, invalid Date of %s!\n" % (mc_bgn, full_date) + col_e)
 			skip += 1
 			continue
