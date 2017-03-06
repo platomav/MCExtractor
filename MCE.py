@@ -7,7 +7,7 @@ Copyright (C) 2016-2017 Plato Mavropoulos
 Based on UEFIStrip v7.8.2 by Lordkag
 """
 
-title = 'MC Extractor v1.4.1'
+title = 'MC Extractor v1.4.2_1'
 
 import os
 import re
@@ -520,7 +520,7 @@ def mc_upd_chk(mc_dates) :
 			mm = date[0][:2]
 			yyyy = date[0][4:8]
 			
-			if year < yyyy or (year == yyyy and month < mm or (month == mm and day < dd)) :
+			if year < yyyy or (year == yyyy and (month < mm or (month == mm and day < dd))) :
 				mc_latest = False
 				break # No need for more loops
 	
