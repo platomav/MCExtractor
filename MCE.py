@@ -7,7 +7,7 @@ Copyright (C) 2016-2017 Plato Mavropoulos
 Based on UEFIStrip v7.8.2 by Lordkag
 """
 
-title = 'MC Extractor v1.4.2_1'
+title = 'MC Extractor v1.4.2'
 
 import os
 import re
@@ -488,14 +488,19 @@ def has_duplicate(file_path, file_data) :
 	
 	return False
 
-# Taken from Igor Skochinsky's me_unpack
+# Inspired from Igor Skochinsky's me_unpack
 def get_struct(str_, off, struct) :
 	my_struct = struct()
 	struct_len = ctypes.sizeof(my_struct)
 	str_data = str_[off:off + struct_len]
 	fit_len = min(len(str_data), struct_len)
 	
-	if fit_len < struct_len: raise Exception(col_r + "\nError: cannot read %d bytes struct, expected %d!\n" % (fit_len, struct_len) + col_e)
+	if (off > file_end) or (fit_len < struct_len) :
+		err_stor.append(col_r + "Error: Offset 0x%0.2X out of bounds, incomplete image!" % off + col_e)
+		
+		for error in err_stor : print(error)
+		
+		mce_exit(1)
 	
 	ctypes.memmove(ctypes.addressof(my_struct), str_data, fit_len)
 	
@@ -528,7 +533,7 @@ def mc_upd_chk(mc_dates) :
 	else : mc_upd = col_r + 'Outdated' + col_e
 	
 	return mc_upd
-
+	
 def mc_table(row_col_names,padd) :
 	pt = prettytable.PrettyTable(row_col_names)
 	pt.padding_width = padd
@@ -584,6 +589,7 @@ def mce_hdr() :
 
 def init_file(in_file,orig_file,temp) :
 	mc_file_name = ''
+	file_end = 0
 	
 	if not os.path.isfile(in_file) :
 		if any(p in in_file for p in param.val) : return 'continue', 'continue'
@@ -593,7 +599,10 @@ def init_file(in_file,orig_file,temp) :
 		if not param.mass_scan : mce_exit(1)
 		else : return 'continue', 'continue'
 
-	with open(in_file, 'rb') as work_file : reading = work_file.read()
+	with open(in_file, 'rb') as work_file :
+		reading = work_file.read()
+		file_end = work_file.seek(0,2)
+		work_file.seek(0,0)
 	
 	if not temp :
 		if not param.mce_extr : print("\nFile: %s\n" % force_ascii(os.path.basename(in_file)))
@@ -601,7 +610,7 @@ def init_file(in_file,orig_file,temp) :
 	else :
 		if param.print_file : mc_file_name = '__%s' % os.path.basename(orig_file)
 	
-	return reading, mc_file_name
+	return reading, file_end, mc_file_name
 
 # Force string to be printed as ASCII, ignore errors
 def force_ascii(string) :
@@ -711,8 +720,10 @@ if param.search :
 	# noinspection PyUnboundLocalVariable
 	res_i = c.execute('SELECT * FROM Intel WHERE cpuid=?', (i_cpuid,))
 	print('\n%s' % display_sql(res_i, col_b + 'Intel' + col_e, 1))
+	
 	res_a = c.execute('SELECT * FROM AMD WHERE cpuid=?', (i_cpuid,))
 	print('\n%s' % display_sql(res_a, col_r + 'AMD' + col_e, 1))
+	
 	res_v = c.execute('SELECT * FROM VIA WHERE cpuid=?', (i_cpuid,))
 	print('\n%s' % display_sql(res_v, col_b + 'VIA' + col_e, 1))
 	
@@ -754,7 +765,7 @@ for in_file in source :
 	mc_bgn_list_a = []
 	mc_conv_data = bytearray()
 	
-	reading,mc_file_name = init_file(in_file,in_file,False)
+	reading,file_end,mc_file_name = init_file(in_file,in_file,False)
 	if reading == 'continue' : continue # Input is parameter, next file
 	
 	# Convert Intel containers (.dat , .inc , .h , .txt) to .bin
@@ -794,7 +805,7 @@ for in_file in source :
 		
 			temp_file.write(mc_conv_data)
 			
-			reading,mc_file_name = init_file(temp_file.name,in_file,True)
+			reading,file_end,mc_file_name = init_file(temp_file.name,in_file,True)
 			if reading == 'continue' : continue
 		
 		except :
