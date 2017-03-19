@@ -1,3 +1,8 @@
+v1.4.3
+
+Fixed crash at Intel microcodes with Extended Signature
+Updated Microcode Repository Database to r20
+
 v1.4.2
 
 Fixed issue that caused wrong Latest/Outdated detection

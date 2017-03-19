@@ -7,7 +7,7 @@ Copyright (C) 2016-2017 Plato Mavropoulos
 Based on UEFIStrip v7.8.2 by Lordkag
 """
 
-title = 'MC Extractor v1.4.2'
+title = 'MC Extractor v1.4.3'
 
 import os
 import re
@@ -901,7 +901,7 @@ for in_file in source :
 				
 				mc_extended_field_off = mc_extended_off + 0x14
 				
-				for idx in range(Intel_MC_Header_Extended.ExtendedSignatureCount) :
+				for idx in range(mc_hdr_extended.ExtendedSignatureCount) :
 					
 					mc_hdr_extended_field = get_struct(reading, mc_extended_field_off, Intel_MC_Header_Extended_Field)
 					mc_hdr_extended_field.mc_print_extended_field()
