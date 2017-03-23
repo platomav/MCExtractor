@@ -7,7 +7,7 @@ Copyright (C) 2016-2017 Plato Mavropoulos
 Based on UEFIStrip v7.8.2 by Lordkag
 """
 
-title = 'MC Extractor v1.4.3'
+title = 'MC Extractor v1.4.4_1'
 
 import os
 import re
@@ -592,12 +592,12 @@ def init_file(in_file,orig_file,temp) :
 	file_end = 0
 	
 	if not os.path.isfile(in_file) :
-		if any(p in in_file for p in param.val) : return 'continue', 'continue'
+		if any(p in in_file for p in param.val) : return 'continue', 'continue', 'continue'
 		
 		print(col_r + "\nError" + col_e + ": file %s was not found!\n" % force_ascii(in_file))
 		
 		if not param.mass_scan : mce_exit(1)
-		else : return 'continue', 'continue'
+		else : return 'continue', 'continue', 'continue'
 
 	with open(in_file, 'rb') as work_file :
 		reading = work_file.read()
