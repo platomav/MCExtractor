@@ -7,7 +7,7 @@ Copyright (C) 2016-2017 Plato Mavropoulos
 Based on UEFIStrip v7.8.2 by Lordkag
 """
 
-title = 'MC Extractor v1.4.4_1'
+title = 'MC Extractor v1.4.4'
 
 import os
 import re
