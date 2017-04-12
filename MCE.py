@@ -4,10 +4,9 @@
 MC Extractor
 Intel, AMD & VIA Microcode Extractor
 Copyright (C) 2016-2017 Plato Mavropoulos
-Based on UEFIStrip v7.8.2 by Lordkag
 """
 
-title = 'MC Extractor v1.4.4'
+title = 'MC Extractor v1.5.0'
 
 import os
 import re
@@ -122,48 +121,63 @@ class Intel_MC_Header(ctypes.LittleEndianStructure) :
 	def mc_print(self) :
 		full_date  = "%0.2X/%0.2X/%0.4X" % (self.Day, self.Month, self.Year)
 		
+		platforms = intel_plat(self.ProcessorFlags)
+		
 		if self.Reserved1 == self.Reserved2 == self.Reserved3 == 0 : reserv_str = "00 * 12"
 		else : reserv_str = "%0.8X %0.8X %0.8X" % (self.Reserved1, self.Reserved2, self.Reserved3)
 		
-		pt, pt_empty = mc_table(['Field', 'Value'], 1)
+		pt, pt_empty = mc_table(['Field', 'Value'], 0)
 		
 		pt.title = col_b + 'Intel Main Header' + col_e
-		pt.add_row(['Header Version', '%0.8X' % self.HeaderVersion])
-		pt.add_row(['Update Revision', '%0.8X' % self.UpdateRevision])
+		pt.add_row(['Header', '%0.8X' % self.HeaderVersion])
+		pt.add_row(['Update', '%0.8X' % self.UpdateRevision])
 		pt.add_row(['Date (D/M/Y)', '%s' % full_date])
-		pt.add_row(['CPU Signature', '%0.8X' % self.ProcessorSignature])
+		pt.add_row(['CPUID', '%0.8X' % self.ProcessorSignature])
 		pt.add_row(['Checksum', '%0.8X' % self.Checksum])
-		pt.add_row(['Loader Revision', '%0.8X' % self.LoaderRevision])
-		pt.add_row(['CPU Flags', '%0.8X' % self.ProcessorFlags])
+		pt.add_row(['Loader', '%0.8X' % self.LoaderRevision])
+		pt.add_row(['Platform', '%0.2X %s' % (self.ProcessorFlags, platforms)])
 		pt.add_row(['Data Size', '0x%0.2X' % self.DataSize])
 		pt.add_row(['Total Size', '0x%0.2X' % self.TotalSize])
 		pt.add_row(['Reserved', '%s' % reserv_str])
 		
 		print(pt)
-		
+
+# noinspection PyTypeChecker
 class Intel_MC_Header_Extra(ctypes.LittleEndianStructure) :
 	_pack_   = 1
 	_fields_ = [
-		("Unknown1",                  uint32_t),    # 00 00000000 (Pattern)
-		("MagicNumber",               uint32_t),    # 04 000000A1 (Pattern)
-		("Unknown2",                  uint32_t),    # 08 00020001 (Pattern)
+		("Unknown1",                  uint32_t),    # 00 00000000 (always, Header Type probably)
+		("ExtraHeaderSize",			  uint32_t),    # 04 dwords (0x284)
+		("Unknown2",                  uint16_t),    # 08 0001 (always, maybe a version)
+		("Unknown3",                  uint16_t),    # 08 0002 (always, maybe a version)
 		("UpdateRevision",            uint32_t),    # 0C
-		("Unknown3",                  uint32_t),    # 10
-		("Unknown4",                  uint32_t),    # 14
+		("VCN",                  	  uint32_t),    # 10 Version Control Number
+		("Unknown4",     			  uint32_t),    # 14 dwords from Extra or UpdateSize or Empty etc...
 		("Day",                       uint8_t),     # 18
 		("Month",                     uint8_t),     # 19
 		("Year",                      uint16_t),    # 1A
-		("UpdateSize",                uint32_t),    # 1C dwords from Extra Header + encrypted padding
-		("LoaderRevision",            uint32_t),    # 20 00000001 (Pattern), maybe Header Version
-		("ProcessorSignature",        uint32_t),    # 24
-		("Unknown5",                  uint32_t*7),  # 28 00000000 * 7 (Pattern)
-		("Unknown6",                  uint32_t),    # 44
-		("Unknown7",                  uint32_t),    # 48
-		("Unknown8",                  uint32_t*5),  # 4C 00000000 * 5 (Pattern)
-		("Unknown9",                  uint32_t*8),  # 60
+		("UpdateSize",                uint32_t),    # 1C dwords from Extra without encrypted padding
+		("ProcessorSignatureCount",   uint32_t),    # 20 max is probably 8 (8 * 4 = 0x20)
+		("ProcessorSignature0",       uint32_t),    # 24
+		("ProcessorSignature1",		  uint32_t),    # 28
+		("ProcessorSignature2",		  uint32_t),    # 2C
+		("ProcessorSignature3",		  uint32_t),    # 30
+		("ProcessorSignature4",		  uint32_t),    # 34
+		("ProcessorSignature5",		  uint32_t),    # 38
+		("ProcessorSignature6",		  uint32_t),    # 3C
+		("ProcessorSignature7",		  uint32_t),    # 40
+		("Unknown5",      			  uint32_t),    # 44 dwords from Extra with encrypted padding or UpdateSize or Platform or Empty
+		("SVN",     				  uint32_t),    # 48 Security Version Number
+		("Unknown6",                  uint32_t),    # 4C 00000000 (always, reserved probably)
+		("Unknown7",                  uint32_t),    # 50 00000000 (always, reserved probably)
+		("Unknown8",                  uint32_t),    # 54 00000000 (always, reserved probably)
+		("Unknown9",                  uint32_t),    # 58 00000000 (always, reserved probably)
+		("Unknown10",                 uint32_t),    # 5C 00000000 (always, reserved probably)
+		("Unknown11",                 uint32_t*8),  # 60 probably a 256-bit hash
 		("RSAPublicKey",              uint32_t*64), # 80
 		("RSAExponent",               uint32_t),    # 180
-		# 184
+		("RSASignature",              uint32_t*64), # 184
+		# 284
 	]
 
 	def mc_print_extra(self) :
@@ -171,37 +185,47 @@ class Intel_MC_Header_Extra(ctypes.LittleEndianStructure) :
 		
 		full_date  = "%0.2X/%0.2X/%0.4X" % (self.Day, self.Month, self.Year)
 		
-		Unknown5 = " ".join("%0.8X" % val for val in self.Unknown5)
-		if re.match('(0{8} ){6}0{8}', Unknown5) : Unknown5 = '00 * 28'
+		platforms = intel_plat(mc_hdr.ProcessorFlags)
 		
-		Unknown8 = " ".join("%0.8X" % val for val in self.Unknown8)
-		if re.match('(0{8} ){4}0{8}', Unknown8) : Unknown8 = '00 * 20'
-		
-		Unknown9 = " ".join("%0.8X" % val for val in self.Unknown9)
+		Unknown11 = " ".join("%0.8X" % val for val in self.Unknown11)
 		RSAPublicKey = " ".join("%0.8X" % val for val in self.RSAPublicKey)
+		RSASignature = " ".join("%0.8X" % val for val in self.RSASignature)
 		
-		UpdateSize = self.UpdateSize * 4
-		
-		pt, pt_empty = mc_table(['Field', 'Value'], 1)
+		pt, pt_empty = mc_table(['Field', 'Value'], 0)
 		
 		pt.title = col_b + 'Intel Extra Header' + col_e
 		pt.add_row(['Unknown 1', '%0.8X' % self.Unknown1])
-		pt.add_row(['Magic Number', '%0.8X' % self.MagicNumber])
-		pt.add_row(['Unknown 2', '%0.8X' % self.Unknown2])
-		pt.add_row(['Update Revision', '%0.8X' % self.UpdateRevision])
-		pt.add_row(['Unknown 3', '%0.8X' % self.Unknown3])
-		pt.add_row(['Unknown 4', '%0.8X' % self.Unknown4])
+		pt.add_row(['Header Size', '0x%0.2X' % (self.ExtraHeaderSize * 4)])
+		pt.add_row(['Unknown 2', '%0.4X' % self.Unknown2])
+		pt.add_row(['Unknown 3', '%0.4X' % self.Unknown3])
+		pt.add_row(['Update', '%0.8X' % self.UpdateRevision])
+		pt.add_row(['Version Control', '%X' % self.VCN])
+		pt.add_row(['Multi Purpose 1', '%0.8X' % self.Unknown4])
 		pt.add_row(['Date (D/M/Y)', '%s' % full_date])
-		pt.add_row(['Update Size', '0x%0.2X' % UpdateSize])
-		pt.add_row(['Loader Revision', '%0.8X' % self.LoaderRevision])
-		pt.add_row(['CPU Signature', '%0.8X' % self.ProcessorSignature])
-		pt.add_row(['Unknown 5', '%s' % Unknown5])
-		pt.add_row(['Unknown 6', '%0.8X' % self.Unknown6])
-		pt.add_row(['Unknown 7', '%0.8X' % self.Unknown7])
-		pt.add_row(['Unknown 8', '%s' % Unknown8])
-		pt.add_row(['Unknown 9', '%s [...]' % Unknown9[:8]])
+		pt.add_row(['Update Size', '0x%0.2X' % (self.UpdateSize * 4)])
+		pt.add_row(['CPU Signatures', '%X' % self.ProcessorSignatureCount])
+		if self.ProcessorSignature0 != 0 : pt.add_row(['CPUID 0', '%0.8X' % self.ProcessorSignature0])
+		if self.ProcessorSignature1 != 0 : pt.add_row(['CPUID 1', '%0.8X' % self.ProcessorSignature1])
+		if self.ProcessorSignature2 != 0 : pt.add_row(['CPUID 2', '%0.8X' % self.ProcessorSignature2])
+		if self.ProcessorSignature3 != 0 : pt.add_row(['CPUID 3', '%0.8X' % self.ProcessorSignature3])
+		if self.ProcessorSignature4 != 0 : pt.add_row(['CPUID 4', '%0.8X' % self.ProcessorSignature4])
+		if self.ProcessorSignature5 != 0 : pt.add_row(['CPUID 5', '%0.8X' % self.ProcessorSignature5])
+		if self.ProcessorSignature6 != 0 : pt.add_row(['CPUID 6', '%0.8X' % self.ProcessorSignature6])
+		if self.ProcessorSignature7 != 0 : pt.add_row(['CPUID 7', '%0.8X' % self.ProcessorSignature7])
+		if self.Unknown5 == mc_hdr.ProcessorFlags : pt.add_row(['Platform', '%0.2X %s' % (self.Unknown5, platforms)])
+		elif self.Unknown5 * 4 == self.UpdateSize * 4 : pass # Covered by UpdateSize
+		elif self.Unknown5 * 4 == file_end - 0x30 : pt.add_row(['Padded Size', '0x%0.2X' % (self.Unknown5 * 4)])
+		else : pt.add_row(['Multi Purpose 2', '%0.8X' % self.Unknown5])
+		pt.add_row(['Security Version', '%X' % self.SVN])
+		if self.Unknown6 != 0 : pt.add_row(['Unknown 6', '%0.8X' % self.Unknown6])
+		if self.Unknown7 != 0 : pt.add_row(['Unknown 7', '%0.8X' % self.Unknown7])
+		if self.Unknown8 != 0 : pt.add_row(['Unknown 8', '%0.8X' % self.Unknown8])
+		if self.Unknown9 != 0 : pt.add_row(['Unknown 9', '%0.8X' % self.Unknown9])
+		if self.Unknown10 != 0 : pt.add_row(['Unknown 10', '%0.8X' % self.Unknown10])
+		pt.add_row(['Unknown 11', '%s [...]' % Unknown11[:8]])
 		pt.add_row(['RSA Public Key', '%s [...]' % RSAPublicKey[:8]])
-		pt.add_row(['RSA Exponent', '%0.8X' % self.RSAExponent])
+		pt.add_row(['RSA Exponent', '0x%0.2X' % self.RSAExponent])
+		pt.add_row(['RSA Signature', '%s [...]' % RSASignature[:8]])
 		
 		print(pt)
 
@@ -210,7 +234,7 @@ class Intel_MC_Header_Extended(ctypes.LittleEndianStructure) :
 	_fields_ = [
 		("ExtendedSignatureCount",    uint32_t),  # 00
 		("ExtendedChecksum",          uint32_t),  # 04
-		("Reserved1",                 uint32_t),  # 08 Splitting this field for better processing
+		("Reserved1",                 uint32_t),  # 08
 		("Reserved2",                 uint32_t),  # 0C
 		("Reserved3",                 uint32_t),  # 10
 		# 14
@@ -222,10 +246,10 @@ class Intel_MC_Header_Extended(ctypes.LittleEndianStructure) :
 		if self.Reserved1 == self.Reserved2 == self.Reserved3 == 0 : reserv_str = "00 * 12"
 		else : reserv_str = "%0.8X %0.8X %0.8X" % (self.Reserved1, self.Reserved2, self.Reserved3)
 
-		pt, pt_empty = mc_table(['Field', 'Value'], 1)
+		pt, pt_empty = mc_table(['Field', 'Value'], 0)
 		
 		pt.title = col_b + 'Intel Extended Header' + col_e
-		pt.add_row(['Extended Signature Count', '%0.2X' % self.ExtendedSignatureCount])
+		pt.add_row(['Extended Signatures', '%X' % self.ExtendedSignatureCount])
 		pt.add_row(['Extended Checksum', '%0.8X' % self.ExtendedChecksum])
 		pt.add_row(['Reserved', '%s' % reserv_str])
 		
@@ -236,22 +260,25 @@ class Intel_MC_Header_Extended_Field(ctypes.LittleEndianStructure) :
 	_fields_ = [
 		("ProcessorSignature",        uint32_t),  # 00
 		("ProcessorFlags",            uint32_t),  # 04
-		("Checksum",                  uint16_t),  # 08
+		("Checksum",                  uint32_t),  # 08 replace CPUID, Platform, Checksum at Main Header w/o Extended
 		# 0C
 	]
 
 	def mc_print_extended_field(self) :
 		print()
 		
-		pt, pt_empty = mc_table(['Field', 'Value'], 1)
+		platforms = intel_plat(self.ProcessorFlags)
+		
+		pt, pt_empty = mc_table(['Field', 'Value'], 0)
 		
 		pt.title = col_b + 'Intel Extended Field' + col_e
-		pt.add_row(['CPU Signature', '%0.6X' % self.ProcessorSignature])
-		pt.add_row(['CPU Flags', '%0.2X' % self.ProcessorFlags])
+		pt.add_row(['CPUID', '%0.6X' % self.ProcessorSignature])
+		pt.add_row(['Platform', '%0.2X %s' % (self.ProcessorFlags, platforms)])
 		pt.add_row(['Checksum', '%0.8X' % self.Checksum])
 		
 		print(pt)
 
+# noinspection PyTypeChecker
 class AMD_MC_Header(ctypes.LittleEndianStructure) :
 	_pack_   = 1
 	_fields_ = [
@@ -282,11 +309,11 @@ class AMD_MC_Header(ctypes.LittleEndianStructure) :
 		
 		#matchreg_str = " ".join("%0.8X" % val for val in self.MatchReg)
 		
-		pt, pt_empty = mc_table(['Field','Value'],1)
+		pt, pt_empty = mc_table(['Field','Value'], 0)
 		
 		pt.title = col_r + 'AMD Header' + col_e
 		pt.add_row(['Date (D/M/Y)',full_date])
-		pt.add_row(['Patch Revision','%0.8X' % self.PatchId])
+		pt.add_row(['Update','%0.8X' % self.PatchId])
 		pt.add_row(['Data Revision','%0.4X' % self.DataId])
 		pt.add_row(['Data Length','%0.2X' % self.DataLen])
 		pt.add_row(['Init Flag','%0.2X' % self.InitFlag])
@@ -300,7 +327,8 @@ class AMD_MC_Header(ctypes.LittleEndianStructure) :
 		pt.add_row(['Reserved','%s' % reserv_str])
 		
 		print(pt)
-		
+
+# noinspection PyTypeChecker
 class AMD_MC_Header_Extra(ctypes.LittleEndianStructure) :
 	_pack_   = 1
 	_fields_ = [
@@ -312,14 +340,15 @@ class AMD_MC_Header_Extra(ctypes.LittleEndianStructure) :
 	]
 
 	def mc_print(self) :
-		pt, pt_empty = mc_table(['Field', 'Value'], 1)
+		pt, pt_empty = mc_table(['Field', 'Value'], 0)
 		
 		pt.title = col_r + 'AMD Extra Header' + col_e
 		pt.add_row(['Flags', '%0.8X' % self.Flags])
 		pt.add_row(['Patch Revision', '%0.8X' % self.PatchId])
 		
 		print(pt)
-		
+
+# noinspection PyTypeChecker
 class VIA_MC_Header(ctypes.LittleEndianStructure) :
 	_pack_   = 1
 	_fields_ = [
@@ -342,15 +371,15 @@ class VIA_MC_Header(ctypes.LittleEndianStructure) :
 	def mc_print(self) :
 		full_date  = "%0.2d/%0.2d/%0.4d" % (self.Day, self.Month, self.Year)
 		
-		pt, pt_empty = mc_table(['Field', 'Value'], 1)
+		pt, pt_empty = mc_table(['Field', 'Value'], 0)
 		
 		pt.title = col_b + 'VIA Header' + col_e
 		pt.add_row(['Signature', '%s' % self.Signature.decode('utf-8')])
-		pt.add_row(['Update Revision', '%0.8X' % self.UpdateRevision])
+		pt.add_row(['Update', '%0.8X' % self.UpdateRevision])
 		pt.add_row(['Date (D/M/Y)', '%s' % full_date])
-		pt.add_row(['CPU Signature', '%0.8X' % self.ProcessorSignature])
+		pt.add_row(['CPUID', '%0.8X' % self.ProcessorSignature])
 		pt.add_row(['Checksum', '%0.8X' % self.Checksum])
-		pt.add_row(['Loader Revision', '%0.8X' % self.LoaderRevision])
+		pt.add_row(['Loader', '%0.8X' % self.LoaderRevision])
 		pt.add_row(['Reserved', '%0.8X' % self.Reserved])
 		pt.add_row(['Data Size', '0x%0.2X' % self.DataSize])
 		pt.add_row(['Total Size', '0x%0.2X' % self.TotalSize])
@@ -496,15 +525,25 @@ def get_struct(str_, off, struct) :
 	fit_len = min(len(str_data), struct_len)
 	
 	if (off > file_end) or (fit_len < struct_len) :
-		err_stor.append(col_r + "Error: Offset 0x%0.2X out of bounds, incomplete image!" % off + col_e)
-		
-		for error in err_stor : print(error)
+		print(col_r + "Error: Offset 0x%0.2X out of bounds, incomplete image!" % off + col_e)
 		
 		mce_exit(1)
 	
 	ctypes.memmove(ctypes.addressof(my_struct), str_data, fit_len)
 	
 	return my_struct
+
+def intel_plat(cpuflags) :
+	platforms = []
+	
+	if cpuflags == 0:  # 1995-1998
+		platforms.append(0)
+	else:
+		for bit in range(8):  # 0-7
+			cpu_flag = cpuflags >> bit & 1
+			if cpu_flag == 1: platforms.append(bit)
+			
+	return platforms
 
 def amd_padd(padd_bgn, max_padd, amd_size, ibv_size, com_size) :
 	for padd_off in range(padd_bgn, padd_bgn + max_padd) :
@@ -536,6 +575,7 @@ def mc_upd_chk(mc_dates) :
 	
 def mc_table(row_col_names,padd) :
 	pt = prettytable.PrettyTable(row_col_names)
+	pt.header = False
 	pt.padding_width = padd
 	pt.hrules = prettytable.ALL
 	pt.vrules = prettytable.ALL
@@ -548,6 +588,7 @@ def display_sql(cursor,title,padd):
 	rows = cursor.fetchall()
 	
 	sqlr = prettytable.PrettyTable()
+	sqlr.header = False
 	sqlr.padding_width = padd
 	sqlr.hrules = prettytable.ALL
 	sqlr.vrules = prettytable.ALL
@@ -589,7 +630,6 @@ def mce_hdr() :
 
 def init_file(in_file,orig_file,temp) :
 	mc_file_name = ''
-	file_end = 0
 	
 	if not os.path.isfile(in_file) :
 		if any(p in in_file for p in param.val) : return 'continue', 'continue', 'continue'
@@ -736,15 +776,24 @@ if param.old_db :
 	res_v = (c.execute('SELECT * FROM VIA')).fetchall()
 	res_all = res_i + res_a + res_v
 	
+	res_m = (c.execute('SELECT * FROM MCE')).fetchall()
+	db_rev = 'r' + str(res_m[0][0])
+	db_date = datetime.datetime.utcfromtimestamp(res_m[0][2]).strftime('%d/%m/%Y, %H:%M')
+	
+	if res_m[0][1] == 1 : db_dev = ' Dev'
+	else : db_dev = ''
+	
+	old_hdr = "MC Extractor Microcode Repository Database\nRevision %s%s (%s)\n\n" % (db_rev,db_dev,db_date)
+	
 	mct = ''
 	for mc in res_all :
 		for field in mc :
 			mct += str(field)
 		mct += '\n'
 
-	with open(mce_dir + os_dir + 'MCE.dat', 'w') as db_old : db_old.write(mct)
+	with open(mce_dir + os_dir + 'MCE.dat', 'w') as db_old : db_old.write(old_hdr + mct)
 	
-	print(col_y + '\nBuilt old MCE.dat database' + col_e)
+	print(col_y + '\nBuilt old MCE.dat database format (%s%s %s)' % (db_rev,db_dev,db_date) + col_e)
 	
 	mce_exit()
 	
@@ -765,6 +814,7 @@ for in_file in source :
 	mc_bgn_list_a = []
 	mc_conv_data = bytearray()
 	
+	# noinspection PyRedeclaration
 	reading,file_end,mc_file_name = init_file(in_file,in_file,False)
 	if reading == 'continue' : continue # Input is parameter, next file
 	
@@ -822,7 +872,7 @@ for in_file in source :
 		pat_icpu = re.compile(br'\x01\x00{3}.{4}[\x00-\x99](([\x19-\x20][\x01-\x31][\x01-\x12])|(\x18\x07\x00)).{8}\x01\x00{3}.\x00{3}', re.DOTALL)
 	else :
 		# HeaderRev 01-02, LoaderRev 01-02, ProcesFlags xxxx00*2, Reserved xx*12
-		pat_icpu = re.compile(br'(\x01|\x02)\x00{3}.{4}[\x00-\x99](([\x19-\x20][\x01-\x31][\x01-\x12])|(\x18\x07\x00)).{8}(\x01|\x02)\x00{3}.{2}\x00{2}', re.DOTALL)
+		pat_icpu = re.compile(br'([\x01\x02])\x00{3}.{4}[\x00-\x99](([\x19-\x20][\x01-\x31][\x01-\x12])|(\x18\x07\x00)).{8}([\x01\x02])\x00{3}.{2}\x00{2}', re.DOTALL)
 	
 	match_list_i += pat_icpu.finditer(reading)
 	
@@ -886,26 +936,40 @@ for in_file in source :
 			skip += 1
 			continue
 		
+		# Analyze and validate optional Extended Header
+		if mc_hdr.TotalSize > mc_hdr.DataSize + 0x30 :
+			mc_extended_found = True
+			mc_extended_off = mc_bgn + 0x30 + mc_hdr.DataSize
+			mc_hdr_extended = get_struct(reading, mc_extended_off, Intel_MC_Header_Extended)
+			ext_header_checksum = mc_hdr_extended.ExtendedChecksum
+			ext_fields_count = mc_hdr_extended.ExtendedSignatureCount
+			ext_header_size = 0x14 + ext_fields_count * 0xC # 20 intro bytes, 12 for each field
+			ext_header_data = reading[mc_hdr.DataSize + 0x30:mc_hdr.DataSize + 0x30 + ext_header_size]
+			valid_ext_chk = checksum32(ext_header_data)
+		else :
+			mc_extended_found = False
+			valid_ext_chk = 0
+		
 		# Print the Header(s)
 		if param.print_hdr :
 			mc_hdr.mc_print()
 
-			if reading[mc_bgn + 0x30:mc_bgn + 0x38] == b'\x00' * 4 + b'\xA1' + b'\x00' * 3 :
+			if reading[mc_bgn + 0x34:mc_bgn + 0x38] == b'\xA1' + b'\x00' * 3 :
 				mc_hdr_extra = get_struct(reading, mc_bgn + 0x30, Intel_MC_Header_Extra)
 				mc_hdr_extra.mc_print_extra()
 			
-			if mc_hdr.TotalSize > mc_hdr.DataSize + 0x30 :
-				mc_extended_off = mc_bgn + 0x30 + mc_hdr.DataSize
-				mc_hdr_extended = get_struct(reading, mc_extended_off, Intel_MC_Header_Extended)
+			if mc_extended_found :
+				# noinspection PyUnboundLocalVariable
 				mc_hdr_extended.mc_print_extended()
 				
+				# noinspection PyUnboundLocalVariable
 				mc_extended_field_off = mc_extended_off + 0x14
 				
-				for idx in range(mc_hdr_extended.ExtendedSignatureCount) :
-					
+				# noinspection PyUnboundLocalVariable
+				for idx in range(ext_fields_count) :
 					mc_hdr_extended_field = get_struct(reading, mc_extended_field_off, Intel_MC_Header_Extended_Field)
 					mc_hdr_extended_field.mc_print_extended_field()
-					mc_extended_field_off += 0x0C
+					mc_extended_field_off += 0xC
 					
 			continue # Next MC of input file
 		
@@ -939,14 +1003,14 @@ for in_file in source :
 		
 		mc_end = mc_bgn + mc_len
 		mc_data = reading[mc_bgn:mc_end]
-		valid_chk = checksum32(mc_data)
+		valid_mc_chk = checksum32(mc_data)
 		
 		# Create extraction folder
 		if '-extr' in source : mc_extract = mce_dir + os_dir +  '..\Z_Extract\\CPU\\'
 		else : mc_extract = mce_dir + os_dir + 'Extracted' + os_dir + 'Intel' + os_dir
 		if not os.path.exists(mc_extract) : os.makedirs(mc_extract)
 		
-		if valid_chk != 0 :
+		if valid_mc_chk != 0 or valid_ext_chk != 0 :
 			if patch == '000000FF' and cpu_id == '000506E3' and full_date == '05-01-2016' : # Someone "fixed" the modded MC checksum wrongfully
 				mc_path = mc_extract + "%s.bin" % mc_name
 			else :
@@ -983,11 +1047,11 @@ for in_file in source :
 	# 1st MC from 1999 (K7), 2000 due to K7 Erratum and performance
 	if not param.exp_check :
 		# BIOS pattern
-		pat_acpu_2 = re.compile(br'[\x00-\x18]\x20[\x01-\x31][\x01-\x13].{4}[\x00-\x04]\x80.{18}[\x00-\x01](\xAA|\x00){3}', re.DOTALL)
+		pat_acpu_2 = re.compile(br'[\x00-\x18]\x20[\x01-\x31][\x01-\x13].{4}[\x00-\x04]\x80.{18}[\x00-\x01]([\xAA\x00]){3}', re.DOTALL)
 		match_list_a += pat_acpu_2.finditer(reading)
 	else :
 		# Data Rev 00-09, Reserved AA or 00, API 00-09
-		pat_acpu_3 = re.compile(br'[\x00-\x18]\x20[\x01-\x31][\x01-\x13].{4}[\x00-\x09]\x80.{18}[\x00-\x09](\xAA|\x00){3}', re.DOTALL)
+		pat_acpu_3 = re.compile(br'[\x00-\x18]\x20[\x01-\x31][\x01-\x13].{4}[\x00-\x09]\x80.{18}[\x00-\x09]([\xAA\x00]){3}', re.DOTALL)
 		match_list_a += pat_acpu_3.finditer(reading)
 	
 	total += len(match_list_a)

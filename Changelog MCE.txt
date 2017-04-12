@@ -1,3 +1,12 @@
+v1.5.0
+
+Greatly improved the analysis of Intel undocumented Extra header
+Added validation of Intel Extended header Checksum
+Parameter -info now shows detailed Intel Platform info
+Fixed two crashes under rare circumstances
+Slight performance and visual improvements
+Updated Microcode Repository Database to r23
+
 v1.4.4
 
 Fixed crash when input files could not be found

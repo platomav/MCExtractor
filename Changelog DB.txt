@@ -1,3 +1,8 @@
+r23
+
+cpu000406F1_platEF_ver0B000020_date02-02-2017
+cpu000306F2_plat6F_ver0000003A_date30-01-2017
+
 r22
 
 cpu000506E3_plat36_ver000000B2_date01-02-2017
