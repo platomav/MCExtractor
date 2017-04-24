@@ -6,7 +6,7 @@ Intel, AMD & VIA Microcode Extractor
 Copyright (C) 2016-2017 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.5.0'
+title = 'MC Extractor v1.5.1'
 
 import os
 import re
@@ -126,7 +126,7 @@ class Intel_MC_Header(ctypes.LittleEndianStructure) :
 		if self.Reserved1 == self.Reserved2 == self.Reserved3 == 0 : reserv_str = "00 * 12"
 		else : reserv_str = "%0.8X %0.8X %0.8X" % (self.Reserved1, self.Reserved2, self.Reserved3)
 		
-		pt, pt_empty = mc_table(['Field', 'Value'], 0)
+		pt, pt_empty = mc_table(['Field', 'Value'], False, 0)
 		
 		pt.title = col_b + 'Intel Main Header' + col_e
 		pt.add_row(['Header', '%0.8X' % self.HeaderVersion])
@@ -191,7 +191,7 @@ class Intel_MC_Header_Extra(ctypes.LittleEndianStructure) :
 		RSAPublicKey = " ".join("%0.8X" % val for val in self.RSAPublicKey)
 		RSASignature = " ".join("%0.8X" % val for val in self.RSASignature)
 		
-		pt, pt_empty = mc_table(['Field', 'Value'], 0)
+		pt, pt_empty = mc_table(['Field', 'Value'], False, 0)
 		
 		pt.title = col_b + 'Intel Extra Header' + col_e
 		pt.add_row(['Unknown 1', '%0.8X' % self.Unknown1])
@@ -246,7 +246,7 @@ class Intel_MC_Header_Extended(ctypes.LittleEndianStructure) :
 		if self.Reserved1 == self.Reserved2 == self.Reserved3 == 0 : reserv_str = "00 * 12"
 		else : reserv_str = "%0.8X %0.8X %0.8X" % (self.Reserved1, self.Reserved2, self.Reserved3)
 
-		pt, pt_empty = mc_table(['Field', 'Value'], 0)
+		pt, pt_empty = mc_table(['Field', 'Value'], False, 0)
 		
 		pt.title = col_b + 'Intel Extended Header' + col_e
 		pt.add_row(['Extended Signatures', '%X' % self.ExtendedSignatureCount])
@@ -269,7 +269,7 @@ class Intel_MC_Header_Extended_Field(ctypes.LittleEndianStructure) :
 		
 		platforms = intel_plat(self.ProcessorFlags)
 		
-		pt, pt_empty = mc_table(['Field', 'Value'], 0)
+		pt, pt_empty = mc_table(['Field', 'Value'], False, 0)
 		
 		pt.title = col_b + 'Intel Extended Field' + col_e
 		pt.add_row(['CPUID', '%0.6X' % self.ProcessorSignature])
@@ -309,7 +309,7 @@ class AMD_MC_Header(ctypes.LittleEndianStructure) :
 		
 		#matchreg_str = " ".join("%0.8X" % val for val in self.MatchReg)
 		
-		pt, pt_empty = mc_table(['Field','Value'], 0)
+		pt, pt_empty = mc_table(['Field', 'Value'], False, 0)
 		
 		pt.title = col_r + 'AMD Header' + col_e
 		pt.add_row(['Date (D/M/Y)',full_date])
@@ -340,7 +340,7 @@ class AMD_MC_Header_Extra(ctypes.LittleEndianStructure) :
 	]
 
 	def mc_print(self) :
-		pt, pt_empty = mc_table(['Field', 'Value'], 0)
+		pt, pt_empty = mc_table(['Field', 'Value'], False, 0)
 		
 		pt.title = col_r + 'AMD Extra Header' + col_e
 		pt.add_row(['Flags', '%0.8X' % self.Flags])
@@ -371,7 +371,7 @@ class VIA_MC_Header(ctypes.LittleEndianStructure) :
 	def mc_print(self) :
 		full_date  = "%0.2d/%0.2d/%0.4d" % (self.Day, self.Month, self.Year)
 		
-		pt, pt_empty = mc_table(['Field', 'Value'], 0)
+		pt, pt_empty = mc_table(['Field', 'Value'], False, 0)
 		
 		pt.title = col_b + 'VIA Header' + col_e
 		pt.add_row(['Signature', '%s' % self.Signature.decode('utf-8')])
@@ -573,9 +573,9 @@ def mc_upd_chk(mc_dates) :
 	
 	return mc_upd
 	
-def mc_table(row_col_names,padd) :
+def mc_table(row_col_names,header,padd) :
 	pt = prettytable.PrettyTable(row_col_names)
-	pt.header = False
+	pt.header = header # Boolean
 	pt.padding_width = padd
 	pt.hrules = prettytable.ALL
 	pt.vrules = prettytable.ALL
@@ -583,12 +583,12 @@ def mc_table(row_col_names,padd) :
 	
 	return pt,pt_empty
 
-def display_sql(cursor,title,padd):
+def display_sql(cursor,title,header,padd):
 	col_names = [cn[0].upper() for cn in cursor.description]
 	rows = cursor.fetchall()
 	
 	sqlr = prettytable.PrettyTable()
-	sqlr.header = False
+	sqlr.header = header
 	sqlr.padding_width = padd
 	sqlr.hrules = prettytable.ALL
 	sqlr.vrules = prettytable.ALL
@@ -751,7 +751,7 @@ if os.path.isfile(db_path) :
 else :
 	print(col_r + "\nError: MCE.db file is missing!" + col_e)
 	mce_exit(1)
-
+	
 if param.search :
 	# noinspection PyUnboundLocalVariable
 	if len(source) == 2 : i_cpuid = source[1] # -search CPUID expected
@@ -759,13 +759,13 @@ if param.search :
 	
 	# noinspection PyUnboundLocalVariable
 	res_i = c.execute('SELECT * FROM Intel WHERE cpuid=?', (i_cpuid,))
-	print('\n%s' % display_sql(res_i, col_b + 'Intel' + col_e, 1))
+	print('\n%s' % display_sql(res_i, col_b + 'Intel' + col_e, True, 1))
 	
 	res_a = c.execute('SELECT * FROM AMD WHERE cpuid=?', (i_cpuid,))
-	print('\n%s' % display_sql(res_a, col_r + 'AMD' + col_e, 1))
+	print('\n%s' % display_sql(res_a, col_r + 'AMD' + col_e, True, 1))
 	
 	res_v = c.execute('SELECT * FROM VIA WHERE cpuid=?', (i_cpuid,))
-	print('\n%s' % display_sql(res_v, col_b + 'VIA' + col_e, 1))
+	print('\n%s' % display_sql(res_v, col_b + 'VIA' + col_e, True, 1))
 	
 	mce_exit()
 
@@ -881,7 +881,7 @@ for in_file in source :
 	if param.verbose : col_names = ['#','CPUID','PLATFORM','VERSION','DD-MM-YYYY','SIZE','CHECKSUM','OFFSET','STATUS']
 	else : col_names = ['#','CPUID','PLATFORM','VERSION','DD-MM-YYYY','STATUS']
 	
-	pt,pt_empty = mc_table(col_names,1)
+	pt,pt_empty = mc_table(col_names, True, 1)
 	
 	for match_ucode in match_list_i :
 		
@@ -1059,7 +1059,7 @@ for in_file in source :
 	if param.verbose : col_names = ['#', 'CPUID', 'VERSION', 'DD-MM-YYYY', 'SIZE', 'CHKAMD', 'CHKMCE', 'OFFSET', 'STATUS']
 	else : col_names = ['#', 'CPUID', 'VERSION', 'DD-MM-YYYY', 'STATUS']
 	
-	pt, pt_empty = mc_table(col_names,1)
+	pt, pt_empty = mc_table(col_names, True, 1)
 	
 	for match_ucode in match_list_a :
 		
@@ -1284,7 +1284,7 @@ for in_file in source :
 	if param.verbose : col_names = ['#', 'CPUID', 'NAME', 'VERSION', 'DD-MM-YYYY', 'SIZE', 'CHECKSUM', 'OFFSET', 'STATUS']
 	else : col_names = ['#', 'CPUID', 'NAME', 'VERSION', 'DD-MM-YYYY', 'STATUS']
 	
-	pt, pt_empty = mc_table(col_names,1)
+	pt, pt_empty = mc_table(col_names, True, 1)
 	
 	for match_ucode in match_list_v :
 		

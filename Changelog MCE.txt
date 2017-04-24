@@ -1,3 +1,8 @@
+v1.5.1
+
+Fixed issue in which Microcode headers were not shown
+Updated Microcode Repository Database to r24
+
 v1.5.0
 
 Greatly improved the analysis of Intel undocumented Extra header
