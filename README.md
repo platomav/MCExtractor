@@ -2,6 +2,7 @@
 Intel, AMD &amp; VIA Microcode Extraction Tool
 
 [MC Extractor News Feed](https://twitter.com/platomaniac)
+
 [MC Extractor Discussion Topic](http://www.win-raid.com/t2199f16-MC-Extractor-Intel-AMD-amp-VIA-Microcode-Extraction-Tool.html#msg30320)
 
 ![](https://i.imgur.com/7fk3x01.png)
