@@ -5,6 +5,8 @@ Intel, AMD &amp; VIA Microcode Extraction Tool
 
 [MC Extractor Discussion Topic](http://www.win-raid.com/t2199f16-MC-Extractor-Intel-AMD-amp-VIA-Microcode-Extraction-Tool.html#msg30320)
 
+[![MC Extractor Donation](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=DJDZD3PRGCSCL)
+
 ![](https://i.imgur.com/7fk3x01.png)
 
 ## **A. About MC Extractor**
