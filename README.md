@@ -77,7 +77,7 @@ During operation, MC Extractor may encounter some issues that can trigger Notes,
 
 ## **C. Download MC Extractor**
 
-MC Extractor is developed using Python 3.x and can work under Windows, Linux and macOS operating systems. Pre-built binaries are provided for Windows only with build/freeze instructions for all three OS found below.
+MC Extractor is developed using Python 3.6 and can work under Windows, Linux and macOS operating systems. Pre-built binaries are provided for Windows only with build/freeze instructions for all three OS found below.
 
 #### **C1. Compatibility**
 
@@ -109,3 +109,5 @@ PyInstaller can freeze MC Extractor at all three platforms, it is simple to run 
 > pyinstaller --noupx --onefile MCE.py
 
 At dist folder you should find the final MCE executable
+
+Note: You need to use the [develop PyInstaller branch](https://github.com/pyinstaller/pyinstaller/tree/develop) to build with Python 3.6

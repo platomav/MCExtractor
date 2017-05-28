@@ -6,7 +6,7 @@ Intel, AMD & VIA Microcode Extractor
 Copyright (C) 2016-2017 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.5.1'
+title = 'MC Extractor v1.5.2'
 
 import os
 import re
@@ -119,7 +119,7 @@ class Intel_MC_Header(ctypes.LittleEndianStructure) :
 	]
 
 	def mc_print(self) :
-		full_date  = "%0.2X/%0.2X/%0.4X" % (self.Day, self.Month, self.Year)
+		full_date  = "%0.4X%0.2X/%0.2X/" % (self.Year, self.Month, self.Day)
 		
 		platforms = intel_plat(self.ProcessorFlags)
 		
@@ -131,7 +131,7 @@ class Intel_MC_Header(ctypes.LittleEndianStructure) :
 		pt.title = col_b + 'Intel Main Header' + col_e
 		pt.add_row(['Header', '%0.8X' % self.HeaderVersion])
 		pt.add_row(['Update', '%0.8X' % self.UpdateRevision])
-		pt.add_row(['Date (D/M/Y)', '%s' % full_date])
+		pt.add_row(['Date', '%s' % full_date])
 		pt.add_row(['CPUID', '%0.8X' % self.ProcessorSignature])
 		pt.add_row(['Checksum', '%0.8X' % self.Checksum])
 		pt.add_row(['Loader', '%0.8X' % self.LoaderRevision])
@@ -183,7 +183,7 @@ class Intel_MC_Header_Extra(ctypes.LittleEndianStructure) :
 	def mc_print_extra(self) :
 		print()
 		
-		full_date  = "%0.2X/%0.2X/%0.4X" % (self.Day, self.Month, self.Year)
+		full_date  = "%0.4X%0.2X/%0.2X/" % (self.Year, self.Month, self.Day)
 		
 		platforms = intel_plat(mc_hdr.ProcessorFlags)
 		
@@ -201,7 +201,7 @@ class Intel_MC_Header_Extra(ctypes.LittleEndianStructure) :
 		pt.add_row(['Update', '%0.8X' % self.UpdateRevision])
 		pt.add_row(['Version Control', '%X' % self.VCN])
 		pt.add_row(['Multi Purpose 1', '%0.8X' % self.Unknown4])
-		pt.add_row(['Date (D/M/Y)', '%s' % full_date])
+		pt.add_row(['Date', '%s' % full_date])
 		pt.add_row(['Update Size', '0x%0.2X' % (self.UpdateSize * 4)])
 		pt.add_row(['CPU Signatures', '%X' % self.ProcessorSignatureCount])
 		if self.ProcessorSignature0 != 0 : pt.add_row(['CPUID 0', '%0.8X' % self.ProcessorSignature0])
@@ -300,7 +300,7 @@ class AMD_MC_Header(ctypes.LittleEndianStructure) :
 	]
 
 	def mc_print(self) :
-		full_date = "%0.2X/%0.2X/%0.4X" % (self.Date >> 16 & 0xFF, self.Date >> 24, self.Date & 0xFFFF)
+		full_date = "%0.4X%0.2X/%0.2X/" % (self.Date & 0xFFFF, self.Date >> 24, self.Date >> 16 & 0xFF)
 		
 		proc_rev_str = "%0.2X0F%0.2X" % (self.ProcessorRevId >> 8, self.ProcessorRevId & 0xFF)
 		
@@ -312,7 +312,7 @@ class AMD_MC_Header(ctypes.LittleEndianStructure) :
 		pt, pt_empty = mc_table(['Field', 'Value'], False, 0)
 		
 		pt.title = col_r + 'AMD Header' + col_e
-		pt.add_row(['Date (D/M/Y)',full_date])
+		pt.add_row(['Date',full_date])
 		pt.add_row(['Update','%0.8X' % self.PatchId])
 		pt.add_row(['Data Revision','%0.4X' % self.DataId])
 		pt.add_row(['Data Length','%0.2X' % self.DataLen])
@@ -369,14 +369,14 @@ class VIA_MC_Header(ctypes.LittleEndianStructure) :
 	]
 
 	def mc_print(self) :
-		full_date  = "%0.2d/%0.2d/%0.4d" % (self.Day, self.Month, self.Year)
+		full_date  = "%0.4d%0.2d/%0.2d/" % (self.Year, self.Month, self.Day)
 		
 		pt, pt_empty = mc_table(['Field', 'Value'], False, 0)
 		
 		pt.title = col_b + 'VIA Header' + col_e
 		pt.add_row(['Signature', '%s' % self.Signature.decode('utf-8')])
 		pt.add_row(['Update', '%0.8X' % self.UpdateRevision])
-		pt.add_row(['Date (D/M/Y)', '%s' % full_date])
+		pt.add_row(['Date', '%s' % full_date])
 		pt.add_row(['CPUID', '%0.8X' % self.ProcessorSignature])
 		pt.add_row(['Checksum', '%0.8X' % self.Checksum])
 		pt.add_row(['Loader', '%0.8X' % self.LoaderRevision])
@@ -412,12 +412,12 @@ def mce_help() :
 # Setup DB Tables
 def create_tables():
 	c.execute('CREATE TABLE IF NOT EXISTS MCE(revision INTEGER, developer INTEGER, date INTEGER)')
-	c.execute('CREATE TABLE IF NOT EXISTS Intel(cpuid BLOB, platform BLOB, version BLOB, mmddyyyy TEXT, size BLOB,\
+	c.execute('CREATE TABLE IF NOT EXISTS Intel(cpuid BLOB, platform BLOB, version BLOB, yyyymmdd TEXT, size BLOB,\
 				checksum BLOB)')
-	c.execute('CREATE TABLE IF NOT EXISTS VIA(cpuid BLOB, signature TEXT, version BLOB, mmddyyyy TEXT, size BLOB,\
+	c.execute('CREATE TABLE IF NOT EXISTS VIA(cpuid BLOB, signature TEXT, version BLOB, yyyymmdd TEXT, size BLOB,\
 				checksum BLOB)')
-	c.execute('CREATE TABLE IF NOT EXISTS AMD(cpuid BLOB, nbdevid BLOB, sbdevid BLOB, version BLOB, mmddyyyy TEXT,\
-				size BLOB, chkbody BLOB, chkmc BLOB)')
+	c.execute('CREATE TABLE IF NOT EXISTS AMD(cpuid BLOB, nbdevid BLOB, sbdevid BLOB, nbsbrev BLOB, version BLOB,\
+				yyyymmdd TEXT, size BLOB, chkbody BLOB, chkmc BLOB)')
 	
 	conn.commit()
 	
@@ -560,9 +560,9 @@ def mc_upd_chk(mc_dates) :
 	
 	if mc_dates is not None :
 		for date in mc_dates :
-			dd = date[0][2:4]
-			mm = date[0][:2]
-			yyyy = date[0][4:8]
+			dd = date[0][6:8]
+			mm = date[0][4:6]
+			yyyy = date[0][:4]
 			
 			if year < yyyy or (year == yyyy and (month < mm or (month == mm and day < dd))) :
 				mc_latest = False
@@ -778,7 +778,7 @@ if param.old_db :
 	
 	res_m = (c.execute('SELECT * FROM MCE')).fetchall()
 	db_rev = 'r' + str(res_m[0][0])
-	db_date = datetime.datetime.utcfromtimestamp(res_m[0][2]).strftime('%d/%m/%Y, %H:%M')
+	db_date = datetime.datetime.utcfromtimestamp(res_m[0][2]).strftime('%Y-%m-%d, %H:%M')
 	
 	if res_m[0][1] == 1 : db_dev = ' Dev'
 	else : db_dev = ''
@@ -878,8 +878,8 @@ for in_file in source :
 	
 	total += len(match_list_i)
 	
-	if param.verbose : col_names = ['#','CPUID','PLATFORM','VERSION','DD-MM-YYYY','SIZE','CHECKSUM','OFFSET','STATUS']
-	else : col_names = ['#','CPUID','PLATFORM','VERSION','DD-MM-YYYY','STATUS']
+	if param.verbose : col_names = ['#','CPUID','PLATFORM','VERSION','YYYY-MM-DD','SIZE','CHECKSUM','OFFSET','STATUS']
+	else : col_names = ['#','CPUID','PLATFORM','VERSION','YYYY-MM-DD','STATUS']
 	
 	pt,pt_empty = mc_table(col_names, True, 1)
 	
@@ -911,14 +911,14 @@ for in_file in source :
 		
 		res_field = mc_hdr.Reserved1 + mc_hdr.Reserved2 + mc_hdr.Reserved3
 		
-		full_date = "%s-%s-%s" % (day, month, year)
+		full_date = "%s-%s-%s" % (year, month, day)
 		
 		# Remove false results, based on date
 		try :
-			date_chk = datetime.datetime.strptime(full_date, '%d-%m-%Y')
+			date_chk = datetime.datetime.strptime(full_date, '%Y-%m-%d')
 			if date_chk.year > 2017 or date_chk.year < 1993 : raise Exception('WrongDate') # 1st MC from 1995 (P6), 1993 for safety
 		except :
-			if full_date == '07-00-1896' and patch == '000000D1' : pass # Drunk Intel employee #1, Happy 0th month from 19th century Intel!
+			if full_date == '1896-00-07' and patch == '000000D1' : pass # Drunk Intel employee #1, Happy 0th month from 19th century Intel!
 			else :
 				if param.verbose : msg_i.append(col_m + "\nWarning: Skipped Intel microcode at 0x%0.2X, invalid Date of %s!" % (mc_bgn, full_date) + col_e)
 				skip += 1
@@ -976,13 +976,13 @@ for in_file in source :
 		mc_name = "cpu%s_plat%s_ver%s_date%s" % (cpu_id, plat_cut, patch, full_date)
 		mc_nr += 1
 		
-		mc_at_db = (c.execute('SELECT * FROM Intel WHERE cpuid=? AND platform=? AND version=? AND mmddyyyy=? AND size=? \
-					AND checksum=?', (cpu_id, plat_db, patch, month + day + year, mc_len_db, mc_chk,))).fetchone()
+		mc_at_db = (c.execute('SELECT * FROM Intel WHERE cpuid=? AND platform=? AND version=? AND yyyymmdd=? AND size=? \
+					AND checksum=?', (cpu_id, plat_db, patch, year + month + day, mc_len_db, mc_chk,))).fetchone()
 		
 		if param.build_db :
 			if mc_at_db is None :
-				c.execute('INSERT INTO Intel (cpuid, platform, version, mmddyyyy, size, checksum) VALUES (?,?,?,?,?,?)',
-						(cpu_id, plat_db, patch, month + day + year, mc_len_db, mc_chk))
+				c.execute('INSERT INTO Intel (cpuid, platform, version, yyyymmdd, size, checksum) VALUES (?,?,?,?,?,?)',
+						(cpu_id, plat_db, patch, year + month + day, mc_len_db, mc_chk))
 			
 				c.execute('UPDATE MCE SET date=?', (int(time.time()),))
 			
@@ -992,7 +992,7 @@ for in_file in source :
 			
 			continue
 		
-		mc_dates = (c.execute('SELECT mmddyyyy FROM Intel WHERE cpuid=? AND platform=?', (cpu_id, plat_db,))).fetchall()
+		mc_dates = (c.execute('SELECT yyyymmdd FROM Intel WHERE cpuid=? AND platform=?', (cpu_id, plat_db,))).fetchall()
 		
 		# Determine if MC is Latest or Outdated
 		mc_upd = mc_upd_chk(mc_dates)
@@ -1011,7 +1011,7 @@ for in_file in source :
 		if not os.path.exists(mc_extract) : os.makedirs(mc_extract)
 		
 		if valid_mc_chk != 0 or valid_ext_chk != 0 :
-			if patch == '000000FF' and cpu_id == '000506E3' and full_date == '05-01-2016' : # Someone "fixed" the modded MC checksum wrongfully
+			if patch == '000000FF' and cpu_id == '000506E3' and full_date == '2016-01-05' : # Someone "fixed" the modded MC checksum wrongfully
 				mc_path = mc_extract + "%s.bin" % mc_name
 			else :
 				msg_i.append(col_m + '\nWarning: Microcode #%s is packed or badly extracted, please report it!' % mc_nr + col_e)
@@ -1056,8 +1056,8 @@ for in_file in source :
 	
 	total += len(match_list_a)
 	
-	if param.verbose : col_names = ['#', 'CPUID', 'VERSION', 'DD-MM-YYYY', 'SIZE', 'CHKAMD', 'CHKMCE', 'OFFSET', 'STATUS']
-	else : col_names = ['#', 'CPUID', 'VERSION', 'DD-MM-YYYY', 'STATUS']
+	if param.verbose : col_names = ['#', 'CPUID', 'VERSION', 'YYYY-MM-DD', 'SIZE', 'CHKAMD', 'CHKMCE', 'OFFSET', 'STATUS']
+	else : col_names = ['#', 'CPUID', 'VERSION', 'YYYY-MM-DD', 'STATUS']
 	
 	pt, pt_empty = mc_table(col_names, True, 1)
 	
@@ -1099,15 +1099,15 @@ for in_file in source :
 		
 		if cpu_id == '00800F11' and patch == '08001105' and year == '2016' : year = '2017' # Drunk AMD employee #2, Zen in January 2016!
 		
-		full_date = "%s-%s-%s" % (day, month, year)
+		full_date = "%s-%s-%s" % (year, month, day)
 		
 		# Remove false results, based on Date
 		try :
-			date_chk = datetime.datetime.strptime(full_date, '%d-%m-%Y')
+			date_chk = datetime.datetime.strptime(full_date, '%Y-%m-%d')
 			
 			if date_chk.year > 2017 or date_chk.year < 2000 : raise Exception('WrongDate') # 1st MC from 1999 (K7), 2000 for K7 Erratum and performance
 		except :
-			if full_date == '09-13-2011' and patch == '03000027' : pass # Drunk AMD employee #1, Happy 13th month from AMD!
+			if full_date == '2011-13-09' and patch == '03000027' : pass # Drunk AMD employee #1, Happy 13th month from AMD!
 			else :
 				if param.verbose : msg_a.append(col_m + "\nWarning: Skipped AMD microcode at 0x%0.2X, invalid Date of %s!" % (mc_bgn, full_date) + col_e)
 				skip += 1
@@ -1201,13 +1201,13 @@ for in_file in source :
 		valid_chk = checksum32(mc_extr[0x40:]) # AMD File Checksum (Data+Padding)
 		
 		mc_at_db = (c.execute('SELECT * FROM AMD WHERE cpuid=? AND nbdevid=? AND sbdevid=? AND nbsbrev=? AND version=? \
-								AND mmddyyyy=? AND size=? AND chkbody=? AND chkmc=?', (cpu_id, nb_id, sb_id, nbsb_rev_id,
-								patch, month + day + year, mc_len_db, mc_chk_hex, mc_file_chk, ))).fetchone()
+								AND yyyymmdd=? AND size=? AND chkbody=? AND chkmc=?', (cpu_id, nb_id, sb_id, nbsb_rev_id,
+								patch, year + month + day, mc_len_db, mc_chk_hex, mc_file_chk, ))).fetchone()
 		
 		if param.build_db :
 			if mc_at_db is None :
-				c.execute('INSERT INTO AMD (cpuid, nbdevid, sbdevid, nbsbrev, version, mmddyyyy, size, chkbody, chkmc) \
-							VALUES (?,?,?,?,?,?,?,?,?)', (cpu_id, nb_id, sb_id, nbsb_rev_id, patch, month + day + year,
+				c.execute('INSERT INTO AMD (cpuid, nbdevid, sbdevid, nbsbrev, version, yyyymmdd, size, chkbody, chkmc) \
+							VALUES (?,?,?,?,?,?,?,?,?)', (cpu_id, nb_id, sb_id, nbsb_rev_id, patch, year + month + day,
 							mc_len_db, mc_chk_hex, mc_file_chk))
 			
 				c.execute('UPDATE MCE SET date=?', (int(time.time()),))
@@ -1218,7 +1218,7 @@ for in_file in source :
 			
 			continue
 		
-		mc_dates = (c.execute('SELECT mmddyyyy FROM AMD WHERE cpuid=? AND nbdevid=? AND sbdevid=? AND nbsbrev=?',
+		mc_dates = (c.execute('SELECT yyyymmdd FROM AMD WHERE cpuid=? AND nbdevid=? AND sbdevid=? AND nbsbrev=?',
 							 (cpu_id, nb_id, sb_id, nbsb_rev_id,))).fetchall()
 		
 		# Determine if MC is Latest or Outdated
@@ -1281,8 +1281,8 @@ for in_file in source :
 	
 	total += len(match_list_v)
 	
-	if param.verbose : col_names = ['#', 'CPUID', 'NAME', 'VERSION', 'DD-MM-YYYY', 'SIZE', 'CHECKSUM', 'OFFSET', 'STATUS']
-	else : col_names = ['#', 'CPUID', 'NAME', 'VERSION', 'DD-MM-YYYY', 'STATUS']
+	if param.verbose : col_names = ['#', 'CPUID', 'NAME', 'VERSION', 'YYYY-MM-DD', 'SIZE', 'CHECKSUM', 'OFFSET', 'STATUS']
+	else : col_names = ['#', 'CPUID', 'NAME', 'VERSION', 'YYYY-MM-DD', 'STATUS']
 	
 	pt, pt_empty = mc_table(col_names, True, 1)
 	
@@ -1311,11 +1311,11 @@ for in_file in source :
 		
 		name = '%s' % str(mc_hdr.Name).strip("b'")
 		
-		full_date = "%s-%s-%s" % (day, month, year)
+		full_date = "%s-%s-%s" % (year, month, day)
 		
 		# Remove false results, based on date
 		try :
-			date_chk = datetime.datetime.strptime(full_date, '%d-%m-%Y')
+			date_chk = datetime.datetime.strptime(full_date, '%Y-%m-%d')
 			if date_chk.year > 2017 or date_chk.year < 2006 : raise Exception('WrongDate') # 1st MC from 2008 (Nano), 2006 for safety
 		except :
 			# VIA is sober? No drunk VIA employee ???
@@ -1331,13 +1331,13 @@ for in_file in source :
 		mc_name = "cpu%s_sig%s_size%s_date%s" % (cpu_id, name, mc_len_db, full_date)
 		mc_nr += 1
 		
-		mc_at_db = (c.execute('SELECT * FROM VIA WHERE cpuid=? AND signature=? AND version=? AND mmddyyyy=? AND size=? AND checksum=?',
-				  (cpu_id, name, patch_db, month + day + year, mc_len_db, mc_chk,))).fetchone()
+		mc_at_db = (c.execute('SELECT * FROM VIA WHERE cpuid=? AND signature=? AND version=? AND yyyymmdd=? AND size=? AND checksum=?',
+				  (cpu_id, name, patch_db, year + month + day, mc_len_db, mc_chk,))).fetchone()
 		
 		if param.build_db :
 			if mc_at_db is None :
-				c.execute('INSERT INTO VIA (cpuid, signature, version, mmddyyyy, size, checksum) VALUES (?,?,?,?,?,?)',
-						(cpu_id, name, patch_db, month + day + year, mc_len_db, mc_chk))
+				c.execute('INSERT INTO VIA (cpuid, signature, version, yyyymmdd, size, checksum) VALUES (?,?,?,?,?,?)',
+						(cpu_id, name, patch_db, year + month + day, mc_len_db, mc_chk))
 			
 				c.execute('UPDATE MCE SET date=?', (int(time.time()),))
 			
@@ -1347,7 +1347,7 @@ for in_file in source :
 			
 			continue
 		
-		mc_dates = (c.execute('SELECT mmddyyyy FROM VIA WHERE cpuid=?', (cpu_id,))).fetchall()
+		mc_dates = (c.execute('SELECT yyyymmdd FROM VIA WHERE cpuid=?', (cpu_id,))).fetchall()
 		
 		# Determine if MC is Latest or Outdated
 		mc_upd = mc_upd_chk(mc_dates)
