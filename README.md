@@ -7,7 +7,7 @@ Intel, AMD &amp; VIA Microcode Extraction Tool
 
 [![MC Extractor Donation](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=DJDZD3PRGCSCL)
 
-![](https://i.imgur.com/7fk3x01.png)
+![](https://i.imgur.com/3EP7N82.png)
 
 ## **A. About MC Extractor**
 
@@ -77,30 +77,32 @@ During operation, MC Extractor may encounter some issues that can trigger Notes,
 
 ## **C. Download MC Extractor**
 
-MC Extractor is developed using Python 3.6 and can work under Windows, Linux and macOS operating systems. Pre-built binaries are provided for Windows only with build/freeze instructions for all three OS found below.
+MC Extractor is developed using Python 3.6 and can work under Windows, Linux and macOS operating systems. It consists of two files, the executable (MCE.exe or MCE) and the database (MCE.db). Regarding the executable, already built/frozen/compiled binaries are provided by me for Windows only. Thus, **you don't need to manually build/freeze/compile MC Extractor under Windows**. Instead, download the latest version from the [Releases](https://github.com/platomav/MCExtractor/releases) tab, title should be "MC Extractor v1.X.X". You may need to scroll down a bit if there are DB releases at the top. The latter can be used to update the outdated DB which was bunled with the latest executable release, title should be "DB rXX". For Linux and macOS or courageous Windows users, the build/freeze/compile instructions for all three OS can be found below.
+
+**Note:** To extract the already built/frozen/compiled MC Extractor archive, you need to use programs which support RAR5 compression!
 
 #### **C1. Compatibility**
 
-MC Extractor has been tested to be compatible with Windows Vista-10, Ubuntu 16.04 and macOS Sierra operating systems. It is expected to work at all Linux or macOS operating systems which have Python 3.5+ support but feel free to test it. It is executed using Python 3.6 under Windows and the built-in Python 3.5 under Linux and macOS. Any latter v3.x releases might work depending on whether MCE's prerequisites are also compatible.
+MC Extractor has been tested to be compatible with Windows Vista-10, Ubuntu 16.04 and macOS Sierra operating systems. It is generally expected to work at all Windows, Linux or macOS operating systems which have Python 3.6 support but feel free to test it. Any latter v3.x releases might work depending on whether MCE's prerequisites are also compatible.
 
 #### **C2. Code Prerequisites**
 
-To run MC Extractor, you need to have the following 3rd party Python modules installed:
+To run MC Extractor's python script, you need to have the following 3rd party Python modules installed:
 
 * [Colorama](https://pypi.python.org/pypi/colorama)
 * [PTable](https://github.com/kxxoling/PTable)
 
-To freeze MC Extractor, you can use whatever you like. The following are verified to work:
+To build/freeze/compile MC Extractor's python script, you can use whatever you like. The following are verified to work:
 
 * [Py2exe](https://pypi.python.org/pypi/py2exe) (Windows)
 * [Py2app](https://pypi.python.org/pypi/py2app) (macOS)
 * [PyInstaller](https://pypi.python.org/pypi/PyInstaller/) (Windows/Linux/macOS)
 
-#### **C3. Freeze with PyInstaller**
+#### **C3. Build/Freeze/Compile with PyInstaller**
 
-PyInstaller can freeze MC Extractor at all three platforms, it is simple to run and gets updated often.
+PyInstaller can build/freeze/compile MC Extractor at all three supported platforms, it is simple to run and gets updated often.
 
-1. Make sure you have Python 3.5+ installed
+1. Make sure you have Python 3.6 installed
 2. Use pip to install colorama module
 3. Use pip to install PTable module
 4. Use pip to install pyinstaller module
@@ -110,4 +112,4 @@ PyInstaller can freeze MC Extractor at all three platforms, it is simple to run 
 
 At dist folder you should find the final MCE executable
 
-Note: You need to use the [develop PyInstaller branch](https://github.com/pyinstaller/pyinstaller/tree/develop) to build with Python 3.6
+**Note:** You need to use the [develop PyInstaller branch](https://github.com/pyinstaller/pyinstaller/tree/develop) to build with Python 3.6 currently.

@@ -1,3 +1,8 @@
+v1.5.3
+
+Fixed jumbled date display at -info parameter
+Updated Microcode Repository Database to r31
+
 v1.5.2
 
 All dates now follow ISO8601 YYYY-MM-DD format

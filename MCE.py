@@ -6,7 +6,7 @@ Intel, AMD & VIA Microcode Extractor
 Copyright (C) 2016-2017 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.5.2'
+title = 'MC Extractor v1.5.3'
 
 import os
 import re
@@ -119,7 +119,7 @@ class Intel_MC_Header(ctypes.LittleEndianStructure) :
 	]
 
 	def mc_print(self) :
-		full_date  = "%0.4X%0.2X/%0.2X/" % (self.Year, self.Month, self.Day)
+		full_date  = "%0.4X-%0.2X-%0.2X" % (self.Year, self.Month, self.Day)
 		
 		platforms = intel_plat(self.ProcessorFlags)
 		
@@ -183,7 +183,7 @@ class Intel_MC_Header_Extra(ctypes.LittleEndianStructure) :
 	def mc_print_extra(self) :
 		print()
 		
-		full_date  = "%0.4X%0.2X/%0.2X/" % (self.Year, self.Month, self.Day)
+		full_date  = "%0.4X-%0.2X-%0.2X" % (self.Year, self.Month, self.Day)
 		
 		platforms = intel_plat(mc_hdr.ProcessorFlags)
 		
@@ -300,7 +300,7 @@ class AMD_MC_Header(ctypes.LittleEndianStructure) :
 	]
 
 	def mc_print(self) :
-		full_date = "%0.4X%0.2X/%0.2X/" % (self.Date & 0xFFFF, self.Date >> 24, self.Date >> 16 & 0xFF)
+		full_date = "%0.4X-%0.2X-%0.2X" % (self.Date & 0xFFFF, self.Date >> 24, self.Date >> 16 & 0xFF)
 		
 		proc_rev_str = "%0.2X0F%0.2X" % (self.ProcessorRevId >> 8, self.ProcessorRevId & 0xFF)
 		
@@ -369,7 +369,7 @@ class VIA_MC_Header(ctypes.LittleEndianStructure) :
 	]
 
 	def mc_print(self) :
-		full_date  = "%0.4d%0.2d/%0.2d/" % (self.Year, self.Month, self.Day)
+		full_date  = "%0.4d-%0.2d-%0.2d" % (self.Year, self.Month, self.Day)
 		
 		pt, pt_empty = mc_table(['Field', 'Value'], False, 0)
 		
