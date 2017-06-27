@@ -2,11 +2,11 @@
 
 """
 MC Extractor
-Intel, AMD & VIA Microcode Extractor
+Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2017 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.5.3'
+title = 'MC Extractor v1.6.0'
 
 import os
 import re
@@ -29,6 +29,7 @@ col_g = colorama.Fore.GREEN + colorama.Style.BRIGHT
 col_b = colorama.Fore.BLUE + colorama.Style.BRIGHT
 col_y = colorama.Fore.YELLOW + colorama.Style.BRIGHT
 col_m = colorama.Fore.MAGENTA + colorama.Style.BRIGHT
+col_c = colorama.Fore.CYAN + colorama.Style.BRIGHT
 col_e = colorama.Fore.RESET + colorama.Style.RESET_ALL
 
 # Detect OS Platform
@@ -373,7 +374,7 @@ class VIA_MC_Header(ctypes.LittleEndianStructure) :
 		
 		pt, pt_empty = mc_table(['Field', 'Value'], False, 0)
 		
-		pt.title = col_b + 'VIA Header' + col_e
+		pt.title = col_c + 'VIA Header' + col_e
 		pt.add_row(['Signature', '%s' % self.Signature.decode('utf-8')])
 		pt.add_row(['Update', '%0.8X' % self.UpdateRevision])
 		pt.add_row(['Date', '%s' % full_date])
@@ -385,6 +386,88 @@ class VIA_MC_Header(ctypes.LittleEndianStructure) :
 		pt.add_row(['Total Size', '0x%0.2X' % self.TotalSize])
 		pt.add_row(['Name', '%s' % self.Name.decode('utf-8')])
 		pt.add_row(['Unknown', '%0.8X' % self.Unknown])
+		
+		print(pt)
+
+# noinspection PyTypeChecker		
+class FSL_MC_Header(ctypes.BigEndianStructure) :
+	_pack_   = 1
+	_fields_ = [
+		("TotalSize",                 uint32_t),    # 00 Entire file
+		("Signature",                 char*3),      # 04 QEF (Pattern)
+		("HeaderVersion",             uint8_t),     # 07 01 (Pattern)
+		("Name",                      char*62),     # 08 Null-terminated ID String
+		("IRAM",                      uint8_t),     # 46 I-RAM (0 shared, 1 split)
+		("CountMC",                   uint8_t),     # 47 Number of MC structures
+		("Model",                     uint16_t),    # 48 SoC Model
+		("Major",                     uint8_t),     # 4A SoC Revision Major
+		("Minor",                     uint8_t),     # 4B SoC Revision Minor
+		("Reserved0",                 uint32_t),    # 4C Alignment
+		("ExtendedModes",             uint64_t),    # 50 Extended Modes
+		("VTraps",                    uint32_t*8),  # 58 Virtual Trap Addresses
+		("Reserved1",                 uint32_t),    # 78 Alignment
+		# 7C
+	]
+
+	def mc_print(self) :
+		pt, pt_empty = mc_table(['Field', 'Value'], False, 0)
+		
+		vtraps_str = "".join("%0.4X" % val for val in self.VTraps)
+		if vtraps_str == '0000' * 8 : vtraps_str = '0000 * 8'
+		
+		pt.title = col_y + 'Freescale QEF Header' + col_e
+		pt.add_row(['Signature', '%s' % self.Signature.decode('utf-8')])
+		pt.add_row(['Name', '%s' % self.Name.decode('utf-8')])
+		pt.add_row(['Header', '%X' % self.HeaderVersion])
+		pt.add_row(['I-RAM', '%s' % ['Shared','Split'][self.IRAM]])
+		pt.add_row(['MC Count', '%X' % self.CountMC])
+		pt.add_row(['Total Size', '0x%X' % self.TotalSize])
+		pt.add_row(['SoC Model', '%0.4d' % self.Model])
+		pt.add_row(['SoC Major', '%X' % self.Major])
+		pt.add_row(['SoC Minor', '%X' % self.Minor])
+		pt.add_row(['Reserved', '%X' % self.Reserved0])
+		pt.add_row(['Extended Modes', '%0.8X' % self.ExtendedModes])
+		pt.add_row(['Virtual Traps', '%s' % vtraps_str])
+		pt.add_row(['Reserved', '%X' % self.Reserved1])
+		
+		print(pt)
+		
+# noinspection PyTypeChecker		
+class FSL_MC_Entry(ctypes.BigEndianStructure) :
+	_pack_   = 1
+	_fields_ = [
+		("Name",                      char*32),     # 00 Null-terminated ID String
+		("Traps",                     uint32_t*16), # 20 Trap Addresses (0 ignore)
+		("ECCR",                      uint32_t),    # 60 ECCR Register value
+		("IRAMOffset",                uint32_t),    # 64 Code Offset into I-RAM
+		("CodeLength",                uint32_t),    # 68 dwords (*4, 1st Entry only)
+		("CodeOffset",                uint32_t),    # 6C MC Offset (from 0x0, 1st Entry only)
+		("Major",                     uint8_t),     # 70 Major
+		("Minor",                     uint8_t),     # 71 Minor
+		("Revision",                  uint8_t),     # 72 Revision
+		("Reserved0",                 uint8_t),     # 73 Alignment
+		("Reserved1",                 uint32_t),    # 74 Future Expansion
+		# 78
+	]
+
+	def mc_print(self) :
+		pt, pt_empty = mc_table(['Field', 'Value'], False, 0)
+		
+		traps_str = "".join("%0.4X" % val for val in self.Traps)
+		if traps_str == '0000' * 16 : traps_str = '0000 * 16'
+		
+		pt.title = col_y + 'Freescale QEF Entry' + col_e
+		pt.add_row(['Name', '%s' % self.Name.decode('utf-8')])
+		pt.add_row(['Traps', '%s' % traps_str])
+		pt.add_row(['ECCR', '%0.8X' % self.ECCR])
+		pt.add_row(['I-RAM Offset', '0x%X' % self.IRAMOffset])
+		pt.add_row(['Code Length', '0x%X' % self.CodeLength])
+		pt.add_row(['Code Offset', '0x%X' % self.CodeOffset])
+		pt.add_row(['Major', '%X' % self.Major])
+		pt.add_row(['Minor', '%X' % self.Minor])
+		pt.add_row(['Revision', '%X' % self.Revision])
+		pt.add_row(['Reserved 0', '%X' % self.Reserved0])
+		pt.add_row(['Reserved 1', '%X' % self.Reserved1])
 		
 		print(pt)
 
@@ -412,10 +495,9 @@ def mce_help() :
 # Setup DB Tables
 def create_tables():
 	c.execute('CREATE TABLE IF NOT EXISTS MCE(revision INTEGER, developer INTEGER, date INTEGER)')
-	c.execute('CREATE TABLE IF NOT EXISTS Intel(cpuid BLOB, platform BLOB, version BLOB, yyyymmdd TEXT, size BLOB,\
-				checksum BLOB)')
-	c.execute('CREATE TABLE IF NOT EXISTS VIA(cpuid BLOB, signature TEXT, version BLOB, yyyymmdd TEXT, size BLOB,\
-				checksum BLOB)')
+	c.execute('CREATE TABLE IF NOT EXISTS Intel(cpuid BLOB, platform BLOB, version BLOB, yyyymmdd TEXT, size BLOB, checksum BLOB)')
+	c.execute('CREATE TABLE IF NOT EXISTS VIA(cpuid BLOB, signature TEXT, version BLOB, yyyymmdd TEXT, size BLOB, checksum BLOB)')
+	c.execute('CREATE TABLE IF NOT EXISTS FSL(name TEXT, model BLOB, major BLOB, minor BLOB, size BLOB, checksum BLOB, note TEXT)')
 	c.execute('CREATE TABLE IF NOT EXISTS AMD(cpuid BLOB, nbdevid BLOB, sbdevid BLOB, nbsbrev BLOB, version BLOB,\
 				yyyymmdd TEXT, size BLOB, chkbody BLOB, chkmc BLOB)')
 	
@@ -691,7 +773,7 @@ else :
 if not param.skip_intro :
 	mce_hdr()
 
-	print("\nWelcome to Intel, AMD & VIA Microcode Extractor\n")
+	print("\nWelcome to Intel, AMD, VIA & Freescale Microcode Extractor\n")
 
 	arg_num = len(sys.argv)
 	
@@ -751,30 +833,32 @@ if os.path.isfile(db_path) :
 else :
 	print(col_r + "\nError: MCE.db file is missing!" + col_e)
 	mce_exit(1)
-	
+
+# Search DB by CPUID (Intel/AMD/VIA) or Model (Freescale)
 if param.search :
 	# noinspection PyUnboundLocalVariable
 	if len(source) == 2 : i_cpuid = source[1] # -search CPUID expected
 	else : i_cpuid = input('\nEnter CPUID to search: ')
 	
 	# noinspection PyUnboundLocalVariable
-	res_i = c.execute('SELECT * FROM Intel WHERE cpuid=?', (i_cpuid,))
+	res_i = c.execute('SELECT * FROM Intel WHERE cpuid=? ORDER BY date(yyyymmdd) DESC', (i_cpuid,))
 	print('\n%s' % display_sql(res_i, col_b + 'Intel' + col_e, True, 1))
 	
-	res_a = c.execute('SELECT * FROM AMD WHERE cpuid=?', (i_cpuid,))
+	res_a = c.execute('SELECT * FROM AMD WHERE cpuid=? ORDER BY date(yyyymmdd) DESC', (i_cpuid,))
 	print('\n%s' % display_sql(res_a, col_r + 'AMD' + col_e, True, 1))
 	
-	res_v = c.execute('SELECT * FROM VIA WHERE cpuid=?', (i_cpuid,))
-	print('\n%s' % display_sql(res_v, col_b + 'VIA' + col_e, True, 1))
+	res_v = c.execute('SELECT * FROM VIA WHERE cpuid=? ORDER BY date(yyyymmdd) DESC', (i_cpuid,))
+	print('\n%s' % display_sql(res_v, col_c + 'VIA' + col_e, True, 1))
+	
+	res_f = c.execute('SELECT * FROM FSL WHERE model=? ORDER BY name DESC', (i_cpuid,))
+	print('\n%s' % display_sql(res_f, col_y + 'Freescale' + col_e, True, 1))
 	
 	mce_exit()
 
+# Build old DB format for UEFI BIOS Updater (UBU)
 if param.old_db :
 	# noinspection PyUnboundLocalVariable
-	res_i = (c.execute('SELECT * FROM Intel')).fetchall()
-	res_a = (c.execute('SELECT * FROM AMD')).fetchall()
-	res_v = (c.execute('SELECT * FROM VIA')).fetchall()
-	res_all = res_i + res_a + res_v
+	res_i = (c.execute('SELECT * FROM Intel')).fetchall() # Intel only
 	
 	res_m = (c.execute('SELECT * FROM MCE')).fetchall()
 	db_rev = 'r' + str(res_m[0][0])
@@ -783,10 +867,10 @@ if param.old_db :
 	if res_m[0][1] == 1 : db_dev = ' Dev'
 	else : db_dev = ''
 	
-	old_hdr = "MC Extractor Microcode Repository Database\nRevision %s%s (%s)\n\n" % (db_rev,db_dev,db_date)
+	old_hdr = "MC Extractor Intel Microcode Repository Database\nRevision %s%s (%s)\n\n" % (db_rev,db_dev,db_date)
 	
 	mct = ''
-	for mc in res_all :
+	for mc in res_i :
 		for field in mc :
 			mct += str(field)
 		mct += '\n'
@@ -808,9 +892,11 @@ for in_file in source :
 	msg_i = []
 	msg_a = []
 	msg_v = []
+	msg_f = []
 	match_list_i = []
 	match_list_a = []
 	match_list_v = []
+	match_list_f = []
 	mc_bgn_list_a = []
 	mc_conv_data = bytearray()
 	
@@ -1382,10 +1468,111 @@ for in_file in source :
 			with open(mc_path, 'wb') as mc_file : mc_file.write(mc_data)
 
 	if str(pt) != pt_empty :
-		pt.title = col_b + 'VIA' + col_e
+		pt.title = col_c + 'VIA' + col_e
 		print(pt)
 	for i in range(len(msg_v)) : print(msg_v[i])
-
+	if msg_i or msg_a or msg_v : print()
+	
+	# Freescale Microcodes
+	
+	# Signature QEF, Header Revision 01, I-RAM 0/1
+	pat_fcpu = re.compile(br'.{4}\x51\x45\x46\x01.{62}[\x00-\x01]', re.DOTALL)
+	
+	match_list_f += pat_fcpu.finditer(reading)
+	
+	total += len(match_list_f)
+	
+	if param.verbose : col_names = ['#', 'NAME', 'SOC-MODEL', 'SOC-MAJOR', 'SOC-MINOR', 'SIZE', 'CHECKSUM', 'OFFSET']
+	else : col_names = ['#', 'NAME', 'SOC-MODEL', 'SOC-MAJOR', 'SOC-MINOR']
+	
+	pt, pt_empty = mc_table(col_names, True, 1)
+	
+	for match_ucode in match_list_f :
+		
+		# noinspection PyRedeclaration
+		(mc_bgn, end_mc_match) = match_ucode.span()
+		
+		mc_hdr = get_struct(reading, mc_bgn, FSL_MC_Header)
+		
+		name = '%s' % mc_hdr.Name.decode('utf-8')
+		
+		model = '%0.4d' % mc_hdr.Model
+		
+		major = '%d' % mc_hdr.Major
+		
+		minor = '%d' % mc_hdr.Minor
+		
+		mc_len = mc_hdr.TotalSize
+		mc_len_db = '%0.8X' % mc_len
+		
+		mc_chk = '%0.8X' % int.from_bytes(reading[mc_bgn + mc_len - 4:mc_bgn + mc_len], 'big')
+		
+		# Print the Header(s)
+		if param.print_hdr :
+			mc_hdr.mc_print()
+			
+			qe_off = 0x7C # Header size
+			for qe_mc in range(mc_hdr.CountMC) :
+				qe_hdr = get_struct(reading, qe_off, FSL_MC_Entry)
+				qe_hdr.mc_print()
+				qe_off += 0x78 # Entry size
+			
+			continue
+		
+		mc_name = "soc%s_rev%s.%s_chk%s_[%s]" % (model, major, minor, mc_chk, name)
+		
+		mc_nr += 1
+		
+		mc_at_db = (c.execute('SELECT * FROM FSL WHERE name=? AND model=? AND major=? AND minor=? AND size=? AND checksum=?',
+				  (name, model, major, minor, mc_len_db, mc_chk,))).fetchone()
+		
+		if param.build_db :
+			if mc_at_db is None :
+				c.execute('INSERT INTO FSL (name, model, major, minor, size, checksum) VALUES (?,?,?,?,?,?)',
+						(name, model, major, minor, mc_len_db, mc_chk))
+			
+				c.execute('UPDATE MCE SET date=?', (int(time.time()),))
+			
+				conn.commit()
+			
+				print(col_g + "\nAdded Freescale: %s\n" % mc_name + col_e)
+			
+			continue
+		
+		if param.verbose : row = [mc_nr, name, model, major, minor, '0x%0.2X' % mc_len, mc_chk, '0x%0.2X' % mc_bgn]
+		else : row = [mc_nr, name, model, major, minor]
+		pt.add_row(row)
+		
+		mc_data = reading[mc_bgn:mc_bgn + mc_len]
+		
+		calc_crc = (binascii.crc32(mc_data[0:-4], -1) ^ -1) & 0xFFFFFFFF
+		
+		# Create extraction folder
+		if '-extr' in source : mc_extract = mce_dir + os_dir +  '..\Z_Extract\\CPU\\'
+		else : mc_extract = mce_dir + os_dir + 'Extracted' + os_dir + 'Freescale' + os_dir
+		if not os.path.exists(mc_extract) : os.makedirs(mc_extract)
+		
+		if calc_crc != int(mc_chk, 16) :
+			msg_f.append(col_m + '\nWarning: Microcode #%s is packed or badly extracted, please report it!\n' % mc_nr + col_e)
+			mc_path = mc_extract + '!Bad_%s%s.bin' % (mc_name,mc_file_name)
+		elif mc_at_db is None :
+			msg_f.append(col_g + '\nNote: Microcode #%s was not found at the database, please report it!\n' % mc_nr + col_e)
+			mc_path = mc_extract + '!New_%s%s.bin' % (mc_name,mc_file_name)
+		else :
+			mc_path = mc_extract + '%s.bin' % mc_name
+		
+		if not has_duplicate(mc_path, mc_data) :
+			baseName = os.path.basename(mc_path)
+			name_root, name_ext = os.path.splitext(baseName)
+			mc_path = auto_name (mc_extract, name_root, "_nr", "bin")[1]
+			
+			with open(mc_path, 'wb') as mc_file : mc_file.write(mc_data)
+	
+	if str(pt) != pt_empty :
+		pt.title = col_y + 'Freescale' + col_e
+		print(pt)
+	for i in range(len(msg_f)) : print(msg_f[i])
+	
 	if temp_file is not None :
 		temp_file.close()
 		os.remove(temp_file.name)
