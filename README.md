@@ -41,7 +41,7 @@ MC Extractor's main goal is to allow users to quickly extract, determine & repor
 
 #### **A3. Sources and Inspiration**
 
-MC Extractor is based on a fraction of [Lordkag's](http://www.win-raid.com/u369_lordkag.html) UEFIStrip tool so, first and foremost, I thank him a lot for all the work he does which inspired this project. Among others, great places to learn about microcodes are Intel's own download site and official documentation, Coreboot ([a](https://chromium.googlesource.com/chromiumos/third_party/coreboot/),[b](https://review.coreboot.org/cgit/coreboot.git/tree/src/cpu?id=HEAD),[c](https://review.coreboot.org/cgit/coreboot.git/tree/src/cpu/via/nano/update_ucode.h?id=HEAD)), [Microparse](https://github.com/ddcc/microparse) by Dominic Chen, Ben Hawkes's [Notes and Research](http://inertiawar.com/microcode/), Richard A Burton's [Microdecode](http://www.onlinecompiler.net/sourcecode&id=18684), [AIDA64 CPUID dumps](http://instlatx64.atw.hu/), [Sandpile CPUID](http://sandpile.org/x86/cpuid.htm), [Free Electrons]([a](http://lxr.free-electrons.com/source/arch/x86/include/asm/microcode_amd.h), [b](http://elixir.free-electrons.com/linux/latest/source/Documentation/powerpc/qe_firmware.txt)), [Freescale](http://opensource.freescale.com/firmware/) and many more which I may have forgotten but would have been here otherwise.
+MC Extractor is based on a fraction of [Lordkag's](http://www.win-raid.com/u369_lordkag.html) UEFIStrip tool so, first and foremost, I thank him a lot for all the work he does which inspired this project. Among others, great places to learn about microcodes are Intel's own download site and official documentation, Coreboot ([a](https://chromium.googlesource.com/chromiumos/third_party/coreboot/),[b](https://review.coreboot.org/cgit/coreboot.git/tree/src/cpu?id=HEAD),[c](https://review.coreboot.org/cgit/coreboot.git/tree/src/cpu/via/nano/update_ucode.h?id=HEAD)), [Microparse](https://github.com/ddcc/microparse) by Dominic Chen, Ben Hawkes's [Notes and Research](http://inertiawar.com/microcode/), Richard A Burton's [Microdecode](http://www.onlinecompiler.net/sourcecode&id=18684), [AIDA64 CPUID dumps](http://instlatx64.atw.hu/), [Sandpile CPUID](http://sandpile.org/x86/cpuid.htm), Free Electrons ([a](http://lxr.free-electrons.com/source/arch/x86/include/asm/microcode_amd.h), [b](http://elixir.free-electrons.com/linux/latest/source/Documentation/powerpc/qe_firmware.txt)), [Freescale](http://opensource.freescale.com/firmware/) and many more which I may have forgotten but would have been here otherwise.
 
 ## **B. How to use MC Extractor**
 
@@ -89,27 +89,27 @@ MC Extractor has been tested to be compatible with Windows Vista-10, Ubuntu 16.0
 
 To run MC Extractor's python script, you need to have the following 3rd party Python modules installed:
 
-* [Colorama](https://pypi.python.org/pypi/colorama)
-* [PTable](https://github.com/kxxoling/PTable)
+* [Colorama](https://pypi.python.org/pypi/colorama/)
+* [PTable](https://github.com/kxxoling/PTable/tree/master/)
 
 To build/freeze/compile MC Extractor's python script, you can use whatever you like. The following are verified to work:
 
-* [Py2exe](https://pypi.python.org/pypi/py2exe) (Windows)
-* [Py2app](https://pypi.python.org/pypi/py2app) (macOS)
-* [PyInstaller](https://pypi.python.org/pypi/PyInstaller/) (Windows/Linux/macOS)
+* [Py2exe](https://pypi.python.org/pypi/py2exe/) (Windows)
+* [Py2app](https://pypi.python.org/pypi/py2app/) (macOS)
+* [PyInstaller](https://github.com/pyinstaller/pyinstaller/tree/develop/) (Windows/Linux/macOS)
 
 #### **C3. Build/Freeze/Compile with PyInstaller**
 
 PyInstaller can build/freeze/compile MC Extractor at all three supported platforms, it is simple to run and gets updated often.
 
 1. Make sure you have Python 3.6 installed
-2. Use pip to install colorama module
-3. Use pip to install PTable module
-4. Use pip to install pyinstaller module
+2. Use pip to install colorama (PyPi)
+3. Use pip to install PTable (Github, master branch)
+4. Use pip to install PyInstaller (Github, develop branch)
 5. Open a command prompt and execute:
 
 > pyinstaller --noupx --onefile MCE.py
 
 At dist folder you should find the final MCE executable
 
-**Note:** You need to use the [develop PyInstaller branch](https://github.com/pyinstaller/pyinstaller/tree/develop) to build with Python 3.6 currently.
+**Note:** You need to use the [develop PyInstaller branch](https://github.com/pyinstaller/pyinstaller/tree/develop/) to build with Python 3.6 currently.
