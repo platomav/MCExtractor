@@ -59,10 +59,11 @@ There are various parameters which enhance or modify the default behavior of MC 
 * -skip : Skips options intro screen
 * -mass : Scans all files of a given directory
 * -info : Displays microcode header(s)
-* -false : Uses loose patterns (false positives)
+* -check : Copies skipped microcodes to check
 * -padd : Keeps padding of AMD microcodes
 * -file : Appends filename to New or Bad microcodes
 * -add : Adds new input microcode to DB
+* -dbname : Renames input file based on DB name
 * -cont : Extracts Intel containers (dat,inc,h,txt)
 * -search : Searches for microcodes based on CPUID
 * -verbose : Shows all microcode details
@@ -111,5 +112,3 @@ PyInstaller can build/freeze/compile MC Extractor at all three supported platfor
 > pyinstaller --noupx --onefile MCE.py
 
 At dist folder you should find the final MCE executable
-
-**Note:** You need to use the [develop PyInstaller branch](https://github.com/pyinstaller/pyinstaller/tree/develop/) to build with Python 3.6 currently.

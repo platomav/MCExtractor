@@ -1,3 +1,14 @@
+v1.7.0
+
+Added input file scanning progress counter (x/y)
+Added parameter -dbname to rename MC based on DB
+Added parameter -check to copy skipped MC files
+Fixed AMD detection pattern at Reserved fields
+Fixed Intel Extended Header checksum calculation
+Fixed wrong bytefield display at -info parameter
+Improved performance by x2.5 compared to 1.6.0
+Updated Microcode Repository Database to r38
+
 v1.6.0
 
 Added support for Freescale QEF Microcodes
