@@ -1,3 +1,8 @@
+v1.7.1
+
+Parameter -verbose now shows Intel Platform bits
+Fixed crash at input files initialization
+
 v1.7.0
 
 Added input file scanning progress counter (x/y)

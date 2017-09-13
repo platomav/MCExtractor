@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2017 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.7.0'
+title = 'MC Extractor v1.7.1'
 
 import os
 import re
@@ -744,12 +744,12 @@ def init_file(in_file,orig_file,temp,in_count,cur_count) :
 	mc_file_name = ''
 	
 	if not os.path.isfile(in_file) :
-		if any(p in in_file for p in param.val) : return 'continue', 'continue', 'continue'
+		if any(p in in_file for p in param.val) : return 'continue', 'continue', 'continue', 'continue'
 		
 		print(col_r + "\nError" + col_e + ": file %s was not found!\n" % force_ascii(in_file))
 		
 		if not param.mass_scan : mce_exit(1)
-		else : return 'continue', 'continue', 'continue'
+		else : return 'continue', 'continue', 'continue', 'continue'
 
 	with open(in_file, 'rb') as work_file :
 		reading = work_file.read()
@@ -946,7 +946,7 @@ for in_file in source :
 	cur_count += 1
 	
 	# noinspection PyRedeclaration
-	work_file, reading,file_end,mc_file_name = init_file(in_file,in_file,False,in_count,cur_count)
+	work_file,reading,file_end,mc_file_name = init_file(in_file,in_file,False,in_count,cur_count)
 	if reading == 'continue' : continue # Input is parameter, next file
 	
 	# Convert Intel containers (.dat , .inc , .h , .txt) to .bin
@@ -986,7 +986,7 @@ for in_file in source :
 		
 			temp_file.write(mc_conv_data)
 			
-			work_file, reading,file_end,mc_file_name = init_file(temp_file.name,in_file,True,in_count,cur_count)
+			work_file,reading,file_end,mc_file_name = init_file(temp_file.name,in_file,True,in_count,cur_count)
 			if reading == 'continue' : continue
 		
 		except :
@@ -1025,6 +1025,7 @@ for in_file in source :
 		
 		plat_db = '%0.8X' % mc_hdr.ProcessorFlags
 		plat_cut = '%0.2X' % mc_hdr.ProcessorFlags
+		plat_bit = intel_plat(mc_hdr.ProcessorFlags)
 		
 		mc_len = mc_hdr.TotalSize
 		if mc_len == 0 : mc_len = 2048
@@ -1122,7 +1123,7 @@ for in_file in source :
 		# Determine if MC is Latest or Outdated
 		mc_upd = mc_upd_chk(mc_dates)
 		
-		if param.verbose : row = [mc_nr, cpu_id, plat_cut, patch, full_date, '0x%0.2X' % mc_len, mc_chk, '0x%0.2X' % mc_bgn, mc_upd]
+		if param.verbose : row = [mc_nr, cpu_id, '%s %s' % (plat_cut, plat_bit), patch, full_date, '0x%0.2X' % mc_len, mc_chk, '0x%0.2X' % mc_bgn, mc_upd]
 		else : row = [mc_nr, cpu_id, plat_cut, patch, full_date, mc_upd]
 		pt.add_row(row)
 		
