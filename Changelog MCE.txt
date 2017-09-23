@@ -1,3 +1,11 @@
+v1.8.0 r40
+
+Added Drunk VIA employee 1, wrong MC Signature
+Added Drunk VIA employee 2, wrong MC Checksum
+Improved VIA_MC_Header, added CNRRev & fixed Name
+Improved VIA file naming, added Version & Checksum
+Fixed VIA Signature unicode character display issue
+
 v1.7.1
 
 Parameter -verbose now shows Intel Platform bits

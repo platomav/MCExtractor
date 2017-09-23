@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2017 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.7.1'
+title = 'MC Extractor v1.8.0'
 
 import os
 import re
@@ -361,23 +361,25 @@ class VIA_MC_Header(ctypes.LittleEndianStructure) :
 	_pack_   = 1
 	_fields_ = [
 		("Signature",                 char*4),    # 00 RRAS (Pattern)
-		("UpdateRevision",            uint32_t),  # 04 00000000 (Pattern)
+		("UpdateRevision",            uint32_t),  # 04
 		("Year",                      uint16_t),  # 08
 		("Day",                       uint8_t),   # 0A
 		("Month",                     uint8_t),   # 0B
 		("ProcessorSignature",        uint32_t),  # 0C
 		("Checksum",                  uint32_t),  # 10
 		("LoaderRevision",            uint32_t),  # 14 00000001 (Pattern)
-		("Reserved",                  uint32_t),  # 18 FFFFFFFF (Pattern)
+		("CNRRevision",               uint8_t),   # 18 0 CNR001 A0, 1 CNR001 A1
+		("Reserved",                  uint8_t*3), # 19 FFFFFF (Pattern)
 		("DataSize",                  uint32_t),  # 1C
 		("TotalSize",                 uint32_t),  # 20
-		("Name",                      char*8),    # 24
-		("Unknown",                   uint32_t),  # 2C
+		("Name",                      char*12),   # 24
 		# 30
 	]
 
 	def mc_print(self) :
 		full_date  = "%0.4d-%0.2d-%0.2d" % (self.Year, self.Month, self.Day)
+		
+		reserv_str = ''.join('%0.2X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.Reserved))
 		
 		pt, pt_empty = mc_table(['Field', 'Value'], False, 0)
 		
@@ -388,11 +390,14 @@ class VIA_MC_Header(ctypes.LittleEndianStructure) :
 		pt.add_row(['CPUID', '%0.8X' % self.ProcessorSignature])
 		pt.add_row(['Checksum', '%0.8X' % self.Checksum])
 		pt.add_row(['Loader', '%0.8X' % self.LoaderRevision])
-		pt.add_row(['Reserved', '%0.8X' % self.Reserved])
+		if self.CNRRevision != 0xFF :
+			pt.add_row(['CNR Revision', '001 A%d' % self.CNRRevision])
+			pt.add_row(['Reserved', '%s' % reserv_str])
+		else :
+			pt.add_row(['Reserved', 'FFFFFFFF'])
 		pt.add_row(['Data Size', '0x%0.2X' % self.DataSize])
 		pt.add_row(['Total Size', '0x%0.2X' % self.TotalSize])
-		pt.add_row(['Name', '%s' % self.Name.decode('utf-8')])
-		pt.add_row(['Unknown', '%0.8X' % self.Unknown])
+		pt.add_row(['Name', '%s' % self.Name.replace(b'\x7f', b'\x2e').decode('utf-8')])
 		
 		print(pt)
 
@@ -544,16 +549,12 @@ def show_exception_and_exit(exc_type, exc_value, tb) :
 def adler32(data) :
 	return zlib.adler32(data) & 0xFFFFFFFF
 	
-def checksum32(data) :
-	if not data :
-		print(col_r + '\nError: Empty data\n' + col_e)
-		return 0
-	
+def checksum32(data) :	
 	chk32 = 0
 	
 	for idx in range(0, len(data), 4) : # Move 4 bytes at a time
 		chkbt = int.from_bytes(data[idx:idx + 4], 'little') # Convert to int, MSB at the end (LE)
-		chk32 = chk32 + chkbt
+		chk32 += chkbt
 	
 	return -chk32 & 0xFFFFFFFF # Return 0
 
@@ -737,8 +738,7 @@ def mce_hdr() :
 		except :
 			pass
 		
-	print("\n-------[ %s ]-------" % title)
-	print("            Database  %s%s" % (db_rev,db_dev))
+	print("\n-------[ %s %s%s ]-------" % (title, db_rev, db_dev))
 
 def init_file(in_file,orig_file,temp,in_count,cur_count) :
 	mc_file_name = ''
@@ -919,8 +919,8 @@ pat_icpu = re.compile(br'\x01\x00{3}.{4}[\x00-\x99](([\x19-\x20][\x01-\x31][\x01
 # AMD - Year 2000+, Month 1-13, DataId, BiosApiRev 00-01, Reserved 00|AA
 pat_acpu = re.compile(br'[\x00-\x18]\x20[\x01-\x31][\x01-\x13].{4}[\x00-\x04]\x80.{18}[\x00-\x01](\x00{3}|\xAA{3})', re.DOTALL)
 
-# VIA - Signature RRAS, Loader Revision 01, Reserved FF
-pat_vcpu = re.compile(br'\x52\x52\x41\x53.{16}\x01\x00{3}\xFF{4}', re.DOTALL)
+# VIA - Signature RRAS, Loader Revision 01
+pat_vcpu = re.compile(br'\x52\x52\x41\x53.{16}\x01\x00{3}', re.DOTALL)
 
 # Freescale - Signature QEF, Header Revision 01
 pat_fcpu = re.compile(br'\x51\x45\x46\x01.{62}[\x00-\x01]', re.DOTALL)
@@ -1042,7 +1042,7 @@ for in_file in source :
 			date_chk = datetime.datetime.strptime(full_date, '%Y-%m-%d')
 			if date_chk.year > 2017 or date_chk.year < 1993 : raise Exception('WrongDate') # 1st MC from 1995 (P6), 1993 for safety
 		except :
-			if full_date == '1896-00-07' and patch == '000000D1' : pass # Drunk Intel employee #1, Happy 0th month from 19th century Intel!
+			if full_date == '1896-00-07' and patch == '000000D1' : pass # Drunk Intel employee 1, Happy 0th month from 19th century Intel!
 			else :
 				if param.verbose : msg_i.append(col_m + "\nWarning: Skipped Intel microcode at 0x%0.2X, invalid Date of %s!" % (mc_bgn, full_date) + col_e)
 				if param.exp_check : mc_verbose(work_file)
@@ -1209,7 +1209,7 @@ for in_file in source :
 		
 		nbsb_rev_id = '%0.2X' % mc_hdr.NbRevId + '%0.2X' % mc_hdr.SbRevId
 		
-		if cpu_id == '00800F11' and patch == '08001105' and year == '2016' : year = '2017' # Drunk AMD employee #2, Zen in January 2016!
+		if cpu_id == '00800F11' and patch == '08001105' and year == '2016' : year = '2017' # Drunk AMD employee 2, Zen in January 2016!
 		
 		full_date = "%s-%s-%s" % (year, month, day)
 		
@@ -1219,7 +1219,7 @@ for in_file in source :
 			
 			if date_chk.year > 2017 or date_chk.year < 2000 : raise Exception('WrongDate') # 1st MC from 1999 (K7), 2000 for K7 Erratum and performance
 		except :
-			if full_date == '2011-13-09' and patch == '03000027' : pass # Drunk AMD employee #1, Happy 13th month from AMD!
+			if full_date == '2011-13-09' and patch == '03000027' : pass # Drunk AMD employee 1, Happy 13th month from AMD!
 			else :
 				if param.verbose : msg_a.append(col_m + "\nWarning: Skipped AMD microcode at 0x%0.2X, invalid Date of %s!" % (mc_bgn, full_date) + col_e)
 				if param.exp_check : mc_verbose(work_file)
@@ -1408,8 +1408,7 @@ for in_file in source :
 		
 		mc_hdr = get_struct(reading, mc_bgn, VIA_MC_Header)
 		
-		patch = '%0.2X' % mc_hdr.UpdateRevision
-		patch_db = '%0.8X' % mc_hdr.UpdateRevision
+		patch = '%0.8X' % mc_hdr.UpdateRevision
 		
 		year = '%0.4d' % mc_hdr.Year
 		
@@ -1424,7 +1423,7 @@ for in_file in source :
 		
 		mc_chk = '%0.8X' % mc_hdr.Checksum
 		
-		name = '%s' % str(mc_hdr.Name).strip("b'")
+		name = '%s' % mc_hdr.Name.replace(b'\x7f', b'\x2e').decode('utf-8') # Replace 0x7f "control" character with 0x2e "fullstop" instead
 		
 		full_date = "%s-%s-%s" % (year, month, day)
 		
@@ -1433,7 +1432,6 @@ for in_file in source :
 			date_chk = datetime.datetime.strptime(full_date, '%Y-%m-%d')
 			if date_chk.year > 2017 or date_chk.year < 2006 : raise Exception('WrongDate') # 1st MC from 2008 (Nano), 2006 for safety
 		except :
-			# VIA is sober? No drunk VIA employee ???
 			if param.verbose : msg_v.append(col_m + "\nWarning: Skipped VIA microcode at 0x%0.2X, invalid Date of %s!\n" % (mc_bgn, full_date) + col_e)
 			if param.exp_check : mc_verbose(work_file)
 			skip += 1
@@ -1444,16 +1442,16 @@ for in_file in source :
 			mc_hdr.mc_print()
 			continue
 		
-		mc_name = "cpu%s_sig%s_size%s_date%s" % (cpu_id, name, mc_len_db, full_date)
+		mc_name = "cpu%s_ver%s_sig%s_chk%s_date%s" % (cpu_id, patch, name, mc_chk, full_date)
 		mc_nr += 1
 		
 		mc_at_db = (c.execute('SELECT * FROM VIA WHERE cpuid=? AND signature=? AND version=? AND yyyymmdd=? AND size=? AND checksum=?',
-				  (cpu_id, name, patch_db, year + month + day, mc_len_db, mc_chk,))).fetchone()
+				  (cpu_id, name, patch, year + month + day, mc_len_db, mc_chk,))).fetchone()
 		
 		if param.build_db :
 			if mc_at_db is None :
 				c.execute('INSERT INTO VIA (cpuid, signature, version, yyyymmdd, size, checksum) VALUES (?,?,?,?,?,?)',
-						(cpu_id, name, patch_db, year + month + day, mc_len_db, mc_chk))
+						(cpu_id, name, patch, year + month + day, mc_len_db, mc_chk))
 			
 				c.execute('UPDATE MCE SET date=?', (int(time.time()),))
 			
@@ -1488,8 +1486,13 @@ for in_file in source :
 		if not os.path.exists(mc_extract) : os.makedirs(mc_extract)
 		
 		if valid_chk != 0 :
-			msg_v.append(col_m + '\nWarning: Microcode #%s is packed or badly extracted, please report it!\n' % mc_nr + col_e)
-			mc_path = mc_extract + '!Bad_%s%s.bin' % (mc_name,mc_file_name)
+			if full_date == '2011-08-09' and name == '06FA03BB0' and mc_chk == '9B86F886' : # Drunk VIA employee 1, Signature is 06FA03BB0 instead of 06FA003BB
+				mc_path = mc_extract + "%s.bin" % mc_name
+			elif full_date == '2011-08-09' and name == '06FE105A' and mc_chk == '8F396F73' : # Drunk VIA employee 2, Checksum for Reserved FF*4 instead of 00FF*3
+				mc_path = mc_extract + "%s.bin" % mc_name
+			else :
+				msg_v.append(col_m + '\nWarning: Microcode #%s is packed or badly extracted, please report it!\n' % mc_nr + col_e)
+				mc_path = mc_extract + '!Bad_%s%s.bin' % (mc_name,mc_file_name)
 		elif mc_at_db is None :
 			msg_v.append(col_g + '\nNote: Microcode #%s was not found at the database, please report it!\n' % mc_nr + col_e)
 			mc_path = mc_extract + '!New_%s%s.bin' % (mc_name,mc_file_name)
