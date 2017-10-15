@@ -24,7 +24,6 @@ MC Extractor is a tool which can extract Intel, AMD, VIA and Freescale processor
 - Shows microcode header structures and details on demand
 - Ignores most false positives based on sanity checks
 - Supports certain special, fixed or modded microcodes
-- Ability to extract AMD microcodes with or without padding
 - Ability to quickly add new microcode entries to the database
 - Ability to use loose patterns for debugging or future proofing
 - Ability to analyze multiple files by drag & drop or by input path
@@ -60,7 +59,6 @@ There are various parameters which enhance or modify the default behavior of MC 
 * -mass : Scans all files of a given directory
 * -info : Displays microcode header(s)
 * -check : Copies skipped microcodes to check
-* -padd : Keeps padding of AMD microcodes
 * -file : Appends filename to New or Bad microcodes
 * -add : Adds new input microcode to DB
 * -dbname : Renames input file based on DB name

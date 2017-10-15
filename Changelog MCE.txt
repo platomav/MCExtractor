@@ -1,3 +1,10 @@
+v1.9.0 r41
+
+Improved AMD Ryzen microcode size detection
+Improved microcode info & structure display
+Removed parameter -padd to keep AMD padding
+Various code & text fixes and improvements
+
 v1.8.0 r40
 
 Added Drunk VIA employee 1, wrong MC Signature
