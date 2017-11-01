@@ -7,11 +7,11 @@ Intel, AMD, VIA &amp; Freescale Microcode Extraction Tool
 
 [![MC Extractor Donation](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=DJDZD3PRGCSCL)
 
-![](https://i.imgur.com/3EP7N82.png)
+![](https://i.imgur.com/APMAJ5H.png)
 
 ## **A. About MC Extractor**
 
-MC Extractor is a tool which can extract Intel, AMD, VIA and Freescale processor microcode binaries. It can be used to identify what microcodes your BIOS/SPI holds, verify their integrity, whether they are updated, show details about them, check if they exist at the microcode repository etc.
+MC Extractor is a tool which can extract Intel, AMD, VIA and Freescale processor microcode binaries. It can be used by both end-users and researchers to identify what microcodes your BIOS/SPI holds, verify their integrity, whether they are updated, show details about them, check if they exist at the microcode repository etc.
 
 #### **A1. MC Extractor Features**
 
@@ -25,7 +25,7 @@ MC Extractor is a tool which can extract Intel, AMD, VIA and Freescale processor
 - Ignores most false positives based on sanity checks
 - Supports certain special, fixed or modded microcodes
 - Ability to quickly add new microcode entries to the database
-- Ability to use loose patterns for debugging or future proofing
+- Ability to detect Intel Production/Pre-Production Release tag
 - Ability to analyze multiple files by drag & drop or by input path
 - Ability to ignore extracted duplicates based on name and contents
 - Reports all microcodes which are not found at the Microcode Repository Database
@@ -36,11 +36,11 @@ MC Extractor is a tool which can extract Intel, AMD, VIA and Freescale processor
 
 #### **A2. Microcode Repository Database**
 
-MC Extractor's main goal is to allow users to quickly extract, determine & report new microcode versions without the use of special tools or Hex Editors. To do that effectively, a database had to be built. Its existence is very important for MC Extractor as it allows us to find new types of microcode, compare releases for similarities, check for updated binaries etc. Bundled with MC Extractor is a file called MCE.db which is required for the program to run. It includes all the Microcodes that have been found so far. This accommodates two actions: a) Check whether the imported microcode is up to date and b) Help find new Microcode releases sooner by reporting them.
+MC Extractor allows end-users and/or researchers to quickly extract, determine & report new microcode versions without the use of special tools or Hex Editors. To do that effectively, a database had to be built. Its existence is very important for MC Extractor as it allows us to find new types of microcode, compare releases for similarities, check for updated binaries etc. Bundled with MC Extractor is a file called MCE.db which is required for the program to run. It includes all the Microcodes entries that have been found so far. This accommodates two actions: a) Check whether the imported microcode is up to date and b) Help find new Microcode releases sooner by reporting them.
 
 #### **A3. Sources and Inspiration**
 
-MC Extractor is based on a fraction of [Lordkag's](http://www.win-raid.com/u369_lordkag.html) UEFIStrip tool so, first and foremost, I thank him a lot for all the work he does which inspired this project. Among others, great places to learn about microcodes are Intel's own download site and official documentation, Coreboot ([a](https://chromium.googlesource.com/chromiumos/third_party/coreboot/),[b](https://review.coreboot.org/cgit/coreboot.git/tree/src/cpu?id=HEAD),[c](https://review.coreboot.org/cgit/coreboot.git/tree/src/cpu/via/nano/update_ucode.h?id=HEAD)), [Microparse](https://github.com/ddcc/microparse) by Dominic Chen, Ben Hawkes's [Notes and Research](http://inertiawar.com/microcode/), Richard A Burton's [Microdecode](http://www.onlinecompiler.net/sourcecode&id=18684), [AIDA64 CPUID dumps](http://instlatx64.atw.hu/), [Sandpile CPUID](http://sandpile.org/x86/cpuid.htm), Free Electrons ([a](http://lxr.free-electrons.com/source/arch/x86/include/asm/microcode_amd.h), [b](http://elixir.free-electrons.com/linux/latest/source/Documentation/powerpc/qe_firmware.txt)), [Freescale](http://opensource.freescale.com/firmware/) and many more which I may have forgotten but would have been here otherwise.
+MC Extractor was initially based on a fraction of [Lordkag's](http://www.win-raid.com/u369_lordkag.html) UEFIStrip tool so, first and foremost, I thank him for all his work which inspired this project. Among others, great places to learn about microcodes are Intel's own download site and official documentation, Coreboot ([a](https://chromium.googlesource.com/chromiumos/third_party/coreboot/),[b](https://review.coreboot.org/cgit/coreboot.git/tree/src/cpu?id=HEAD),[c](https://review.coreboot.org/cgit/coreboot.git/tree/src/cpu/via/nano/update_ucode.h?id=HEAD)), [Microparse](https://github.com/ddcc/microparse) by Dominic Chen, Ben Hawkes's [Notes and Research](http://inertiawar.com/microcode/), Richard A Burton's [Microdecode](http://www.onlinecompiler.net/sourcecode&id=18684), [AIDA64 CPUID dumps](http://instlatx64.atw.hu/), [Sandpile CPUID](http://sandpile.org/x86/cpuid.htm), Free Electrons ([a](http://lxr.free-electrons.com/source/arch/x86/include/asm/microcode_amd.h), [b](http://elixir.free-electrons.com/linux/latest/source/Documentation/powerpc/qe_firmware.txt)), [Freescale](http://opensource.freescale.com/firmware/) and many more which I may have forgotten but would have been here otherwise.
 
 ## **B. How to use MC Extractor**
 
@@ -82,7 +82,7 @@ MC Extractor is developed using Python 3.6 and can work under Windows, Linux and
 
 #### **C1. Compatibility**
 
-MC Extractor has been tested to be compatible with Windows Vista-10, Ubuntu 16.04 and macOS Sierra operating systems. It is generally expected to work at all Windows, Linux or macOS operating systems which have Python 3.6 support but feel free to test it. Any latter v3.x releases might work depending on whether MCE's prerequisites are also compatible. Windows Vista-8.1 users who plan to use the already built/frozen/compiled binaries must make sure that they have the latest Windows Updates installed which include all required "Universal C Runtime (CRT)" libraries.
+MC Extractor has been tested to be compatible with Windows Vista-10, Ubuntu 16.04+ and macOS Sierra+ operating systems. It is generally expected to work at all Windows, Linux or macOS operating systems which have Python 3.6 support but feel free to test it. Any latter v3.x releases might work depending on whether MCE's prerequisites are also compatible. Windows Vista-8.1 users who plan to use the already built/frozen/compiled binaries must make sure that they have the latest Windows Updates installed which include all required "Universal C Runtime (CRT)" libraries.
 
 #### **C2. Code Prerequisites**
 

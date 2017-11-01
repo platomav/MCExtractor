@@ -1,3 +1,10 @@
+v1.10.0 r43
+
+Added Intel Production/Pre-Production Release detection
+Added better Intel Status detection based on Platforms
+Improved all microcode info & structure display
+Improved all microcode extracted file names
+
 v1.9.0 r41
 
 Improved AMD Ryzen microcode size detection
