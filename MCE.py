@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2017 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.11.0'
+title = 'MC Extractor v1.11.1'
 
 import os
 import re
@@ -172,13 +172,14 @@ class Intel_MC_Header(ctypes.LittleEndianStructure) :
 class Intel_MC_Header_Extra(ctypes.LittleEndianStructure) :
 	_pack_   = 1
 	_fields_ = [
-		("HeaderType",                uint32_t),    # 00 00000000
-		("HeaderSize",			      uint32_t),    # 04 dwords
+		("ModuleType",                uint16_t),    # 00 0000 (always)
+		("ModuleSubType",             uint16_t),    # 02 0000 (always)
+		("ModuleSize",			      uint32_t),    # 04 dwords
 		("Flags",                     uint16_t),    # 08 0 RSA Signed, 1-31 Reserved
 		("Unknown1",                  uint16_t),    # 0A 0002 (always)
 		("UpdateRevision",            uint32_t),    # 0C Signed to signify PRD/PRE
 		("VCN",                  	  uint32_t),    # 10 Version Control Number
-		("Unknown2",     			  uint32_t),    # 14 dwords from Extra, UpdateSize, Empty etc
+		("MultiPurpose1",     	      uint32_t),    # 14 dwords from Extra, UpdateSize, Empty etc
 		("Day",                       uint8_t),     # 18
 		("Month",                     uint8_t),     # 19
 		("Year",                      uint16_t),    # 1A
@@ -192,16 +193,12 @@ class Intel_MC_Header_Extra(ctypes.LittleEndianStructure) :
 		("ProcessorSignature5",		  uint32_t),    # 38
 		("ProcessorSignature6",		  uint32_t),    # 3C
 		("ProcessorSignature7",		  uint32_t),    # 40
-		("Unknown3",      			  uint32_t),    # 44 dwords from Extra + encrypted padding, UpdateSize, Platform, Empty
+		("MultiPurpose2",      	      uint32_t),    # 44 dwords from Extra + encrypted padding, UpdateSize, Platform, Empty
 		("SVN",     				  uint32_t),    # 48 Security Version Number
-		("Unknown4",                  uint32_t),    # 4C 00000000 (always, Reserved probably)
-		("Unknown5",                  uint32_t),    # 50 00000000 (always, Reserved probably)
-		("Unknown6",                  uint32_t),    # 54 00000000 (always, Reserved probably)
-		("Unknown7",                  uint32_t),    # 58 00000000 (always, Reserved probably)
-		("Unknown8",                  uint32_t),    # 5C 00000000 (always, Reserved probably)
-		("Unknown9",                  uint32_t*8),  # 60 256-bit hash probably
+		("Reserved",                  uint32_t*5),  # 4C Reserved (00000000)
+		("Unknown2",                  uint32_t*8),  # 60 256-bit hash probably
 		("RSAPublicKey",              uint32_t*64), # 80
-		("RSAExponent",               uint32_t),    # 180
+		("RSAExponent",               uint32_t),    # 180 0x11 = 17 (always)
 		("RSASignature",              uint32_t*64), # 184
 		# 284
 	]
@@ -211,24 +208,26 @@ class Intel_MC_Header_Extra(ctypes.LittleEndianStructure) :
 		
 		f1,f2 = self.get_flags()
 		
-		Unknown9 = ''.join('%0.8X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.Unknown9))
+		Reserved = int.from_bytes(self.Reserved, 'little')
+		Unknown2 = ''.join('%0.8X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.Unknown2))
 		RSAPublicKey = ''.join('%0.8X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.RSAPublicKey))
 		RSASignature = ''.join('%0.8X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.RSASignature))
 		
 		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
 		
 		pt.title = col_b + 'Intel Header Extra' + col_e
-		pt.add_row(['Header Type', '%d' % self.HeaderType])
-		pt.add_row(['Header Size', '0x%X' % (self.HeaderSize * 4)])
+		pt.add_row(['Module Type', '%d' % self.ModuleType])
+		pt.add_row(['Module Sub Type', '%d' % self.ModuleSubType])
+		pt.add_row(['Module Size', '0x%X' % (self.ModuleSize * 4)])
 		pt.add_row(['RSA Signed', ['No','Yes'][f1]])
-		pt.add_row(['Flags', '0x%X' % f2])
+		pt.add_row(['Flags Reserved', '0x%X' % f2])
 		pt.add_row(['Unknown 1', '0x%X' % self.Unknown1])
 		pt.add_row(['Update Version', '%X' % self.UpdateRevision])
 		pt.add_row(['Version Control Number', '%d' % self.VCN])
-		if self.Unknown2 == mc_hdr.ProcessorFlags : pt.add_row(['Platform (MP1)', '%0.2X %s' % (self.Unknown2, intel_plat(mc_hdr.ProcessorFlags))])
-		elif self.Unknown2 * 4 == self.UpdateSize * 4 : pt.add_row(['Update Size (MP1)', '0x%X' % (self.Unknown2 * 4)])
-		elif self.Unknown2 * 4 == file_end - 0x30 : pt.add_row(['Padded Size (MP1)', '0x%X' % (self.Unknown2 * 4)])
-		else : pt.add_row(['Multi Purpose 1', '0x%X' % self.Unknown2])
+		if self.MultiPurpose1 == mc_hdr.ProcessorFlags : pt.add_row(['Platform (MP1)', '%0.2X %s' % (self.MultiPurpose1, intel_plat(mc_hdr.ProcessorFlags))])
+		elif self.MultiPurpose1 * 4 == self.UpdateSize * 4 : pt.add_row(['Update Size (MP1)', '0x%X' % (self.MultiPurpose1 * 4)])
+		elif self.MultiPurpose1 * 4 == file_end - 0x30 : pt.add_row(['Padded Size (MP1)', '0x%X' % (self.MultiPurpose1 * 4)])
+		else : pt.add_row(['Multi Purpose 1', '0x%X' % self.MultiPurpose1])
 		pt.add_row(['Date', '%0.4X-%0.2X-%0.2X' % (self.Year, self.Month, self.Day)])
 		pt.add_row(['Update Size', '0x%X' % (self.UpdateSize * 4)])
 		pt.add_row(['CPU Signatures', '%d' % self.ProcessorSignatureCount])
@@ -240,17 +239,13 @@ class Intel_MC_Header_Extra(ctypes.LittleEndianStructure) :
 		if self.ProcessorSignature5 != 0 : pt.add_row(['CPUID 5', '%0.5X' % self.ProcessorSignature5])
 		if self.ProcessorSignature6 != 0 : pt.add_row(['CPUID 6', '%0.5X' % self.ProcessorSignature6])
 		if self.ProcessorSignature7 != 0 : pt.add_row(['CPUID 7', '%0.5X' % self.ProcessorSignature7])
-		if self.Unknown3 == mc_hdr.ProcessorFlags : pt.add_row(['Platform (MP2)', '%0.2X %s' % (self.Unknown3, intel_plat(mc_hdr.ProcessorFlags))])
-		elif self.Unknown3 * 4 == self.UpdateSize * 4 : pt.add_row(['Update Size (MP2)', '0x%X' % (self.Unknown3 * 4)])
-		elif self.Unknown3 * 4 == file_end - 0x30 : pt.add_row(['Padded Size (MP2)', '0x%X' % (self.Unknown3 * 4)])
-		else : pt.add_row(['Multi Purpose 2', '0x%X' % self.Unknown3])
+		if self.MultiPurpose2 == mc_hdr.ProcessorFlags : pt.add_row(['Platform (MP2)', '%0.2X %s' % (self.MultiPurpose2, intel_plat(mc_hdr.ProcessorFlags))])
+		elif self.MultiPurpose2 * 4 == self.UpdateSize * 4 : pt.add_row(['Update Size (MP2)', '0x%X' % (self.MultiPurpose2 * 4)])
+		elif self.MultiPurpose2 * 4 == file_end - 0x30 : pt.add_row(['Padded Size (MP2)', '0x%X' % (self.MultiPurpose2 * 4)])
+		else : pt.add_row(['Multi Purpose 2', '0x%X' % self.MultiPurpose2])
 		pt.add_row(['Security Version Number', '%d' % self.SVN])
-		if self.Unknown4 != 0 : pt.add_row(['Unknown 4', '0x%X' % self.Unknown4])
-		if self.Unknown5 != 0 : pt.add_row(['Unknown 5', '0x%X' % self.Unknown5])
-		if self.Unknown6 != 0 : pt.add_row(['Unknown 6', '0x%X' % self.Unknown6])
-		if self.Unknown7 != 0 : pt.add_row(['Unknown 7', '0x%X' % self.Unknown7])
-		if self.Unknown8 != 0 : pt.add_row(['Unknown 8', '0x%X' % self.Unknown8])
-		pt.add_row(['Unknown Hash', '%s [...]' % Unknown9[:8]])
+		pt.add_row(['Reserved', '0x%X' % Reserved])
+		pt.add_row(['Unknown 2', '%s [...]' % Unknown2[:8]])
 		pt.add_row(['RSA Public Key', '%s [...]' % RSAPublicKey[:8]])
 		pt.add_row(['RSA Exponent', '0x%X' % self.RSAExponent])
 		pt.add_row(['RSA Signature', '%s [...]' % RSASignature[:8]])
