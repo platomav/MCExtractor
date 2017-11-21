@@ -1,3 +1,7 @@
+v1.11.1 r45
+
+Updated Intel Extra Header undocumented fields
+
 v1.11.0 r44
 
 Added AMD microcode CPUID 00810F size detection
