@@ -3,10 +3,10 @@
 """
 MC Extractor
 Intel, AMD, VIA & Freescale Microcode Extractor
-Copyright (C) 2016-2017 Plato Mavropoulos
+Copyright (C) 2016-2018 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.11.1'
+title = 'MC Extractor v1.12.0'
 
 import os
 import re
@@ -43,7 +43,7 @@ elif mce_os.startswith('linux') or mce_os == 'darwin' :
 	cl_wipe = 'clear'
 	os_dir = '//'
 else :
-	print(col_r + '\nError: ' + col_e + 'Unsupported platform: %s\n' % mce_os)
+	print(col_r + '\nError: ' + col_e + 'Unsupported platform "%s"\n' % mce_os)
 	input('Press enter to exit')
 	colorama.deinit()
 	sys.exit(-1)
@@ -68,7 +68,8 @@ def mce_help() :
 	text += "-dbname  : Renames input file based on DB name\n"
 	text += "-cont    : Extracts Intel containers (dat,inc,h,txt)\n"
 	text += "-search  : Searches for microcodes based on CPUID\n"
-	text += "-verbose : Shows all microcode details"
+	text += "-repo    : Builds microcode repositories from input\n"
+	text += "-verbose : Shows all microcode details and messages"
 	
 	if mce_os == 'win32' :
 		text += "\n-extr    : Lordkag's UEFIStrip mode"
@@ -80,7 +81,7 @@ class MCE_Param :
 
 	def __init__(self,source) :
 	
-		self.all = ['-?','-skip','-info','-add','-file','-check','-extr','-cont','-mass','-verbose','-search','-olddb','-dbname']
+		self.all = ['-?','-skip','-info','-add','-file','-check','-extr','-cont','-mass','-verbose','-search','-olddb','-dbname','-repo']
 		
 		self.win = ['-extr'] # Windows only
 		
@@ -102,6 +103,7 @@ class MCE_Param :
 		self.old_db = False
 		self.search = False
 		self.give_db_name = False
+		self.build_repo = False
 		
 		for i in source :
 			if i == '-?' : self.help_scr = True
@@ -116,11 +118,12 @@ class MCE_Param :
 			if i == '-olddb' : self.old_db = True
 			if i == '-search' : self.search = True
 			if i == '-dbname' : self.give_db_name = True
+			if i == '-repo' : self.build_repo = True
 			
 			if mce_os == 'win32' : # Windows only options
 				if i == '-extr': self.mce_extr = True
 			
-		if self.mce_extr or self.mass_scan or self.search : self.skip_intro = True
+		if self.mce_extr or self.mass_scan or self.search or self.build_repo : self.skip_intro = True
 		if self.mce_extr : self.verbose = True
 
 # noinspection PyTypeChecker
@@ -646,6 +649,16 @@ def mc_db_name(work_file, in_file, mc_name) :
 	elif os.path.basename(in_file) == mc_name + '.bin' : pass
 	else : print(col_r + 'Error: ' + col_e + 'A file with the same name already exists!')
 
+def db_new_MCE() :
+	db_is_dev = (c.execute('SELECT developer FROM MCE')).fetchone()[0]
+	db_rev_now = (c.execute('SELECT revision FROM MCE')).fetchone()[0]
+	
+	c.execute('UPDATE MCE SET date=?', (int(time.time()),))
+	
+	if db_is_dev == 0 :
+		c.execute('UPDATE MCE SET revision=?', (db_rev_now + 1,))
+		c.execute('UPDATE MCE SET developer=1')
+	
 def mc_verbose(work_file) :
 	work_file.close()
 	suffix = 0
@@ -661,31 +674,32 @@ def mc_verbose(work_file) :
 		
 	shutil.copyfile(in_file, check_dir + file_name)
 	
-def mc_upd_chk_intel(mc_upd_chk_rsl) :
+def mc_upd_chk_intel(mc_upd_chk_rsl, plat_bit, rel_file) :
 	mc_latest = True
 	
 	for entry in mc_upd_chk_rsl :
 		dd = entry[0][6:8]
 		mm = entry[0][4:6]
 		yyyy = entry[0][:4]
-		mc_pl = intel_plat(int(entry[1], 16)) # Platforms of DB Entry with same CPUID as Input
+		mc_pl = intel_plat(int(entry[1], 16)) # Platforms of DB entry with same CPUID as Input
+		mc_rel = 'PRE' if ctypes.c_int(int(entry[2], 16)).value < 0 else 'PRD' # Release of DB entry with same CPUID as Input
 		
 		# Input Platforms less than DB Platforms, but within the latter (ex: Input 0,3,4 within DB 0,1,3,4,7)
-		if len(plat_bit) < len(mc_pl) and set(plat_bit).issubset(mc_pl) :
+		if rel_file == mc_rel and len(plat_bit) < len(mc_pl) and set(plat_bit).issubset(mc_pl) :
 			if year < yyyy or (year == yyyy and (month < mm or (month == mm and (day == dd or day < dd)))) :
 				# Input within DB Entry, Input date older than DB Entry
 				mc_latest = False # Upon equal Date, DB prevails
 			# Input within DB Entry, Input date newer than DB Entry
 		# DB Platforms less than Input Platforms, but within the latter (ex: DB 0,3,4 within Input 0,1,3,4,7)
-		elif len(plat_bit) > len(mc_pl) and set(mc_pl).issubset(plat_bit) :
+		elif rel_file == mc_rel and len(plat_bit) > len(mc_pl) and set(mc_pl).issubset(plat_bit) :
 			# Nothing to do, the more Input Platforms the better (Date ignored)
 			pass
 		# Input Platforms != DB Platforms and not within each other, separate Platforms (ex: Input 0,3,4,5 with DB 1,2,6,7)
-		elif plat_bit != mc_pl :
+		elif rel_file == mc_rel and plat_bit != mc_pl :
 			# Nothing to do, Input & DB Platforms are not affiliated with each other (Date ignored)
 			pass
 		# Input Platforms = DB Platforms, check Date
-		else :
+		elif rel_file == mc_rel :
 			if year < yyyy or (year == yyyy and (month < mm or (month == mm and day < dd))) :
 				# Input = DB, Input date older than DB Entry
 				mc_latest = False # Equal date at same CPUID & Platform means Latest
@@ -714,6 +728,13 @@ def mc_upd_chk(mc_dates) :
 	
 	return mc_upd
 	
+def build_mc_repo(vendor, mc_upd, rel_file) :
+	if 'Latest' in mc_upd and ((vendor == 'INTEL' and rel_file == 'PRD') or (vendor in ['AMD','VIA'])) :
+		repo_name = os.path.basename(in_file)
+		repo_dir = mce_dir + os_dir + '__REPO_%s__' % vendor + os_dir
+		if not os.path.isdir(repo_dir) : os.mkdir(repo_dir)
+		shutil.copyfile(in_file, repo_dir + repo_name)
+
 def mc_table(row_col_names,header,padd) :
 	pt = prettytable.PrettyTable(row_col_names)
 	pt.header = header # Boolean
@@ -1097,14 +1118,6 @@ for in_file in source :
 			mc_hdr_extra = get_struct(reading, mc_bgn + 0x30, Intel_MC_Header_Extra)
 			
 			# RSA Signature cannot be verified (Hash probably from Header + Decrypted Patch)
-			'''
-			man_pexp = mc_hdr_extra.RSAExponent
-			man_pkey = int((''.join('%0.8X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(mc_hdr_extra.RSAPublicKey))), 16)
-			man_sign = int((''.join('%0.8X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(mc_hdr_extra.RSASignature))), 16)
-			dec_sign = '%X' % pow(man_sign, man_pexp, man_pkey) # Decrypted Signature (160-bit or 256-bit)
-			dec_hash_160 = dec_sign[-40:] # SHA-1 Hash (160-bit)
-			dec_hash_256 = dec_sign[-64:] # SHA-256 Hash (256-bit)
-			'''
 			
 		else :
 			mc_extra_found = False
@@ -1154,11 +1167,11 @@ for in_file in source :
 		
 		if param.build_db :
 			if mc_at_db is None :
+				db_new_MCE()
+				
 				c.execute('INSERT INTO Intel (cpuid, platform, version, yyyymmdd, size, checksum) VALUES (?,?,?,?,?,?)',
 						('%0.8X' % cpu_id, '%0.8X' % plat, '%0.8X' % patch_u, year + month + day, '%0.8X' % mc_len, '%0.8X' % mc_chk))
-			
-				c.execute('UPDATE MCE SET date=?', (int(time.time()),))
-			
+				
 				conn.commit()
 			
 				print(col_g + "\nAdded Intel: %s\n" % mc_name + col_e)
@@ -1171,10 +1184,16 @@ for in_file in source :
 			
 			continue
 		
-		mc_upd_chk_rsl = (c.execute('SELECT yyyymmdd,platform FROM Intel WHERE cpuid=?', ('%0.8X' % cpu_id,))).fetchall()
+		mc_upd_chk_rsl = (c.execute('SELECT yyyymmdd,platform,version FROM Intel WHERE cpuid=?', ('%0.8X' % cpu_id,))).fetchall()
 		
 		# Determine if MC is Latest or Outdated
-		mc_upd = mc_upd_chk_intel(mc_upd_chk_rsl)
+		mc_upd = mc_upd_chk_intel(mc_upd_chk_rsl, plat_bit, rel_file)
+		
+		# Build Microcode Repository (PRD & Latest)
+		if param.build_repo :
+			build_mc_repo('INTEL', mc_upd, rel_file)
+			
+			continue
 		
 		if param.verbose :
 			row = [mc_nr, '%X' % cpu_id, '%0.2X %s' % (plat, plat_bit), '%X' % patch_u, full_date, release, '0x%X' % mc_len, '%0.8X' % mc_chk, '0x%X' % mc_bgn, mc_upd]
@@ -1341,11 +1360,11 @@ for in_file in source :
 		
 		if param.build_db :
 			if mc_at_db is None :
+				db_new_MCE()
+				
 				c.execute('INSERT INTO AMD (cpuid, nbdevid, sbdevid, nbsbrev, version, yyyymmdd, size, chkbody, chkmc) \
 							VALUES (?,?,?,?,?,?,?,?,?)', (cpu_id, nb_id, sb_id, nbsb_rev_id, '%0.8X' % patch, year + month + day,
 							mc_len_db, '%0.8X' % mc_chk, '%0.8X' % mc_file_chk))
-			
-				c.execute('UPDATE MCE SET date=?', (int(time.time()),))
 				
 				conn.commit()
 				
@@ -1364,6 +1383,11 @@ for in_file in source :
 		
 		# Determine if MC is Latest or Outdated
 		mc_upd = mc_upd_chk(mc_upd_chk_rsl)
+		
+		# Build Microcode Repository (Latest)
+		if param.build_repo :
+			build_mc_repo('AMD', mc_upd, '')
+			continue
 		
 		if param.verbose :
 			row = [mc_nr, cpu_id, '%0.8X' % patch, full_date, '0x%X' % mc_len, '%0.8X' % mc_chk, '%0.8X' % mc_file_chk, '0x%X' % mc_bgn, mc_upd]
@@ -1467,11 +1491,11 @@ for in_file in source :
 		
 		if param.build_db :
 			if mc_at_db is None :
+				db_new_MCE()
+				
 				c.execute('INSERT INTO VIA (cpuid, signature, version, yyyymmdd, size, checksum) VALUES (?,?,?,?,?,?)',
 						('%0.8X' % cpu_id, name, '%0.8X' % patch, year + month + day, '%0.8X' % mc_len, '%0.8X' % mc_chk))
-			
-				c.execute('UPDATE MCE SET date=?', (int(time.time()),))
-			
+				
 				conn.commit()
 			
 				print(col_g + "\nAdded VIA: %s\n" % mc_name + col_e)
@@ -1488,6 +1512,11 @@ for in_file in source :
 		
 		# Determine if MC is Latest or Outdated
 		mc_upd = mc_upd_chk(mc_upd_chk_rsl)
+		
+		# Build Microcode Repository (Latest)
+		if param.build_repo :
+			build_mc_repo('VIA', mc_upd, '')
+			continue
 		
 		if param.verbose :
 			row = [mc_nr, '%X' % cpu_id, name, '%X' % patch, full_date, '0x%X' % mc_len, '%0.8X' % mc_chk, '0x%X' % mc_bgn, mc_upd]
@@ -1533,7 +1562,7 @@ for in_file in source :
 	
 	# Freescale Microcodes
 	
-	match_list_f += pat_fcpu.finditer(reading)
+	if not param.build_repo : match_list_f += pat_fcpu.finditer(reading)
 	
 	total += len(match_list_f)
 	
@@ -1584,11 +1613,11 @@ for in_file in source :
 		
 		if param.build_db :
 			if mc_at_db is None :
+				db_new_MCE()
+				
 				c.execute('INSERT INTO FSL (name, model, major, minor, size, checksum) VALUES (?,?,?,?,?,?)',
 						(name, model, major, minor, '%0.8X' % mc_len, '%0.8X' % mc_chk))
-			
-				c.execute('UPDATE MCE SET date=?', (int(time.time()),))
-			
+				
 				conn.commit()
 			
 				print(col_g + "\nAdded Freescale: %s\n" % mc_name + col_e)

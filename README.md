@@ -3,7 +3,7 @@ Intel, AMD, VIA &amp; Freescale Microcode Extraction Tool
 
 [MC Extractor News Feed](https://twitter.com/platomaniac)
 
-[MC Extractor Discussion Topic](http://www.win-raid.com/t2199f16-MC-Extractor-Intel-AMD-VIA-amp-Freescale-Microcode-Extraction-Tool.html#msg30320)
+[MC Extractor Discussion Topic](https://www.win-raid.com/t2199f47-MC-Extractor-Intel-AMD-VIA-amp-Freescale-Microcode-Extraction-Tool-Discussion.html#msg30320)
 
 [Intel, AMD &amp; VIA CPU Microcode Repositories](https://www.win-raid.com/t3355f47-Intel-AMD-amp-VIA-CPU-Microcode-Repositories.html#msg45883)
 
@@ -66,7 +66,8 @@ There are various parameters which enhance or modify the default behavior of MC 
 * -dbname  : Renames input file based on DB name
 * -cont    : Extracts Intel containers (dat,inc,h,txt)
 * -search  : Searches for microcodes based on CPUID
-* -verbose : Shows all microcode details
+* -repo    : Builds microcode repositories from input
+* -verbose : Shows all microcode details and messages
 
 The following is Windows specific:
 
