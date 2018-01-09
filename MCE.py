@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2018 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.12.0'
+title = 'MC Extractor v1.13.0'
 
 import os
 import re
@@ -62,17 +62,11 @@ def mce_help() :
 	text += "-skip    : Skips options intro screen\n"
 	text += "-mass    : Scans all files of a given directory\n"
 	text += "-info    : Displays microcode header(s)\n"
-	text += "-check   : Copies skipped microcodes to check\n"
-	text += "-file    : Appends filename to New or Bad microcodes\n"
 	text += "-add     : Adds new input microcode to DB\n"
 	text += "-dbname  : Renames input file based on DB name\n"
 	text += "-cont    : Extracts Intel containers (dat,inc,h,txt)\n"
 	text += "-search  : Searches for microcodes based on CPUID\n"
-	text += "-repo    : Builds microcode repositories from input\n"
-	text += "-verbose : Shows all microcode details and messages"
-	
-	if mce_os == 'win32' :
-		text += "\n-extr    : Lordkag's UEFIStrip mode"
+	text += "-repo    : Builds microcode repositories from input"
 	
 	print(text)
 	mce_exit()
@@ -81,7 +75,7 @@ class MCE_Param :
 
 	def __init__(self,source) :
 	
-		self.all = ['-?','-skip','-info','-add','-file','-check','-extr','-cont','-mass','-verbose','-search','-olddb','-dbname','-repo']
+		self.all = ['-?','-skip','-info','-add','-extr','-cont','-mass','-search','-olddb','-dbname','-repo']
 		
 		self.win = ['-extr'] # Windows only
 		
@@ -94,12 +88,9 @@ class MCE_Param :
 		self.build_db = False
 		self.skip_intro = False
 		self.print_hdr = False
-		self.exp_check = False
-		self.print_file = False
 		self.mce_extr = False
 		self.conv_cont = False
 		self.mass_scan = False
-		self.verbose = False
 		self.old_db = False
 		self.search = False
 		self.give_db_name = False
@@ -110,21 +101,18 @@ class MCE_Param :
 			if i == '-skip' : self.skip_intro = True
 			if i == '-add' : self.build_db = True
 			if i == '-info' : self.print_hdr = True
-			if i == '-check' : self.exp_check = True
-			if i == '-file' : self.print_file = True
 			if i == '-cont' : self.conv_cont = True
 			if i == '-mass' : self.mass_scan = True
-			if i == '-verbose' : self.verbose = True
-			if i == '-olddb' : self.old_db = True
+			if i == '-olddb' : self.old_db = True # Hidden
 			if i == '-search' : self.search = True
 			if i == '-dbname' : self.give_db_name = True
 			if i == '-repo' : self.build_repo = True
 			
-			if mce_os == 'win32' : # Windows only options
-				if i == '-extr': self.mce_extr = True
+			# Windows only options
+			if mce_os == 'win32' :
+				if i == '-extr': self.mce_extr = True # Hidden
 			
 		if self.mce_extr or self.mass_scan or self.search or self.build_repo : self.skip_intro = True
-		if self.mce_extr : self.verbose = True
 
 # noinspection PyTypeChecker
 class Intel_MC_Header(ctypes.LittleEndianStructure) :
@@ -659,20 +647,20 @@ def db_new_MCE() :
 		c.execute('UPDATE MCE SET revision=?', (db_rev_now + 1,))
 		c.execute('UPDATE MCE SET developer=1')
 	
-def mc_verbose(work_file) :
+def copy_file_with_warn(work_file) :
 	work_file.close()
 	suffix = 0
 		
 	file_name = os.path.basename(in_file)
-	check_dir = mce_dir + os_dir + '__CHECK__' + os_dir
+	warn_dir = mce_dir + os_dir + '__Warnings__' + os_dir
 		
-	if not os.path.isdir(check_dir) : os.mkdir(check_dir)
+	if not os.path.isdir(warn_dir) : os.mkdir(warn_dir)
 	
-	while os.path.exists(check_dir + file_name) :
+	while os.path.exists(warn_dir + file_name) :
 		suffix += 1
 		file_name += '_%s' % suffix
 		
-	shutil.copyfile(in_file, check_dir + file_name)
+	shutil.copyfile(in_file, warn_dir + file_name)
 	
 def mc_upd_chk_intel(mc_upd_chk_rsl, plat_bit, rel_file) :
 	mc_latest = True
@@ -705,8 +693,8 @@ def mc_upd_chk_intel(mc_upd_chk_rsl, plat_bit, rel_file) :
 				mc_latest = False # Equal date at same CPUID & Platform means Latest
 			# Input = DB, Input date newer than DB Entry
 	
-	if mc_latest : mc_upd = col_g + 'Latest' + col_e
-	else : mc_upd = col_r + 'Outdated' + col_e
+	if mc_latest : mc_upd = col_g + 'Yes' + col_e # Used at build_mc_repo as well
+	else : mc_upd = col_r + 'No' + col_e
 	
 	return mc_upd
 	
@@ -723,13 +711,13 @@ def mc_upd_chk(mc_dates) :
 				mc_latest = False
 				break # No need for more loops
 	
-	if mc_latest : mc_upd = col_g + 'Latest' + col_e
+	if mc_latest : mc_upd = col_g + 'Yes' + col_e # Used at build_mc_repo as well
 	else : mc_upd = col_r + 'Outdated' + col_e
 	
 	return mc_upd
 	
 def build_mc_repo(vendor, mc_upd, rel_file) :
-	if 'Latest' in mc_upd and ((vendor == 'INTEL' and rel_file == 'PRD') or (vendor in ['AMD','VIA'])) :
+	if mc_upd == (col_g + 'Yes' + col_e) and ((vendor == 'INTEL' and rel_file == 'PRD') or (vendor in ['AMD','VIA'])) :
 		repo_name = os.path.basename(in_file)
 		repo_dir = mce_dir + os_dir + '__REPO_%s__' % vendor + os_dir
 		if not os.path.isdir(repo_dir) : os.mkdir(repo_dir)
@@ -789,8 +777,10 @@ def mce_hdr() :
 		
 	print("\n-------[ %s %s%s ]-------" % (title, db_rev, db_dev))
 
+# noinspection PyUnusedLocal
 def init_file(in_file,orig_file,temp,in_count,cur_count) :
-	mc_file_name = ''
+	# in_file : Working input file (ex: temp mc file during -cont)
+	# orig_file : Original input file (ex: *.dat file during -cont)
 	
 	if not os.path.isfile(in_file) :
 		if any(p in in_file for p in param.val) : return 'continue', 'continue', 'continue', 'continue'
@@ -805,13 +795,9 @@ def init_file(in_file,orig_file,temp,in_count,cur_count) :
 		file_end = work_file.seek(0,2)
 		work_file.seek(0,0)
 	
-	if not temp :
-		if not param.mce_extr : print("\nFile (%d/%d): %s\n" % (cur_count, in_count, force_ascii(os.path.basename(in_file))))
-		if param.print_file : mc_file_name = '__%s' % os.path.basename(in_file)
-	else :
-		if param.print_file : mc_file_name = '__%s' % os.path.basename(orig_file)
+	if not temp and not param.mce_extr : print("\nFile (%d/%d): %s\n" % (cur_count, in_count, force_ascii(os.path.basename(in_file))))
 	
-	return work_file, reading, file_end, mc_file_name
+	return work_file, reading, file_end
 
 # Force string to be printed as ASCII, ignore errors
 def force_ascii(string) :
@@ -977,7 +963,6 @@ pat_fcpu = re.compile(br'\x51\x45\x46\x01.{62}[\x00-\x01]', re.DOTALL)
 for in_file in source :
 
 	# MC Variables
-	skip = 0
 	mc_nr = 0
 	total = 0
 	type_conv = ''
@@ -995,7 +980,7 @@ for in_file in source :
 	cur_count += 1
 	
 	# noinspection PyRedeclaration
-	work_file,reading,file_end,mc_file_name = init_file(in_file,in_file,False,in_count,cur_count)
+	work_file,reading,file_end = init_file(in_file,in_file,False,in_count,cur_count)
 	if reading == 'continue' : continue # Input is parameter, next file
 	
 	# Convert Intel containers (.dat , .inc , .h , .txt) to .bin
@@ -1035,7 +1020,7 @@ for in_file in source :
 		
 			temp_file.write(mc_conv_data)
 			
-			work_file,reading,file_end,mc_file_name = init_file(temp_file.name,in_file,True,in_count,cur_count)
+			work_file,reading,file_end = init_file(temp_file.name,in_file,True,in_count,cur_count)
 			if reading == 'continue' : continue
 		
 		except :
@@ -1050,8 +1035,7 @@ for in_file in source :
 	
 	total += len(match_list_i)
 	
-	if param.verbose : col_names = ['#','CPUID','Platform','Version','Date','Release','Size','Checksum','Offset','Status']
-	else : col_names = ['#','CPUID','Platform','Version','Date','Release','Status']
+	col_names = ['#','CPUID','Platform','Version','Date','Release','Size','Checksum','Offset','Latest']
 	
 	pt,pt_empty = mc_table(col_names, True, 1)
 	
@@ -1086,30 +1070,24 @@ for in_file in source :
 		full_date = "%s-%s-%s" % (year, month, day)
 		
 		# Detect Release based on Patch signature
-		if patch_s >= 0 :
-			release = 'Production'
-			rel_file = 'PRD'
-		else :
-			release = 'Pre-Production'
-			rel_file = 'PRE'
+		if patch_s >= 0 : rel_file = 'PRD'
+		else : rel_file = 'PRE'
 		
 		# Remove false results, based on date
 		try :
 			date_chk = datetime.datetime.strptime(full_date, '%Y-%m-%d')
-			if date_chk.year > 2017 or date_chk.year < 1993 : raise Exception('WrongDate') # 1st MC from 1995 (P6), 1993 for safety
+			if date_chk.year > 2020 or date_chk.year < 1993 : raise Exception('WrongDate') # 1st MC from 1995 (P6), 1993 for safety
 		except :
 			if full_date == '1896-00-07' and patch_u == 0xD1 : pass # Drunk Intel employee 1, Happy 0th month from 19th century Intel!
 			else :
-				if param.verbose : msg_i.append(col_m + "\nWarning: Skipped Intel microcode at 0x%0.2X, invalid Date of %s!" % (mc_bgn, full_date) + col_e)
-				if param.exp_check : mc_verbose(work_file)
-				skip += 1
+				msg_i.append(col_m + "\nWarning: Skipped Intel microcode at 0x%0.2X, invalid Date of %s!" % (mc_bgn, full_date) + col_e)
+				copy_file_with_warn(work_file)
 				continue
 		
 		# Remove false results, based on Reserved field
 		if res_field != 0 :
-			if param.verbose : msg_i.append(col_m + "\nWarning: Skipped Intel microcode at 0x%0.2X, Reserved field not empty!" % mc_bgn + col_e)
-			if param.exp_check : mc_verbose(work_file)
-			skip += 1
+			msg_i.append(col_m + "\nWarning: Skipped Intel microcode at 0x%0.2X, Reserved field not empty!" % mc_bgn + col_e)
+			copy_file_with_warn(work_file)
 			continue
 		
 		# Detect Extra Header
@@ -1195,10 +1173,7 @@ for in_file in source :
 			
 			continue
 		
-		if param.verbose :
-			row = [mc_nr, '%X' % cpu_id, '%0.2X %s' % (plat, plat_bit), '%X' % patch_u, full_date, release, '0x%X' % mc_len, '%0.8X' % mc_chk, '0x%X' % mc_bgn, mc_upd]
-		else :
-			row = [mc_nr, '%X' % cpu_id, '%0.2X %s' % (plat, plat_bit), '%X' % patch_u, full_date, release, mc_upd]
+		row = [mc_nr, '%X' % cpu_id, '%0.2X %s' % (plat, plat_bit), '%X' % patch_u, full_date, rel_file, '0x%X' % mc_len, '%0.8X' % mc_chk, '0x%X' % mc_bgn, mc_upd]
 		pt.add_row(row)
 		
 		mc_end = mc_bgn + mc_len
@@ -1215,10 +1190,10 @@ for in_file in source :
 				mc_path = mc_extract + "%s.bin" % mc_name
 			else :
 				msg_i.append(col_m + '\nWarning: Microcode #%s is packed or badly extracted, please report it!' % mc_nr + col_e)
-				mc_path = mc_extract + "!Bad_%s%s.bin" % (mc_name,mc_file_name)
+				mc_path = mc_extract + "!Bad_%s.bin" % mc_name
 		elif mc_at_db is None :
 			msg_i.append(col_g + "\nNote: Microcode #%s was not found at the database, please report it!" % mc_nr + col_e)
-			mc_path = mc_extract + "!New_%s%s.bin" % (mc_name,mc_file_name)
+			mc_path = mc_extract + "!New_%s.bin" % mc_name
 		else :
 			mc_path = mc_extract + "%s.bin" % mc_name
 		
@@ -1244,8 +1219,7 @@ for in_file in source :
 	
 	total += len(match_list_a)
 	
-	if param.verbose : col_names = ['#', 'CPUID', 'Version', 'Date', 'Size', 'Checksum AMD', 'Checksum MCE', 'Offset', 'Status']
-	else : col_names = ['#', 'CPUID', 'Version', 'Date', 'Status']
+	col_names = ['#', 'CPUID', 'Version', 'Date', 'Size', 'Checksum AMD', 'Checksum MCE', 'Offset', 'Latest']
 	
 	pt, pt_empty = mc_table(col_names, True, 1)
 	
@@ -1290,35 +1264,31 @@ for in_file in source :
 		try :
 			date_chk = datetime.datetime.strptime(full_date, '%Y-%m-%d')
 			
-			if date_chk.year > 2017 or date_chk.year < 2000 : raise Exception('WrongDate') # 1st MC from 1999 (K7), 2000 for K7 Erratum and performance
+			if date_chk.year > 2020 or date_chk.year < 2000 : raise Exception('WrongDate') # 1st MC from 1999 (K7), 2000 for K7 Erratum and performance
 		except :
 			if full_date == '2011-13-09' and patch == 0x3000027 : pass # Drunk AMD employee 1, Happy 13th month from AMD!
 			else :
-				if param.verbose : msg_a.append(col_m + "\nWarning: Skipped AMD microcode at 0x%0.2X, invalid Date of %s!" % (mc_bgn, full_date) + col_e)
-				if param.exp_check : mc_verbose(work_file)
-				skip += 1
+				msg_a.append(col_m + "\nWarning: Skipped AMD microcode at 0x%0.2X, invalid Date of %s!" % (mc_bgn, full_date) + col_e)
+				copy_file_with_warn(work_file)
 				continue
 		
 		# Remove false results, based on VEN_IDs
 		if (nb_id != '0'*8 and '1002' not in nb_id[4:8] and '1022' not in nb_id[4:8]) \
 		or (sb_id != '0'*8 and '1002' not in sb_id[4:8] and '1022' not in sb_id[4:8]) :
-			if param.verbose : msg_a.append(col_m + "\nWarning: Skipped AMD microcode at 0x%0.2X, invalid VEN_IDs of %s,%s!" % (mc_bgn, nb_id[4:8], sb_id[4:8]) + col_e)
-			if param.exp_check : mc_verbose(work_file)
-			skip += 1
+			msg_a.append(col_m + "\nWarning: Skipped AMD microcode at 0x%0.2X, invalid VEN_IDs of %s,%s!" % (mc_bgn, nb_id[4:8], sb_id[4:8]) + col_e)
+			copy_file_with_warn(work_file)
 			continue
 		
 		# Remove false results, based on Data Length
 		if data_len not in ['10','20','00'] :
-			if param.verbose : msg_a.append(col_m + "\nWarning: Skipped AMD microcode at 0x%0.2X, Data Length not standard!" % mc_bgn + col_e)
-			if param.exp_check : mc_verbose(work_file)
-			skip += 1
+			msg_a.append(col_m + "\nWarning: Skipped AMD microcode at 0x%0.2X, Data Length not standard!" % mc_bgn + col_e)
+			copy_file_with_warn(work_file)
 			continue
 		
 		# Remove false results, based on data
 		if reading[mc_bgn + 0x40:mc_bgn + 0x44] == b'\x00' * 4 : # 0x40 has non-null data
-			if param.verbose : msg_a.append(col_m + "\nWarning: Skipped AMD microcode at 0x%0.2X, null data at 0x40!" % mc_bgn + col_e)
-			if param.exp_check : mc_verbose(work_file)
-			skip += 1
+			msg_a.append(col_m + "\nWarning: Skipped AMD microcode at 0x%0.2X, null data at 0x40!" % mc_bgn + col_e)
+			copy_file_with_warn(work_file)
 			continue
 		
 		# Print the Header
@@ -1389,10 +1359,7 @@ for in_file in source :
 			build_mc_repo('AMD', mc_upd, '')
 			continue
 		
-		if param.verbose :
-			row = [mc_nr, cpu_id, '%0.8X' % patch, full_date, '0x%X' % mc_len, '%0.8X' % mc_chk, '%0.8X' % mc_file_chk, '0x%X' % mc_bgn, mc_upd]
-		else :
-			row = [mc_nr, cpu_id, '%0.8X' % patch, full_date, mc_upd]
+		row = [mc_nr, cpu_id, '%0.8X' % patch, full_date, '0x%X' % mc_len, '%0.8X' % mc_chk, '%0.8X' % mc_file_chk, '0x%X' % mc_bgn, mc_upd]
 		pt.add_row(row)
 		
 		# Create extraction folder
@@ -1402,10 +1369,10 @@ for in_file in source :
 		
 		if int(cpu_id[2:4], 16) < 0x50 and (valid_chk + mc_chk) & 0xFFFFFFFF != 0 :
 			msg_a.append(col_m + '\nWarning: Microcode #%s is packed or badly extracted, please report it!' % mc_nr + col_e)
-			mc_path = mc_extract + "!Bad_%s%s.bin" % (mc_name,mc_file_name)
+			mc_path = mc_extract + "!Bad_%s.bin" % mc_name
 		elif mc_at_db is None :
 			msg_a.append(col_g + "\nNote: Microcode #%s was not found at the database, please report it!" % mc_nr + col_e)
-			mc_path = mc_extract + "!New_%s%s.bin" % (mc_name,mc_file_name)
+			mc_path = mc_extract + "!New_%s.bin" % mc_name
 		else :
 			mc_path = mc_extract + "%s.bin" % mc_name
 		
@@ -1438,8 +1405,7 @@ for in_file in source :
 	
 	total += len(match_list_v)
 	
-	if param.verbose : col_names = ['#', 'CPUID', 'Name', 'Version', 'Date', 'Size', 'Checksum', 'Offset', 'Status']
-	else : col_names = ['#', 'CPUID', 'Name', 'Version', 'Date', 'Status']
+	col_names = ['#', 'CPUID', 'Name', 'Version', 'Date', 'Size', 'Checksum', 'Offset', 'Latest']
 	
 	pt, pt_empty = mc_table(col_names, True, 1)
 	
@@ -1471,11 +1437,10 @@ for in_file in source :
 		# Remove false results, based on date
 		try :
 			date_chk = datetime.datetime.strptime(full_date, '%Y-%m-%d')
-			if date_chk.year > 2017 or date_chk.year < 2006 : raise Exception('WrongDate') # 1st MC from 2008 (Nano), 2006 for safety
+			if date_chk.year > 2020 or date_chk.year < 2006 : raise Exception('WrongDate') # 1st MC from 2008 (Nano), 2006 for safety
 		except :
-			if param.verbose : msg_v.append(col_m + "\nWarning: Skipped VIA microcode at 0x%0.2X, invalid Date of %s!\n" % (mc_bgn, full_date) + col_e)
-			if param.exp_check : mc_verbose(work_file)
-			skip += 1
+			msg_v.append(col_m + "\nWarning: Skipped VIA microcode at 0x%0.2X, invalid Date of %s!\n" % (mc_bgn, full_date) + col_e)
+			copy_file_with_warn(work_file)
 			continue
 		
 		# Print the Header(s)
@@ -1518,10 +1483,7 @@ for in_file in source :
 			build_mc_repo('VIA', mc_upd, '')
 			continue
 		
-		if param.verbose :
-			row = [mc_nr, '%X' % cpu_id, name, '%X' % patch, full_date, '0x%X' % mc_len, '%0.8X' % mc_chk, '0x%X' % mc_bgn, mc_upd]
-		else :
-			row = [mc_nr, '%X' % cpu_id, name, '%X' % patch, full_date, mc_upd]
+		row = [mc_nr, '%X' % cpu_id, name, '%X' % patch, full_date, '0x%X' % mc_len, '%0.8X' % mc_chk, '0x%X' % mc_bgn, mc_upd]
 		pt.add_row(row)
 		
 		mc_end = mc_bgn + mc_len
@@ -1540,10 +1502,10 @@ for in_file in source :
 				mc_path = mc_extract + "%s.bin" % mc_name
 			else :
 				msg_v.append(col_m + '\nWarning: Microcode #%s is packed or badly extracted, please report it!\n' % mc_nr + col_e)
-				mc_path = mc_extract + '!Bad_%s%s.bin' % (mc_name,mc_file_name)
+				mc_path = mc_extract + '!Bad_%s.bin' % mc_name
 		elif mc_at_db is None :
 			msg_v.append(col_g + '\nNote: Microcode #%s was not found at the database, please report it!\n' % mc_nr + col_e)
-			mc_path = mc_extract + '!New_%s%s.bin' % (mc_name,mc_file_name)
+			mc_path = mc_extract + '!New_%s.bin' % mc_name
 		else :
 			mc_path = mc_extract + '%s.bin' % mc_name
 		
@@ -1566,8 +1528,7 @@ for in_file in source :
 	
 	total += len(match_list_f)
 	
-	if param.verbose : col_names = ['#', 'Name', 'SoC Model', 'SoC Major', 'SoC Minor', 'Size', 'Checksum', 'Offset']
-	else : col_names = ['#', 'Name', 'SoC Model', 'SoC Major', 'SoC Minor']
+	col_names = ['#', 'Name', 'SoC Model', 'SoC Major', 'SoC Minor', 'Size', 'Checksum', 'Offset']
 	
 	pt, pt_empty = mc_table(col_names, True, 1)
 	
@@ -1630,10 +1591,7 @@ for in_file in source :
 			
 			continue
 		
-		if param.verbose :
-			row = [mc_nr, name, model, major, minor, '0x%X' % mc_len, '%0.8X' % mc_chk, '0x%X' % mc_bgn]
-		else :
-			row = [mc_nr, name, model, major, minor]
+		row = [mc_nr, name, model, major, minor, '0x%X' % mc_len, '%0.8X' % mc_chk, '0x%X' % mc_bgn]
 		pt.add_row(row)
 		
 		mc_data = reading[mc_bgn:mc_bgn + mc_len]
@@ -1647,10 +1605,10 @@ for in_file in source :
 		
 		if calc_crc != mc_chk :
 			msg_f.append(col_m + '\nWarning: Microcode #%s is packed or badly extracted, please report it!\n' % mc_nr + col_e)
-			mc_path = mc_extract + '!Bad_%s%s.bin' % (mc_name,mc_file_name)
+			mc_path = mc_extract + '!Bad_%s.bin' % mc_name
 		elif mc_at_db is None :
 			msg_f.append(col_g + '\nNote: Microcode #%s was not found at the database, please report it!\n' % mc_nr + col_e)
-			mc_path = mc_extract + '!New_%s%s.bin' % (mc_name,mc_file_name)
+			mc_path = mc_extract + '!New_%s.bin' % mc_name
 		else :
 			mc_path = mc_extract + '%s.bin' % mc_name
 		
@@ -1670,9 +1628,6 @@ for in_file in source :
 		temp_file.close()
 		os.remove(temp_file.name)
 		
-	if total == 0 or skip == total :
-		print('File does not contain CPU microcodes')
-		
-	if skip > 0 and not param.verbose : print(col_y + '\nNote: %s skipped microcode(s), use -verbose for details' % skip + col_e)
+	if total == 0 : print('File does not contain CPU microcodes')
 
 mce_exit()
