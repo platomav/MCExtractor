@@ -60,18 +60,11 @@ There are various parameters which enhance or modify the default behavior of MC 
 * -skip    : Skips options intro screen
 * -mass    : Scans all files of a given directory
 * -info    : Displays microcode header(s)
-* -check   : Copies skipped microcodes to check
-* -file    : Appends filename to New or Bad microcodes
 * -add     : Adds new input microcode to DB
 * -dbname  : Renames input file based on DB name
 * -cont    : Extracts Intel containers (dat,inc,h,txt)
 * -search  : Searches for microcodes based on CPUID
 * -repo    : Builds microcode repositories from input
-* -verbose : Shows all microcode details and messages
-
-The following is Windows specific:
-
-* -extr    : Lordkag's UEFIStrip mode
 
 #### **B3. MC Extractor Error Control**
 
