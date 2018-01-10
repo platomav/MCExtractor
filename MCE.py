@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2018 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.13.0'
+title = 'MC Extractor v1.13.1'
 
 import os
 import re
@@ -112,7 +112,8 @@ class MCE_Param :
 			if mce_os == 'win32' :
 				if i == '-extr': self.mce_extr = True # Hidden
 			
-		if self.mce_extr or self.mass_scan or self.search or self.build_repo : self.skip_intro = True
+		if self.mce_extr or self.mass_scan or self.search or self.build_repo or self.conv_cont : self.skip_intro = True
+		if self.conv_cont : self.give_db_name = False
 
 # noinspection PyTypeChecker
 class Intel_MC_Header(ctypes.LittleEndianStructure) :
@@ -712,7 +713,7 @@ def mc_upd_chk(mc_dates) :
 				break # No need for more loops
 	
 	if mc_latest : mc_upd = col_g + 'Yes' + col_e # Used at build_mc_repo as well
-	else : mc_upd = col_r + 'Outdated' + col_e
+	else : mc_upd = col_r + 'No' + col_e
 	
 	return mc_upd
 	
@@ -776,28 +777,6 @@ def mce_hdr() :
 			pass
 		
 	print("\n-------[ %s %s%s ]-------" % (title, db_rev, db_dev))
-
-# noinspection PyUnusedLocal
-def init_file(in_file,orig_file,temp,in_count,cur_count) :
-	# in_file : Working input file (ex: temp mc file during -cont)
-	# orig_file : Original input file (ex: *.dat file during -cont)
-	
-	if not os.path.isfile(in_file) :
-		if any(p in in_file for p in param.val) : return 'continue', 'continue', 'continue', 'continue'
-		
-		print(col_r + "\nError" + col_e + ": file %s was not found!\n" % force_ascii(in_file))
-		
-		if not param.mass_scan : mce_exit(1)
-		else : return 'continue', 'continue', 'continue', 'continue'
-
-	with open(in_file, 'rb') as work_file :
-		reading = work_file.read()
-		file_end = work_file.seek(0,2)
-		work_file.seek(0,0)
-	
-	if not temp and not param.mce_extr : print("\nFile (%d/%d): %s\n" % (cur_count, in_count, force_ascii(os.path.basename(in_file))))
-	
-	return work_file, reading, file_end
 
 # Force string to be printed as ASCII, ignore errors
 def force_ascii(string) :
@@ -882,7 +861,7 @@ if param.mass_scan :
 	source = mass_scan(in_path)
 else :
 	source = sys.argv[1:] # Skip script/executable
-
+	
 # Connect to DB, if it exists
 if os.path.isfile(db_path) :
 	conn = sqlite3.connect(db_path)
@@ -947,6 +926,8 @@ if param.old_db :
 	mce_exit()
 
 in_count = len(source)
+for arg in source :
+	if arg in param.val : in_count -= 1
 
 # Intel - HeaderRev 01, LoaderRev 01, ProcesFlags xx00*3 (Intel 64 and IA-32 Architectures Software Developer's Manual Vol 3A, Ch 9.11.1)
 pat_icpu = re.compile(br'\x01\x00{3}.{4}[\x00-\x99](([\x19-\x20][\x01-\x31][\x01-\x12])|(\x18\x07\x00)).{8}\x01\x00{3}.\x00{3}', re.DOTALL)
@@ -979,15 +960,19 @@ for in_file in source :
 	mc_conv_data = bytearray()
 	cur_count += 1
 	
-	# noinspection PyRedeclaration
-	work_file,reading,file_end = init_file(in_file,in_file,False,in_count,cur_count)
-	if reading == 'continue' : continue # Input is parameter, next file
+	if not os.path.isfile(in_file) :
+		if any(p in in_file for p in param.val) : continue
+		
+		print(col_r + "\nError" + col_e + ": file %s was not found!\n" % force_ascii(in_file))
+		
+		if not param.mass_scan : mce_exit(1)
+		else : continue
 	
 	# Convert Intel containers (.dat , .inc , .h , .txt) to .bin
 	if param.conv_cont :
 		mc_f_ex = open(in_file, "r")
 		
-		temp_file = tempfile.NamedTemporaryFile(mode='ab', delete=False) # No auto delete for use at init_file
+		temp_file = tempfile.NamedTemporaryFile(mode='ab', delete=False) # No auto delete for scanning after convertion
 		
 		try :
 			for line in mc_f_ex :
@@ -1020,11 +1005,17 @@ for in_file in source :
 		
 			temp_file.write(mc_conv_data)
 			
-			work_file,reading,file_end = init_file(temp_file.name,in_file,True,in_count,cur_count)
-			if reading == 'continue' : continue
+			in_file = temp_file.name # New in_file for converted container
 		
 		except :
 			print(col_r + 'Error: Cannot convert Intel container!\n' + col_e)
+
+	with open(in_file, 'rb') as work_file :
+		reading = work_file.read()
+		file_end = work_file.seek(0,2)
+		work_file.seek(0,0)
+	
+	if not param.mce_extr : print("\nFile (%d/%d): %s\n" % (cur_count, in_count, force_ascii(os.path.basename(in_file))))
 	
 	# Intel Microcodes
 	
