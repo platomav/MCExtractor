@@ -1,3 +1,9 @@
+v1.13.1 r52
+
+Fixed crash when converting Intel containers
+Fixed wrong file enumeration at command prompt
+Fixed wrong Latest Yes/No status text display
+
 v1.13.0 r51
 
 Fixed bug which skipped all 2018 microcodes

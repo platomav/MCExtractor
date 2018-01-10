@@ -3,9 +3,9 @@ Intel, AMD, VIA &amp; Freescale Microcode Extraction Tool
 
 [MC Extractor News Feed](https://twitter.com/platomaniac)
 
-[MC Extractor Discussion Topic](https://www.win-raid.com/t2199f47-MC-Extractor-Intel-AMD-VIA-amp-Freescale-Microcode-Extraction-Tool-Discussion.html#msg30320)
+[MC Extractor Discussion Topic](https://www.win-raid.com/t2199f47-MC-Extractor-Intel-AMD-VIA-amp-Freescale-Microcode-Extraction-Tool-Discussion.html)
 
-[Intel, AMD &amp; VIA CPU Microcode Repositories](https://www.win-raid.com/t3355f47-Intel-AMD-amp-VIA-CPU-Microcode-Repositories.html#msg45883)
+[Intel, AMD &amp; VIA CPU Microcode Repositories](https://github.com/platomav/CPUMicrocodes)
 
 [![MC Extractor Donation](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=DJDZD3PRGCSCL)
 
@@ -38,7 +38,7 @@ MC Extractor is a tool which parses Intel, AMD, VIA and Freescale processor micr
 
 #### **A2. Microcode Repository Database**
 
-MC Extractor allows end-users and/or researchers to quickly extract, view, convert & report new microcode versions without the use of special tools or Hex Editors. To do that effectively, a database had to be built. The [Intel, AMD &amp; VIA CPU Microcode Repositories](https://www.win-raid.com/t3355f47-Intel-AMD-amp-VIA-CPU-Microcode-Repositories.html#msg45883) is a collection of every Intel, AMD &amp; VIA CPU Microcodes we have found. Its existence is very important for MC Extractor as it allows us to continue doing research, find new types of microcode, compare releases for similarities, check for updated binaries etc. Bundled with MC Extractor is a file called MCE.db which is required for the program to run. It includes entries for all Microcode binaries that are available to us. This accommodates primarily two actions: a) Check whether the imported microcode is up to date and b) Help find new Microcode releases sooner by reporting them.
+MC Extractor allows end-users and/or researchers to quickly extract, view, convert & report new microcode versions without the use of special tools or Hex Editors. To do that effectively, a database had to be built. The [Intel, AMD &amp; VIA CPU Microcode Repositories](https://github.com/platomav/CPUMicrocodes) is a collection of every Intel, AMD &amp; VIA CPU Microcodes we have found. Its existence is very important for MC Extractor as it allows us to continue doing research, find new types of microcode, compare releases for similarities, check for updated binaries etc. Bundled with MC Extractor is a file called MCE.db which is required for the program to run. It includes entries for all Microcode binaries that are available to us. This accommodates primarily two actions: a) Check whether the imported microcode is up to date and b) Help find new Microcode releases sooner by reporting them.
 
 #### **A3. Sources and Inspiration**
 
