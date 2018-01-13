@@ -1,3 +1,7 @@
+v1.13.2 r52
+
+Improved parameter -search input & result order
+
 v1.13.1 r52
 
 Fixed crash when converting Intel containers
