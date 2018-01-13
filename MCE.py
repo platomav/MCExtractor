@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2018 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.13.1'
+title = 'MC Extractor v1.13.2'
 
 import os
 import re
@@ -75,7 +75,7 @@ class MCE_Param :
 
 	def __init__(self,source) :
 	
-		self.all = ['-?','-skip','-info','-add','-extr','-cont','-mass','-search','-olddb','-dbname','-repo']
+		self.all = ['-?','-skip','-info','-add','-extr','-cont','-mass','-search','-dbname','-repo','-ubutest']
 		
 		self.win = ['-extr'] # Windows only
 		
@@ -91,10 +91,10 @@ class MCE_Param :
 		self.mce_extr = False
 		self.conv_cont = False
 		self.mass_scan = False
-		self.old_db = False
 		self.search = False
 		self.give_db_name = False
 		self.build_repo = False
+		self.ubu_test = False # TBD
 		
 		for i in source :
 			if i == '-?' : self.help_scr = True
@@ -103,10 +103,10 @@ class MCE_Param :
 			if i == '-info' : self.print_hdr = True
 			if i == '-cont' : self.conv_cont = True
 			if i == '-mass' : self.mass_scan = True
-			if i == '-olddb' : self.old_db = True # Hidden
 			if i == '-search' : self.search = True
 			if i == '-dbname' : self.give_db_name = True
 			if i == '-repo' : self.build_repo = True
+			if i == '-ubutest' : self.ubu_test = True # Hidden (TBD)
 			
 			# Windows only options
 			if mce_os == 'win32' :
@@ -512,7 +512,7 @@ def create_tables():
 	return
 		
 def mce_exit(code=0) :
-	if not param.mce_extr : input("\nPress enter to exit")
+	if not param.mce_extr and not param.ubu_test : input("\nPress enter to exit")
 	try :
 		c.close()
 		conn.close() # Close DB connection
@@ -852,7 +852,7 @@ if not param.skip_intro :
 
 	mce_hdr()
 
-if (arg_num < 2 and not param.help_scr and not param.mass_scan and not param.search and not param.old_db) or param.help_scr :
+if (arg_num < 2 and not param.help_scr and not param.mass_scan and not param.search) or param.help_scr :
 	mce_help()
 	mce_exit()
 
@@ -884,44 +884,24 @@ if param.search :
 	if len(source) == 2 : i_cpuid = source[1] # -search CPUID expected
 	else : i_cpuid = input('\nEnter CPUID to search: ')
 	
-	# noinspection PyUnboundLocalVariable
-	res_i = c.execute('SELECT * FROM Intel WHERE cpuid=? ORDER BY date(yyyymmdd) DESC', (i_cpuid,))
-	print('\n%s' % display_sql(res_i, col_b + 'Intel' + col_e, True, 1))
+	try :
+		i_cpuid = '%0.8X' % int(i_cpuid, 16)
+		
+		# noinspection PyUnboundLocalVariable
+		res_i = c.execute('SELECT * FROM Intel WHERE cpuid=? ORDER BY yyyymmdd DESC', (i_cpuid,))
+		print('\n%s' % display_sql(res_i, col_b + 'Intel' + col_e, True, 1))
+		
+		res_a = c.execute('SELECT * FROM AMD WHERE cpuid=? ORDER BY yyyymmdd DESC', (i_cpuid,))
+		print('\n%s' % display_sql(res_a, col_r + 'AMD' + col_e, True, 1))
+		
+		res_v = c.execute('SELECT * FROM VIA WHERE cpuid=? ORDER BY yyyymmdd DESC', (i_cpuid,))
+		print('\n%s' % display_sql(res_v, col_c + 'VIA' + col_e, True, 1))
+		
+		res_f = c.execute('SELECT * FROM FSL WHERE model=? ORDER BY name DESC', (i_cpuid,))
+		print('\n%s' % display_sql(res_f, col_y + 'Freescale' + col_e, True, 1))
 	
-	res_a = c.execute('SELECT * FROM AMD WHERE cpuid=? ORDER BY date(yyyymmdd) DESC', (i_cpuid,))
-	print('\n%s' % display_sql(res_a, col_r + 'AMD' + col_e, True, 1))
-	
-	res_v = c.execute('SELECT * FROM VIA WHERE cpuid=? ORDER BY date(yyyymmdd) DESC', (i_cpuid,))
-	print('\n%s' % display_sql(res_v, col_c + 'VIA' + col_e, True, 1))
-	
-	res_f = c.execute('SELECT * FROM FSL WHERE model=? ORDER BY name DESC', (i_cpuid,))
-	print('\n%s' % display_sql(res_f, col_y + 'Freescale' + col_e, True, 1))
-	
-	mce_exit()
-
-# Build old DB format for UEFI BIOS Updater (UBU)
-if param.old_db :
-	# noinspection PyUnboundLocalVariable
-	res_i = (c.execute('SELECT * FROM Intel')).fetchall() # Intel only
-	
-	res_m = (c.execute('SELECT * FROM MCE')).fetchall()
-	db_rev = 'r' + str(res_m[0][0])
-	db_date = datetime.datetime.utcfromtimestamp(res_m[0][2]).strftime('%Y-%m-%d, %H:%M')
-	
-	if res_m[0][1] == 1 : db_dev = ' Dev'
-	else : db_dev = ''
-	
-	old_hdr = "MC Extractor Intel Microcode Repository Database\nRevision %s%s (%s)\n\n" % (db_rev,db_dev,db_date)
-	
-	mct = ''
-	for mc in res_i :
-		for field in mc :
-			mct += str(field)
-		mct += '\n'
-
-	with open(mce_dir + os_dir + 'MCE.dat', 'w') as db_old : db_old.write(old_hdr + mct)
-	
-	print(col_y + '\nBuilt old MCE.dat database format (%s%s %s)' % (db_rev,db_dev,db_date) + col_e)
+	except :
+		print(col_r + '\nError: Invalid CPUID!' + col_e)
 	
 	mce_exit()
 
@@ -972,7 +952,7 @@ for in_file in source :
 	if param.conv_cont :
 		mc_f_ex = open(in_file, "r")
 		
-		temp_file = tempfile.NamedTemporaryFile(mode='ab', delete=False) # No auto delete for scanning after convertion
+		temp_file = tempfile.NamedTemporaryFile(mode='ab', delete=False) # No auto delete for scanning after conversion
 		
 		try :
 			for line in mc_f_ex :
@@ -1174,7 +1154,7 @@ for in_file in source :
 		# Create extraction folder
 		if '-extr' in source : mc_extract = mce_dir + os_dir +  '..\Z_Extract\\CPU\\'
 		else : mc_extract = mce_dir + os_dir + 'Extracted' + os_dir + 'Intel' + os_dir
-		if not os.path.exists(mc_extract) : os.makedirs(mc_extract)
+		if not param.ubu_test and not os.path.exists(mc_extract) : os.makedirs(mc_extract)
 		
 		if valid_mc_chk != 0 or valid_ext_chk != 0 :
 			if patch_u == 0xFF and cpu_id == 0x506E3 and full_date == '2016-01-05' : # Someone "fixed" the modded MC checksum wrongfully
@@ -1188,7 +1168,7 @@ for in_file in source :
 		else :
 			mc_path = mc_extract + "%s.bin" % mc_name
 		
-		if not has_duplicate(mc_path, mc_data) :
+		if not param.ubu_test and not has_duplicate(mc_path, mc_data) :
 			baseName = os.path.basename(mc_path)
 			name_root, name_ext = os.path.splitext(baseName)
 			mc_path = auto_name (mc_extract, name_root, "_nr", "bin")[1]
@@ -1356,7 +1336,7 @@ for in_file in source :
 		# Create extraction folder
 		if '-extr' in source : mc_extract = mce_dir + os_dir +  '..\Z_Extract\\CPU\\'
 		else : mc_extract = mce_dir + os_dir + 'Extracted' + os_dir + 'AMD' + os_dir
-		if not os.path.exists(mc_extract) : os.makedirs(mc_extract)
+		if not param.ubu_test and not os.path.exists(mc_extract) : os.makedirs(mc_extract)
 		
 		if int(cpu_id[2:4], 16) < 0x50 and (valid_chk + mc_chk) & 0xFFFFFFFF != 0 :
 			msg_a.append(col_m + '\nWarning: Microcode #%s is packed or badly extracted, please report it!' % mc_nr + col_e)
@@ -1367,7 +1347,7 @@ for in_file in source :
 		else :
 			mc_path = mc_extract + "%s.bin" % mc_name
 		
-		if not has_duplicate(mc_path, mc_data) :
+		if not param.ubu_test and not has_duplicate(mc_path, mc_data) :
 			baseName = os.path.basename(mc_path)
 			name_root, name_ext = os.path.splitext(baseName)
 			mc_path = auto_name (mc_extract, name_root, "_nr", "bin")[1]
@@ -1484,7 +1464,7 @@ for in_file in source :
 		# Create extraction folder
 		if '-extr' in source : mc_extract = mce_dir + os_dir +  '..\Z_Extract\\CPU\\'
 		else : mc_extract = mce_dir + os_dir + 'Extracted' + os_dir + 'VIA' + os_dir
-		if not os.path.exists(mc_extract) : os.makedirs(mc_extract)
+		if not param.ubu_test and not os.path.exists(mc_extract) : os.makedirs(mc_extract)
 		
 		if valid_chk != 0 :
 			if full_date == '2011-08-09' and name == '06FA03BB0' and mc_chk == 0x9B86F886 : # Drunk VIA employee 1, Signature is 06FA03BB0 instead of 06FA003BB
@@ -1500,7 +1480,7 @@ for in_file in source :
 		else :
 			mc_path = mc_extract + '%s.bin' % mc_name
 		
-		if not has_duplicate(mc_path, mc_data) :
+		if not param.ubu_test and not has_duplicate(mc_path, mc_data) :
 			baseName = os.path.basename(mc_path)
 			name_root, name_ext = os.path.splitext(baseName)
 			mc_path = auto_name (mc_extract, name_root, "_nr", "bin")[1]
@@ -1592,7 +1572,7 @@ for in_file in source :
 		# Create extraction folder
 		if '-extr' in source : mc_extract = mce_dir + os_dir +  '..\Z_Extract\\CPU\\'
 		else : mc_extract = mce_dir + os_dir + 'Extracted' + os_dir + 'Freescale' + os_dir
-		if not os.path.exists(mc_extract) : os.makedirs(mc_extract)
+		if not param.ubu_test and not os.path.exists(mc_extract) : os.makedirs(mc_extract)
 		
 		if calc_crc != mc_chk :
 			msg_f.append(col_m + '\nWarning: Microcode #%s is packed or badly extracted, please report it!\n' % mc_nr + col_e)
@@ -1603,7 +1583,7 @@ for in_file in source :
 		else :
 			mc_path = mc_extract + '%s.bin' % mc_name
 		
-		if not has_duplicate(mc_path, mc_data) :
+		if not param.ubu_test and not has_duplicate(mc_path, mc_data) :
 			baseName = os.path.basename(mc_path)
 			name_root, name_ext = os.path.splitext(baseName)
 			mc_path = auto_name (mc_extract, name_root, "_nr", "bin")[1]
