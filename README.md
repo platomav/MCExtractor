@@ -57,7 +57,8 @@ To use MC Extractor, select one or multiple files and Drag & Drop them to its ex
 There are various parameters which enhance or modify the default behavior of MC Extractor:
 
 * -?       : Displays help & usage screen
-* -skip    : Skips options intro screen
+* -skip    : Skips welcome & options screen
+* -exit    : Skips Press enter to exit prompt
 * -mass    : Scans all files of a given directory
 * -info    : Displays microcode header(s)
 * -add     : Adds new input microcode to DB
@@ -78,14 +79,14 @@ MC Extractor is developed using Python 3.6 and can work under Windows, Linux and
 
 #### **C1. Compatibility**
 
-MC Extractor has been tested to be compatible with Windows Vista-10, Ubuntu 16.04+ and macOS Sierra+ operating systems. It is generally expected to work at all Windows, Linux or macOS operating systems which have Python 3.6 support but feel free to test it. Any latter v3.x releases might work depending on whether MCE's prerequisites are also compatible. Windows Vista-8.1 users who plan to use the already built/frozen/compiled binaries must make sure that they have the latest Windows Updates installed which include all required "Universal C Runtime (CRT)" libraries.
+MC Extractor should work at all Windows, Linux or macOS operating systems which have Python 3.6 support. Any latter v3.x releases might work depending on whether MCE's prerequisites are also compatible. Windows users who plan to use the already built/frozen/compiled binaries must make sure that they have the latest Windows Updates installed which include all required "Universal C Runtime (CRT)" libraries. Windows users who plan to use console redirection must first "set PYTHONIOENCODING=UTF-8".
 
 #### **C2. Code Prerequisites**
 
 To run MC Extractor's python script, you need to have the following 3rd party Python modules installed:
 
 * [Colorama](https://pypi.python.org/pypi/colorama/)
-* [PTable](https://github.com/kxxoling/PTable/tree/master/)
+* [PTable](https://github.com/platomav/PTable/tree/boxchar)
 
 To build/freeze/compile MC Extractor's python script, you can use whatever you like. The following are verified to work:
 
@@ -99,7 +100,7 @@ PyInstaller can build/freeze/compile MC Extractor at all three supported platfor
 
 1. Make sure you have Python 3.6 installed
 2. Use pip to install colorama (PyPi)
-3. Use pip to install PTable (Github, master branch)
+3. Use pip to install PTable (Github, boxchar branch)
 4. Use pip to install PyInstaller (Github, master branch)
 5. Open a command prompt and execute:
 
