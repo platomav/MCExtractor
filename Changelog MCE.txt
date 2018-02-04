@@ -1,3 +1,11 @@
+v1.14.0 r55
+
+Improved AMD microcode detection pattern
+Improved table text & line output visuals
+Improved parameter -search output & error handling
+Added parameter -exit to skip Press enter to exit prompt
+MCE now checks & allows supported Python versions only
+
 v1.13.2 r52
 
 Improved parameter -search input & result order
