@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2018 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.14.0'
+title = 'MC Extractor v1.14.1'
 
 import os
 import re
@@ -883,7 +883,7 @@ else :
 # Search DB by CPUID (Intel/AMD/VIA) or Model (Freescale)
 if param.search :
 	# noinspection PyUnboundLocalVariable
-	if len(source) == 2 : i_cpuid = source[1] # -search CPUID expected
+	if len(source) >= 2 : i_cpuid = source[1] # -search CPUID expected first
 	else : i_cpuid = input('\nEnter CPUID (Intel, AMD, VIA) or Model (FSL) to search: ')
 	
 	try :
