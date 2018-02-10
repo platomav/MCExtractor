@@ -1,3 +1,8 @@
+v1.15.0 r56
+
+Improved scan performance by up to 300%
+Improved AMD microcode detection pattern
+
 v1.14.1 r55
 
 Improved AMD microcode detection pattern
