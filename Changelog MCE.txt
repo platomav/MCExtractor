@@ -1,3 +1,8 @@
+v1.16.0 r62
+
+Added parameter -redir for Console Redirection
+Fixed missing MCE header when using -skip
+
 v1.15.0 r56
 
 Improved scan performance by up to 300%

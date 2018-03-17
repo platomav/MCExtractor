@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2018 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.15.0'
+title = 'MC Extractor v1.16.0'
 
 import os
 import re
@@ -70,16 +70,17 @@ uint64_t = ctypes.c_uint64
 def mce_help() :
 	
 	text = "\nUsage: MCE [FilePath] {Options}\n\n{Options}\n\n"
-	text += "-?       : Displays help & usage screen\n"
-	text += "-skip    : Skips welcome & options screen\n"
-	text += "-exit    : Skips Press enter to exit prompt\n"
-	text += "-mass    : Scans all files of a given directory\n"
-	text += "-info    : Displays microcode header(s)\n"
-	text += "-add     : Adds new input microcode to DB\n"
-	text += "-dbname  : Renames input file based on DB name\n"
-	text += "-cont    : Extracts Intel containers (dat,inc,h,txt)\n"
-	text += "-search  : Searches for microcodes based on CPUID\n"
-	text += "-repo    : Builds microcode repositories from input"
+	text += "-?      : Displays help & usage screen\n"
+	text += "-skip   : Skips welcome & options screen\n"
+	text += "-exit   : Skips Press enter to exit prompt\n"
+	text += "-redir  : Enables console redirection support\n"
+	text += "-mass   : Scans all files of a given directory\n"
+	text += "-info   : Displays microcode header(s)\n"
+	text += "-add    : Adds new input microcode to DB\n"
+	text += "-dbname : Renames input file based on DB name\n"
+	text += "-cont   : Extracts Intel containers (dat,inc,h,txt)\n"
+	text += "-search : Searches for microcodes based on CPUID\n"
+	text += "-repo   : Builds microcode repositories from input"
 	
 	print(text)
 	mce_exit()
@@ -88,7 +89,7 @@ class MCE_Param :
 
 	def __init__(self,source) :
 	
-		self.all = ['-?','-skip','-info','-add','-extr','-cont','-mass','-search','-dbname','-repo','-exit','-ubutest']
+		self.all = ['-?','-skip','-info','-add','-extr','-cont','-mass','-search','-dbname','-repo','-exit','-ubutest','-redir']
 		
 		self.win = ['-extr'] # Windows only
 		
@@ -109,6 +110,7 @@ class MCE_Param :
 		self.build_repo = False
 		self.ubu_test = False # TBD
 		self.skip_pause = False
+		self.cli_redirect = False
 		
 		for i in source :
 			if i == '-?' : self.help_scr = True
@@ -122,6 +124,7 @@ class MCE_Param :
 			if i == '-repo' : self.build_repo = True
 			if i == '-ubutest' : self.ubu_test = True # Hidden (TBD)
 			if i == '-exit' : self.skip_pause = True
+			if i == '-redir' : self.cli_redirect = True
 			
 			# Windows only options
 			if mce_os == 'win32' :
@@ -129,6 +132,7 @@ class MCE_Param :
 			
 		if self.mce_extr or self.mass_scan or self.search or self.build_repo or self.conv_cont : self.skip_intro = True
 		if self.conv_cont : self.give_db_name = False
+		if self.cli_redirect : self.skip_pause = True
 
 # noinspection PyTypeChecker
 class Intel_MC_Header(ctypes.LittleEndianStructure) :
@@ -722,13 +726,11 @@ def build_mc_repo(vendor, mc_upd, rel_file) :
 		shutil.copyfile(in_file, repo_dir + repo_name)
 
 def mc_table(row_col_names,header,padd) :
-	if param.ubu_test : padd = 0
-	
 	pt = prettytable.PrettyTable(row_col_names)
-	pt.set_style(prettytable.BOX_CHARS) # Comment out if UnicodeEncodeError
+	if not param.cli_redirect : pt.set_style(prettytable.BOX_CHARS)
 	pt.header = header # Boolean
-	pt.left_padding_width = padd
-	pt.right_padding_width = padd
+	pt.left_padding_width = padd if not param.ubu_test else 0
+	pt.right_padding_width = padd if not param.ubu_test else 0
 	pt.hrules = prettytable.ALL
 	pt.vrules = prettytable.ALL
 	pt_empty = str(pt)
@@ -780,8 +782,10 @@ def mce_hdr() :
 			hdr_conn.close()
 		except :
 			pass
-		
-	print("\n-------[ %s %s%s ]-------" % (title, db_rev, db_dev))
+	
+	hdr_pt,hdr_pt_empty = mc_table([], False, 1)
+	hdr_pt.add_row([col_y + "        %s %s%s        " % (title, db_rev, db_dev) + col_e])
+	print(hdr_pt)
 
 # Force string to be printed as ASCII, ignore errors
 def force_ascii(string) :
@@ -812,8 +816,8 @@ param = MCE_Param(sys.argv)
 # Enumerate parameter input
 arg_num = len(sys.argv)
 
-# Actions for MCE but not UEFIStrip
-if param.mce_extr :
+# Actions for MCE but not UBU or UEFIStrip
+if param.mce_extr or param.ubu_test :
 	pass
 else :
 	sys.excepthook = show_exception_and_exit # Pause after any unexpected python exception
@@ -855,6 +859,9 @@ if not param.skip_intro :
 	
 	os.system(cl_wipe)
 
+	mce_hdr()
+
+else :
 	mce_hdr()
 
 if (arg_num < 2 and not param.help_scr and not param.mass_scan and not param.search) or param.help_scr :
@@ -952,7 +959,7 @@ for in_file in source :
 		if not param.mass_scan : mce_exit(1)
 		else : continue
 	
-	if not param.mce_extr : print("\nFile (%d/%d): %s\n" % (cur_count, in_count, force_ascii(os.path.basename(in_file))))
+	if not param.mce_extr and not param.ubu_test : print(col_c + '\n%s (%d/%d)\n' % (force_ascii(os.path.basename(in_file)), cur_count, in_count) + col_e)
 	
 	# Convert Intel containers (.dat , .inc , .h , .txt) to .bin
 	if param.conv_cont :
