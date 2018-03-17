@@ -56,16 +56,17 @@ To use MC Extractor, select one or multiple files and Drag & Drop them to its ex
 
 There are various parameters which enhance or modify the default behavior of MC Extractor:
 
-* -?       : Displays help & usage screen
-* -skip    : Skips welcome & options screen
-* -exit    : Skips Press enter to exit prompt
-* -mass    : Scans all files of a given directory
-* -info    : Displays microcode header(s)
-* -add     : Adds new input microcode to DB
-* -dbname  : Renames input file based on DB name
-* -cont    : Extracts Intel containers (dat,inc,h,txt)
-* -search  : Searches for microcodes based on CPUID
-* -repo    : Builds microcode repositories from input
+* -?      : Displays help & usage screen
+* -skip   : Skips welcome & options screen
+* -exit   : Skips Press enter to exit prompt
+* -redir  : Enables console redirection support
+* -mass   : Scans all files of a given directory
+* -info   : Displays microcode header(s)
+* -add    : Adds new input microcode to DB
+* -dbname : Renames input file based on DB name
+* -cont   : Extracts Intel containers (dat,inc,h,txt)
+* -search : Searches for microcodes based on CPUID
+* -repo   : Builds microcode repositories from input
 
 #### **B3. MC Extractor Error Control**
 
