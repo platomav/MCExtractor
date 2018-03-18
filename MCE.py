@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2018 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.16.0'
+title = 'MC Extractor v1.16.1'
 
 import os
 import re
@@ -132,6 +132,7 @@ class MCE_Param :
 			
 		if self.mce_extr or self.mass_scan or self.search or self.build_repo or self.conv_cont : self.skip_intro = True
 		if self.conv_cont : self.give_db_name = False
+		if self.mce_extr : self.cli_redirect = True
 		if self.cli_redirect : self.skip_pause = True
 
 # noinspection PyTypeChecker
@@ -762,7 +763,7 @@ def display_sql(cursor,title,header,padd):
 # MCE Version Header
 def mce_hdr() :
 	db_rev = col_r + 'Unknown' + col_e
-	db_dev = ''
+	db_dev = col_r + ' Unknown' + col_e
 	
 	if os.path.isfile(db_path) :
 		try :
@@ -772,10 +773,10 @@ def mce_hdr() :
 			hdr_c.execute('PRAGMA quick_check')
 			
 			hdr_res = (hdr_c.execute('SELECT revision, developer FROM MCE')).fetchone()
-			db_rev = 'r' + str(hdr_res[0])
+			db_rev = col_y + 'r' + str(hdr_res[0]) + col_e
 			db_dev = hdr_res[1]
 		
-			if db_dev == 1 : db_dev = ' Dev'
+			if db_dev == 1 : db_dev = col_y + ' Dev' + col_e
 			else : db_dev = ''
 		
 			hdr_c.close()
@@ -784,7 +785,7 @@ def mce_hdr() :
 			pass
 	
 	hdr_pt,hdr_pt_empty = mc_table([], False, 1)
-	hdr_pt.add_row([col_y + "        %s %s%s        " % (title, db_rev, db_dev) + col_e])
+	hdr_pt.add_row([col_y + '        %s' % title + col_e + ' %s%s        ' % (db_rev, db_dev)])
 	print(hdr_pt)
 
 # Force string to be printed as ASCII, ignore errors
@@ -861,7 +862,7 @@ if not param.skip_intro :
 
 	mce_hdr()
 
-else :
+elif not param.mce_extr :
 	mce_hdr()
 
 if (arg_num < 2 and not param.help_scr and not param.mass_scan and not param.search) or param.help_scr :

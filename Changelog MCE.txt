@@ -1,3 +1,7 @@
+v1.16.1 r62
+
+Fixed crashes under rare circumstances
+
 v1.16.0 r62
 
 Added parameter -redir for Console Redirection
