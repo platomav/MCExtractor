@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2018 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.16.1'
+title = 'MC Extractor v1.16.2'
 
 import os
 import re
@@ -888,6 +888,7 @@ if os.path.isfile(db_path) :
 	
 	create_tables()
 else :
+	conn = None
 	print(col_r + "\nError: MCE.db file is missing!" + col_e)
 	mce_exit(1)
 
@@ -1230,7 +1231,8 @@ for in_file in source :
 		
 		nbsb_rev_id = '%0.2X' % mc_hdr.NorthBridgeREV_ID + '%0.2X' % mc_hdr.SouthBridgeREV_ID
 		
-		if cpu_id == '00800F11' and patch == 0x8001105 and year == '2016' : year = '2017' # Drunk AMD employee 2, Zen in January 2016!
+		if (cpu_id,patch,year) == ('00800F11',0x8001105,'2016') : year = '2017' # Drunk AMD employee 2, Zen in January 2016!
+		if (cpu_id,patch,month,day) == ('00730F01',0x7030106,'09','02') : month,day = '02','09' # Drunk AMD employee 3, 2018-09 in 2018-02!
 		
 		full_date = "%s-%s-%s" % (year, month, day)
 		
@@ -1240,7 +1242,7 @@ for in_file in source :
 			
 			if date_chk.year > 2020 : raise Exception('WrongDate') # 1st MC from 1999 (K7), 2000 for K7 Erratum and performance
 		except :
-			if full_date == '2011-13-09' and patch == 0x3000027 : pass # Drunk AMD employee 1, Happy 13th month from AMD!
+			if (full_date,patch) == ('2011-13-09',0x3000027) : pass # Drunk AMD employee 1, Happy 13th month from AMD!
 			else :
 				msg_a.append(col_m + "\nWarning: Skipped AMD microcode at 0x%X, invalid Date of %s!" % (mc_bgn, full_date) + col_e)
 				copy_file_with_warn(work_file)
