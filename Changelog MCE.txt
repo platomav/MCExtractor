@@ -1,3 +1,8 @@
+v1.16.2 r65
+
+Added Drunk AMD employee 3, wrong MC date
+Fixed a crash under rare circumstances
+
 v1.16.1 r62
 
 Fixed crashes under rare circumstances

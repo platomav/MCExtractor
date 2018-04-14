@@ -111,7 +111,9 @@ At dist folder you should find the final MCE executable
 
 ## **D. Pictures**
 
-![](https://i.imgur.com/b5zUqvd.png)
+**Note:** Some pictures are outdated and depict older MC Extractor versions.
+
+![](https://i.imgur.com/1jZL0p2.png)
 
 ![](https://i.imgur.com/LcFVxwI.png)
 
