@@ -1,3 +1,7 @@
+v1.16.3 r66
+
+Fixed issues under rare circumstances
+
 v1.16.2 r65
 
 Added Drunk AMD employee 3, wrong MC date
