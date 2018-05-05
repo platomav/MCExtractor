@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2018 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.16.2'
+title = 'MC Extractor v1.16.3'
 
 import os
 import re
@@ -888,13 +888,13 @@ if os.path.isfile(db_path) :
 	
 	create_tables()
 else :
+	c = None
 	conn = None
 	print(col_r + "\nError: MCE.db file is missing!" + col_e)
 	mce_exit(1)
 
 # Search DB by CPUID (Intel/AMD/VIA) or Model (Freescale)
 if param.search :
-	# noinspection PyUnboundLocalVariable
 	if len(source) >= 2 : i_cpuid = source[1] # -search CPUID expected first
 	else : i_cpuid = input('\nEnter CPUID (Intel, AMD, VIA) or Model (FSL) to search: ')
 	
@@ -903,8 +903,7 @@ if param.search :
 	except :
 		print(col_r + '\nError: Invalid CPUID (Intel, AMD, VIA) or Model (FSL)!' + col_e)
 		mce_exit()
-		
-	# noinspection PyUnboundLocalVariable
+	
 	res_i = c.execute('SELECT cpuid,platform,version,yyyymmdd,size FROM Intel WHERE cpuid=? ORDER BY yyyymmdd DESC', (i_cpuid,))
 	display_sql(res_i, col_b + 'Intel' + col_e, True, 1)
 	
@@ -942,6 +941,9 @@ for in_file in source :
 	total = 0
 	type_conv = ''
 	temp_file = None
+	mc_hdr_extra = None
+	mc_hdr_extended = None
+	
 	msg_i = []
 	msg_a = []
 	msg_v = []
@@ -1093,6 +1095,8 @@ for in_file in source :
 			valid_ext_chk = checksum32(ext_header_data)
 		else :
 			mc_extended_found = False
+			mc_extended_off = -1
+			ext_fields_count = -1
 			valid_ext_chk = 0
 		
 		# Print the Header(s)
@@ -1100,17 +1104,13 @@ for in_file in source :
 			mc_hdr.mc_print()
 			
 			if mc_extra_found :
-				# noinspection PyUnboundLocalVariable
 				mc_hdr_extra.mc_print_extra()
 			
 			if mc_extended_found :
-				# noinspection PyUnboundLocalVariable
 				mc_hdr_extended.mc_print_extended()
 				
-				# noinspection PyUnboundLocalVariable
 				mc_extended_field_off = mc_extended_off + 0x14
 				
-				# noinspection PyUnboundLocalVariable
 				for idx in range(ext_fields_count) :
 					mc_hdr_extended_field = get_struct(reading, mc_extended_field_off, Intel_MC_Header_Extended_Field)
 					mc_hdr_extended_field.mc_print_extended_field()
