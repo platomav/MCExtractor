@@ -93,17 +93,29 @@ To build/freeze/compile MC Extractor's python script, you can use whatever you l
 
 * [Py2exe](https://pypi.python.org/pypi/py2exe/) (Windows)
 * [Py2app](https://pypi.python.org/pypi/py2app/) (macOS)
-* [PyInstaller](https://github.com/pyinstaller/pyinstaller/tree/master/) (Windows/Linux/macOS)
+* [PyInstaller](https://pypi.org/project/PyInstaller/) (Windows/Linux/macOS)
 
 #### **C3. Build/Freeze/Compile with PyInstaller**
 
 PyInstaller can build/freeze/compile MC Extractor at all three supported platforms, it is simple to run and gets updated often.
 
-1. Make sure you have Python 3.6 installed
-2. Use pip to install colorama (PyPi)
-3. Use pip to install PTable (Github, boxchar branch)
-4. Use pip to install PyInstaller (Github, master branch)
-5. Open a command prompt and execute:
+1. Make sure Python 3.6.0 or newer is installed:
+
+> python --version
+
+2. Use pip to install colorama (PyPi):
+
+> pip3 install colorama
+
+3. Use pip to install PTable (Github, boxchar branch):
+
+> pip3 install PTable-boxchar.zip
+
+4. Use pip to install PyInstaller (PyPi):
+
+> pip3 install pyinstaller
+
+5. Build/Freeze/Compile MC Extractor:
 
 > pyinstaller --noupx --onefile MCE.py
 
