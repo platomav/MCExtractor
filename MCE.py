@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2018 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.16.3'
+title = 'MC Extractor v1.20.0'
 
 import os
 import re
@@ -89,7 +89,7 @@ class MCE_Param :
 
 	def __init__(self,source) :
 	
-		self.all = ['-?','-skip','-info','-add','-extr','-cont','-mass','-search','-dbname','-repo','-exit','-ubutest','-redir']
+		self.all = ['-?','-skip','-info','-add','-extr','-cont','-mass','-search','-dbname','-repo','-exit','-ubutest','-redir','-blob']
 		
 		self.win = ['-extr'] # Windows only
 		
@@ -111,6 +111,7 @@ class MCE_Param :
 		self.ubu_test = False # TBD
 		self.skip_pause = False
 		self.cli_redirect = False
+		self.build_blob = False
 		
 		for i in source :
 			if i == '-?' : self.help_scr = True
@@ -125,12 +126,13 @@ class MCE_Param :
 			if i == '-ubutest' : self.ubu_test = True # Hidden (TBD)
 			if i == '-exit' : self.skip_pause = True
 			if i == '-redir' : self.cli_redirect = True
+			if i == '-blob' : self.build_blob = True
 			
 			# Windows only options
 			if mce_os == 'win32' :
 				if i == '-extr': self.mce_extr = True # Hidden
 			
-		if self.mce_extr or self.mass_scan or self.search or self.build_repo or self.conv_cont : self.skip_intro = True
+		if self.mce_extr or self.mass_scan or self.search or self.build_repo or self.conv_cont or self.build_blob : self.skip_intro = True
 		if self.conv_cont : self.give_db_name = False
 		if self.mce_extr : self.cli_redirect = True
 		if self.cli_redirect : self.skip_pause = True
@@ -499,6 +501,67 @@ class FSL_MC_Entry(ctypes.BigEndianStructure) :
 		pt.add_row(['Reserved 1', '0x%X' % self.Reserved1])
 		
 		print(pt)
+		
+# noinspection PyTypeChecker		
+class MCB_Header(ctypes.LittleEndianStructure) :
+	_pack_   = 1
+	_fields_ = [
+		('Tag',                       char*4),      # 00 Microcode Blob Tag ($MCB)
+		('MCCount',                   uint16_t),    # 04 Microcode Entry Count
+		('MCEDBRev',                  uint8_t),     # 06 MCE DB Revision
+		('MCEDBDev',                  uint8_t),     # 07 MCE DB Developer (0 No, 1 Yes)
+		('HeaderRev',                 uint8_t),     # 08 MCB Header Revision (1)
+		('MCVendor',                  uint8_t),     # 09 Microcode Vendor (0 Intel)
+		('Reserved',                  uint16_t),    # 0A Reserved (0)
+		('Checksum',                  uint32_t),    # 0C CRC-32 of Entries + Data
+		# 0x10
+	]
+	
+	def mc_print(self) :
+		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
+		
+		pt.title = col_y + 'Microcode Blob Header' + col_e
+		pt.add_row(['Tag', self.Tag.decode('utf-8')])
+		pt.add_row(['Microcode Count', self.MCCount])
+		pt.add_row(['MCE DB Revision', 'r%d' % self.MCEDBRev])
+		pt.add_row(['MCE DB Developer', ['No','Yes'][self.MCEDBDev]])
+		pt.add_row(['Header Revision', self.HeaderRev])
+		pt.add_row(['Microcode Vendor', ['Intel'][self.MCVendor]])
+		pt.add_row(['Reserved', self.Reserved])
+		pt.add_row(['Checksum', '0x%0.8X' % self.Checksum])
+		
+		print(pt)
+
+# noinspection PyTypeChecker		
+class MCB_Entry(ctypes.LittleEndianStructure) :
+	_pack_   = 1
+	_fields_ = [
+		('CPUID',                     uint32_t),    # 00 CPUID
+		('Platform',                  uint32_t),    # 04 Platform (Intel)
+		('Revision',                  uint32_t),    # 08 Revision
+		('Year',                      uint16_t),    # 0C Year
+		('Month',                     uint8_t),     # 0E Month
+		('Day',                       uint8_t),     # 0F Day
+		('Offset',                    uint32_t),    # 10 Offset
+		('Size',                      uint32_t),    # 14 Size
+		('Checksum',                  uint32_t),    # 18 Checksum (Vendor/MCE)
+		('Reserved',                  uint32_t),    # 1C Reserved (0)
+		# 0x20
+	]
+	
+	def mc_print(self) :
+		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
+		
+		pt.title = col_y + 'Microcode Blob Entry' + col_e
+		pt.add_row(['CPUID', '%0.8X' % self.CPUID])
+		pt.add_row(['Platform', intel_plat(self.Platform)])
+		pt.add_row(['Date', '%0.4X-%0.2X-%0.2X' % (self.Year, self.Month, self.Day)])
+		pt.add_row(['Offset', '0x%X' % self.Offset])
+		pt.add_row(['Size', '0x%X' % self.Size])
+		pt.add_row(['Checksum', '0x%0.8X' % self.Checksum])
+		pt.add_row(['Reserved', self.Reserved])
+		
+		print(pt)
 
 # Setup DB Tables
 def create_tables():
@@ -544,11 +607,14 @@ def show_exception_and_exit(exc_type, exc_value, tb) :
 def adler32(data) :
 	return zlib.adler32(data) & 0xFFFFFFFF
 	
+def crc32(data) :
+	return zlib.crc32(data) & 0xFFFFFFFF
+	
 def checksum32(data) :	
 	chk32 = 0
 	
 	for idx in range(0, len(data), 4) : # Move 4 bytes at a time
-		chkbt = int.from_bytes(data[idx:idx + 4], 'little') # Convert to int, MSB at the end (LE)
+		chkbt = int.from_bytes(data[idx:idx + 4], 'little') # Convert to int
 		chk32 += chkbt
 	
 	return -chk32 & 0xFFFFFFFF # Return 0
@@ -667,39 +733,48 @@ def copy_file_with_warn(work_file) :
 	
 def mc_upd_chk_intel(mc_upd_chk_rsl, plat_bit, rel_file) :
 	mc_latest = True
+	result = None
 	
-	for entry in mc_upd_chk_rsl :
-		dd = entry[0][6:8]
-		mm = entry[0][4:6]
-		yyyy = entry[0][:4]
-		mc_pl = intel_plat(int(entry[1], 16)) # Platforms of DB entry with same CPUID as Input
-		mc_rel = 'PRE' if ctypes.c_int(int(entry[2], 16)).value < 0 else 'PRD' # Release of DB entry with same CPUID as Input
-		
-		# Input Platforms less than DB Platforms, but within the latter (ex: Input 0,3,4 within DB 0,1,3,4,7)
-		if rel_file == mc_rel and len(plat_bit) < len(mc_pl) and set(plat_bit).issubset(mc_pl) :
-			if year < yyyy or (year == yyyy and (month < mm or (month == mm and (day == dd or day < dd)))) :
-				# Input within DB Entry, Input date older than DB Entry
-				mc_latest = False # Upon equal Date, DB prevails
-			# Input within DB Entry, Input date newer than DB Entry
-		# DB Platforms less than Input Platforms, but within the latter (ex: DB 0,3,4 within Input 0,1,3,4,7)
-		elif rel_file == mc_rel and len(plat_bit) > len(mc_pl) and set(mc_pl).issubset(plat_bit) :
-			# Nothing to do, the more Input Platforms the better (Date ignored)
-			pass
-		# Input Platforms != DB Platforms and not within each other, separate Platforms (ex: Input 0,3,4,5 with DB 1,2,6,7)
-		elif rel_file == mc_rel and plat_bit != mc_pl :
-			# Nothing to do, Input & DB Platforms are not affiliated with each other (Date ignored)
-			pass
-		# Input Platforms = DB Platforms, check Date
-		elif rel_file == mc_rel :
-			if year < yyyy or (year == yyyy and (month < mm or (month == mm and day < dd))) :
-				# Input = DB, Input date older than DB Entry
-				mc_latest = False # Equal date at same CPUID & Platform means Last
-			# Input = DB, Input date newer than DB Entry
+	if mc_upd_chk_rsl :
+		for entry in mc_upd_chk_rsl :
+			dd = entry[0][6:8]
+			mm = entry[0][4:6]
+			yyyy = entry[0][:4]
+			mc_pl_val = int(entry[1], 16)
+			mc_pl_bit = intel_plat(int(entry[1], 16)) # Platforms of DB entry with same CPUID as Input
+			mc_rel = 'PRE' if ctypes.c_int(int(entry[2], 16)).value < 0 else 'PRD' # Release of DB entry with same CPUID as Input
+			
+			# Input Platforms less than DB Platforms, but within the latter (ex: Input 0,3,4 within DB 0,1,3,4,7)
+			if rel_file == mc_rel and len(plat_bit) < len(mc_pl_bit) and set(plat_bit).issubset(mc_pl_bit) :
+				if year < yyyy or (year == yyyy and (month < mm or (month == mm and (day == dd or day < dd)))) :
+					# Input within DB Entry, Input date older than DB Entry
+					mc_latest = False # Upon equal Date, DB prevails
+					
+					# Store newest microcode for same CPUID/Release & compatible Platform
+					result = [cpu_id, mc_pl_val, yyyy, mm, dd, mc_rel]
+				# Input within DB Entry, Input date newer than DB Entry
+			# DB Platforms less than Input Platforms, but within the latter (ex: DB 0,3,4 within Input 0,1,3,4,7)
+			elif rel_file == mc_rel and len(plat_bit) > len(mc_pl_bit) and set(mc_pl_bit).issubset(plat_bit) :
+				# Nothing to do, the more Input Platforms the better (Date ignored)
+				pass
+			# Input Platforms != DB Platforms and not within each other, separate Platforms (ex: Input 0,3,4,5 with DB 1,2,6,7)
+			elif rel_file == mc_rel and plat_bit != mc_pl_bit :
+				# Nothing to do, Input & DB Platforms are not affiliated with each other (Date ignored)
+				pass
+			# Input Platforms = DB Platforms, check Date
+			elif rel_file == mc_rel :
+				if year < yyyy or (year == yyyy and (month < mm or (month == mm and day < dd))) :
+					# Input = DB, Input date older than DB Entry
+					mc_latest = False # Equal date at same CPUID & Platform means Last
+					
+					# Store newest microcode for same CPUID/Release & compatible Platform
+					result = [cpu_id, mc_pl_val, yyyy, mm, dd, mc_rel]
+				# Input = DB, Input date newer than DB Entry
 	
 	if mc_latest : mc_upd = col_g + 'Yes' + col_e # Used at build_mc_repo as well
 	else : mc_upd = col_r + 'No' + col_e
 	
-	return mc_upd
+	return mc_upd, result
 	
 def mc_upd_chk(mc_dates) :
 	mc_latest = True
@@ -838,7 +913,7 @@ if not param.skip_intro :
 		print("Press Enter to skip or input -? to list options\n")
 		print("\nFiles:       " + col_y + "Multiple" + col_e)
 	else :
-		print('Input a filename or "filepath" or press Enter to list options\n')
+		print('Input a file name/path or press Enter to list options\n')
 		print("\nFile:       " + col_m + "None" + col_e)
 
 	input_var = input('\nOption(s):  ')
@@ -894,7 +969,7 @@ else :
 	mce_exit(1)
 
 # Search DB by CPUID (Intel/AMD/VIA) or Model (Freescale)
-if param.search :
+if param.search and not param.build_blob :
 	if len(source) >= 2 : i_cpuid = source[1] # -search CPUID expected first
 	else : i_cpuid = input('\nEnter CPUID (Intel, AMD, VIA) or Model (FSL) to search: ')
 	
@@ -922,6 +997,13 @@ in_count = len(source)
 for arg in source :
 	if arg in param.val : in_count -= 1
 
+# Blob Variables
+blob_lut_init = []
+blob_lut_done = b''
+blob_data = b''
+blob_count = 0
+mc_last = None
+	
 # Intel - HeaderRev 01, LoaderRev 01, ProcesFlags xx00*3 (Intel 64 and IA-32 Architectures Software Developer's Manual Vol 3A, Ch 9.11.1)
 pat_icpu = re.compile(br'\x01\x00{3}.{4}[\x00-\x99](([\x19\x20][\x01-\x31][\x01-\x12])|(\x18\x07\x00)).{8}\x01\x00{3}.\x00{3}', re.DOTALL)
 
@@ -943,7 +1025,6 @@ for in_file in source :
 	temp_file = None
 	mc_hdr_extra = None
 	mc_hdr_extended = None
-	
 	msg_i = []
 	msg_a = []
 	msg_v = []
@@ -1145,19 +1226,31 @@ for in_file in source :
 		mc_upd_chk_rsl = (c.execute('SELECT yyyymmdd,platform,version FROM Intel WHERE cpuid=?', ('%0.8X' % cpu_id,))).fetchall()
 		
 		# Determine if MC is Last or Outdated
-		mc_upd = mc_upd_chk_intel(mc_upd_chk_rsl, plat_bit, rel_file)
+		mc_upd, mc_last = mc_upd_chk_intel(mc_upd_chk_rsl, plat_bit, rel_file)
 		
 		# Build Microcode Repository (PRD & Last)
 		if param.build_repo :
 			build_mc_repo('INTEL', mc_upd, rel_file)
+			
 			continue
-		
-		row = [mc_nr, '%X' % cpu_id, '%0.2X (%s)' % (plat, ','.join(map(str, plat_bit))), '%X' % patch_u, full_date, rel_file, '0x%X' % mc_len, '0x%X' % mc_bgn, mc_upd]
-		pt.add_row(row)
 		
 		mc_end = mc_bgn + mc_len
 		mc_data = reading[mc_bgn:mc_end]
 		valid_mc_chk = checksum32(mc_data)
+		
+		# Prepare Microcode Blob
+		if param.build_blob :
+			blob_count += 1
+			
+			# CPUID [0x4] + Platform [0x4] + Version [0x4] + Date [0x4] + Offset [0x4] + Size [0x4] + Checksum [0x4] + Reserved [0x4]
+			blob_lut_init.append([cpu_id, plat, patch_u, mc_hdr.Year, mc_hdr.Month, mc_hdr.Day, 0, mc_len, mc_chk, 0])
+			
+			blob_data += mc_data
+				
+			continue
+			
+		row = [mc_nr, '%X' % cpu_id, '%0.2X (%s)' % (plat, ','.join(map(str, plat_bit))), '%X' % patch_u, full_date, rel_file, '0x%X' % mc_len, '0x%X' % mc_bgn, mc_upd]
+		pt.add_row(row)
 		
 		# Create extraction folder
 		if '-extr' in source : mc_extract = mce_dir + os_dir +  '..\Z_Extract\\CPU\\'
@@ -1200,8 +1293,6 @@ for in_file in source :
 	pt, pt_empty = mc_table(col_names, True, 1)
 	
 	for match_ucode in match_list_a :
-		
-		unk_size = False
 		
 		# noinspection PyRedeclaration
 		(mc_bgn, end_mc_match) = match_ucode.span()
@@ -1578,5 +1669,79 @@ for in_file in source :
 		os.remove(temp_file.name)
 		
 	if total == 0 : print('File does not contain CPU microcodes')
+
+# Search Microcode Blob for Latest
+if param.build_blob and param.search :
+	if mc_last is None :
+		print(col_y + '\nNote: Microcode is the latest!' + col_e) # Based on DB
+		mce_exit(1)
+	
+	if os.path.isfile(mce_dir + os_dir + 'MCB.bin') :
+		# Delete previous Latest Microcode
+		if os.path.isfile(mce_dir + os_dir + 'last.bin') : os.remove(mce_dir + os_dir + 'last.bin')
+	
+		with open(mce_dir + os_dir + 'MCB.bin', 'rb') as mcb :
+			mcb_data = mcb.read()
+			file_end = mcb.seek(0,2)
+			mcb.seek(0,0)
+			
+			mcb_hdr = get_struct(mcb_data, 0, MCB_Header)
+			
+			if mcb_hdr.Tag == b'$MCB' : # Sanity checks
+				mcb_count = mcb_hdr.MCCount
+				mcb_dbrev = mcb_hdr.MCEDBRev
+				mcb_dbdev = mcb_hdr.MCEDBDev
+				mcb_rev = mcb_hdr.HeaderRev
+				mcb_ven = mcb_hdr.MCVendor
+				mcb_crc = mcb_hdr.Checksum
+				
+				for e in range(0, mcb_count) :
+					mcb_lut = get_struct(mcb_data, 0x10 + e * 0x20, MCB_Entry)
+					
+					mcb_cpuid = mcb_lut.CPUID
+					mcb_plat = mcb_lut.Platform
+					mcb_year = '%0.4X' % mcb_lut.Year
+					mcb_month = '%0.2X' % mcb_lut.Month
+					mcb_day = '%0.2X' % mcb_lut.Day
+					mcb_rel = 'PRD' if ctypes.c_int(mcb_lut.Revision).value >= 0 else 'PRE'
+					
+					if (mcb_ven,mcb_cpuid,mcb_plat,mcb_year,mcb_month,mcb_day,mcb_rel) == (0,mc_last[0],mc_last[1],mc_last[2],mc_last[3],mc_last[4],mc_last[5]) :
+						with open(mce_dir + os_dir + 'last.bin', 'wb') as mc : mc.write(mcb_data[mcb_lut.Offset:mcb_lut.Offset + mcb_lut.Size])
+						break
+				else :
+					print(col_r + '\nError: Latest microcode not within MCB.bin!' + col_e)
+					mce_exit(3)
+						
+	else :
+		print(col_r + '\nError: MCB.bin is missing!' + col_e)
+		mce_exit(2)
+	
+	print(col_g + '\nLatest Microcode extracted!' + col_e)
+	mce_exit(0)
+	
+# Build Microcode Blob
+elif param.build_blob :
+	db_rev_now = (c.execute('SELECT revision FROM MCE')).fetchone()[0] # Get DB Revision
+	db_is_dev = (c.execute('SELECT developer FROM MCE')).fetchone()[0] # Get DB Developer
+	
+	# Determine Microcode Blob offsets
+	blob_offset = 0x10 + blob_count * 0x20 # Header Length = 0x10, Entry Length = 0x20
+	for i in range(len(blob_lut_init)) :
+		blob_lut_init[i][6] += blob_offset # 6 = Microcode Offset
+		blob_offset += blob_lut_init[i][7] # 7 = Microcode Size
+		blob_lut_done += struct.pack('<IIIHBBIIII', blob_lut_init[i][0], blob_lut_init[i][1], blob_lut_init[i][2], blob_lut_init[i][3],
+						 blob_lut_init[i][4], blob_lut_init[i][5], blob_lut_init[i][6], blob_lut_init[i][7], blob_lut_init[i][8], blob_lut_init[i][9])
+	
+	# Tag [0x4] + Entry Count [0x2] + DB Revision [0x1] + DB Developer [0x1] + Header Revision [0x1] + Vendor [0x1] + Reserved [0x2] + CRC32 [0x4]
+	blob_hdr = struct.pack('<4sHBBBBHI', b'$MCB', blob_count, db_rev_now, db_is_dev, 1, 0, 0, crc32(blob_lut_done + blob_data))
+	
+	# Delete previous Microcode Blob
+	if os.path.isfile(mce_dir + os_dir + 'MCB.bin') : os.remove(mce_dir + os_dir + 'MCB.bin')
+	
+	# Generate final Microcode Blob
+	with open(mce_dir + os_dir + 'MCB.bin', 'ab') as mc_blob :
+		mc_blob.write(blob_hdr)
+		mc_blob.write(blob_lut_done)
+		mc_blob.write(blob_data)
 
 mce_exit()

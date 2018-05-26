@@ -1,3 +1,7 @@
+v1.20.0 r69
+
+Added MCE Microcode Blob format support
+
 v1.16.3 r66
 
 Fixed issues under rare circumstances
