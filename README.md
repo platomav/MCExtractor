@@ -109,7 +109,7 @@ PyInstaller can build/freeze/compile MC Extractor at all three supported platfor
 
 3. Use pip to install PTable (Github, boxchar branch):
 
-> pip3 install PTable-boxchar.zip
+> pip3 install https://github.com/platomav/PTable/archive/boxchar.zip
 
 4. Use pip to install PyInstaller (PyPi):
 
