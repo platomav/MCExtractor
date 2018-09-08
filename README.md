@@ -9,7 +9,7 @@ Intel, AMD, VIA &amp; Freescale Microcode Extraction Tool
 
 [![MC Extractor Donation](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=DJDZD3PRGCSCL)
 
-![](https://i.imgur.com/1jZL0p2.png)
+![](https://i.imgur.com/YN1bfmo.png)
 
 ## **A. About MC Extractor**
 
@@ -74,13 +74,11 @@ During operation, MC Extractor may encounter issues that can trigger Notes, Warn
 
 ## **C. Execute/Download MC Extractor**
 
-MC Extractor is developed using Python 3.6 and can work under Windows, Linux and macOS operating systems. It consists of two files, the executable (MCE.exe or MCE) and the database (MCE.db). Regarding the executable, already built/frozen/compiled binaries are provided by me for Windows only (icon designed by [Alfredo Hernandez](https://www.alfredocreates.com/)). Thus, **you don't need to manually build/freeze/compile MC Extractor under Windows**. Instead, download the latest version from the [Releases](https://github.com/platomav/MCExtractor/releases) tab, title should be "MC Extractor v1.X.X". You may need to scroll down a bit if there are DB releases at the top. The latter can be used to update the outdated DB which was bundled with the latest executable release, title should be "DB rXX". For Linux and macOS or courageous Windows users, the build/freeze/compile instructions for all three OS can be found below.
-
-**Note:** To extract the already built/frozen/compiled MC Extractor archives, you need to use programs which support RAR5 compression!
+MC Extractor consists of two files, the executable (MCE.exe or MCE) and the database (MCE.db). An already built/frozen/compiled binary is provided by me for Windows only (icon designed by [Alfredo Hernandez](https://www.alfredocreates.com/)). Thus, **you don't need to manually build/freeze/compile MC Extractor under Windows**. Instead, download the latest version from the [Releases](https://github.com/platomav/MCExtractor/releases) tab, title should be "MC Extractor v1.X.X". You may need to scroll down a bit if there are DB releases at the top. The latter can be used to update the outdated DB which was bundled with the latest executable release, title should be "DB rXX". To extract the already built/frozen/compiled archive, you need to use programs which support RAR5 compression.
 
 #### **C1. Compatibility**
 
-MC Extractor should work at all Windows, Linux or macOS operating systems which have Python 3.6 support. Any latter v3.x releases might work depending on whether MCE's prerequisites are also compatible. Windows users who plan to use the already built/frozen/compiled binaries must make sure that they have the latest Windows Updates installed which include all required "Universal C Runtime (CRT)" libraries.
+MC Extractor should work at all Windows, Linux or macOS operating systems which have Python 3.6 support. Windows users who plan to use the already built/frozen/compiled binaries must make sure that they have the latest Windows Updates installed which include all required "Universal C Runtime (CRT)" libraries.
 
 #### **C2. Code Prerequisites**
 
@@ -88,12 +86,6 @@ To run MC Extractor's python script, you need to have the following 3rd party Py
 
 * [Colorama](https://pypi.python.org/pypi/colorama/)
 * [PTable](https://github.com/platomav/PTable/tree/boxchar)
-
-To build/freeze/compile MC Extractor's python script, you can use whatever you like. The following are verified to work:
-
-* [Py2exe](https://pypi.python.org/pypi/py2exe/) (Windows)
-* [Py2app](https://pypi.python.org/pypi/py2app/) (macOS)
-* [PyInstaller](https://pypi.org/project/PyInstaller/) (Windows/Linux/macOS)
 
 #### **C3. Build/Freeze/Compile with PyInstaller**
 
@@ -103,15 +95,15 @@ PyInstaller can build/freeze/compile MC Extractor at all three supported platfor
 
 > python --version
 
-2. Use pip to install PyInstaller (PyPi):
+2. Use pip to install PyInstaller:
 
 > pip3 install pyinstaller
 
-3. Use pip to install colorama (PyPi):
+3. Use pip to install colorama:
 
 > pip3 install colorama
 
-4. Use pip to install PTable (Github, boxchar branch):
+4. Use pip to install PTable:
 
 > pip3 install https://github.com/platomav/PTable/archive/boxchar.zip
 
@@ -125,7 +117,7 @@ At dist folder you should find the final MCE executable
 
 **Note:** Some pictures are outdated and depict older MC Extractor versions.
 
-![](https://i.imgur.com/1jZL0p2.png)
+![](https://i.imgur.com/YN1bfmo.png)
 
 ![](https://i.imgur.com/LcFVxwI.png)
 
