@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2018 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.20.0'
+title = 'MC Extractor v1.21.0'
 
 import os
 import re
@@ -38,10 +38,8 @@ col_e = colorama.Fore.RESET + colorama.Style.RESET_ALL
 mce_os = sys.platform
 if mce_os == 'win32' :
 	cl_wipe = 'cls'
-	os_dir = '\\'
 elif mce_os.startswith('linux') or mce_os == 'darwin' :
 	cl_wipe = 'clear'
-	os_dir = '//'
 else :
 	print(col_r + '\nError: ' + col_e + 'Unsupported platform "%s"!\n' % mce_os)
 	if ' -exit' not in sys.argv : input('Press enter to exit')
@@ -54,9 +52,7 @@ try :
 	assert mce_py >= (3,6)
 except :
 	print(col_r + '\nError: ' + col_e + 'Python >= 3.6 required, not %d.%d!\n' % (mce_py[0],mce_py[1]))
-	if ' -exit' not in sys.argv :
-		if mce_py[0] < 3 : raw_input('Press enter to exit')
-		else : input('Press enter to exit')
+	if ' -exit' not in sys.argv : input('Press enter to exit')
 	colorama.deinit()
 	sys.exit(-1)
 
@@ -90,13 +86,10 @@ class MCE_Param :
 	def __init__(self,source) :
 	
 		self.all = ['-?','-skip','-info','-add','-extr','-cont','-mass','-search','-dbname','-repo','-exit','-ubutest','-redir','-blob']
-		
 		self.win = ['-extr'] # Windows only
 		
-		if mce_os == 'win32' :
-			self.val = self.all
-		else :
-			self.val = [item for item in self.all if item not in self.win]
+		if mce_os == 'win32' : self.val = self.all
+		else : self.val = [item for item in self.all if item not in self.win]
 		
 		self.help_scr = False
 		self.build_db = False
@@ -108,7 +101,7 @@ class MCE_Param :
 		self.search = False
 		self.give_db_name = False
 		self.build_repo = False
-		self.ubu_test = False # TBD
+		self.ubu_test = False
 		self.skip_pause = False
 		self.cli_redirect = False
 		self.build_blob = False
@@ -126,7 +119,7 @@ class MCE_Param :
 			if i == '-ubutest' : self.ubu_test = True # Hidden (TBD)
 			if i == '-exit' : self.skip_pause = True
 			if i == '-redir' : self.cli_redirect = True
-			if i == '-blob' : self.build_blob = True
+			if i == '-blob' : self.build_blob = True # Hidden (TBD)
 			
 			# Windows only options
 			if mce_os == 'win32' :
@@ -619,56 +612,6 @@ def checksum32(data) :
 	
 	return -chk32 & 0xFFFFFFFF # Return 0
 
-def mc_repair(semi_sum) :
-	for i in range(4294967295) : # FFFFFFFF (max possible value of last 0x4)
-		chk32 = semi_sum # Int sum of all but the last 0x4
-		chk32 += i # Add last 0x4 sum from range
-		if -chk32 & 0xFFFFFFFF == 0 : print(i)
-	mce_exit()
-	
-def auto_name(t_folder, name_root, name_tail, name_ext) :
-	
-	name_ext = name_ext.lstrip(".")
-	
-	new_name = "%s.%s" % (name_root, name_ext)
-	new_file = "%s%s" % (t_folder, new_name)
-	
-	xn = 1
-	while os.path.exists(new_file) :
-		xn += 1
-		new_name = "%s%s%s.%s" % (name_root, name_tail, xn, name_ext)
-		new_file = "%s%s" % (t_folder, new_name)
-	
-	return new_name.rstrip("."), new_file.rstrip(".")
-	
-def has_duplicate(file_path, file_data) :
-	
-	if not os.path.exists(file_path) : return False
-	
-	name_tail = "_nr"
-	t_folder = os.path.dirname(file_path) + os_dir
-	baseName = os.path.basename(file_path)
-	name_root, name_ext = os.path.splitext(baseName)
-	name_ext = name_ext.lstrip(".")
-	new_crc32_int = binascii.crc32(file_data) & 0xFFFFFFFF
-	
-	xn = 1
-	new_file = file_path
-	
-	while os.path.exists(new_file) :
-		
-		with open(new_file, 'rb') as old_file :
-			old_data = old_file.read()
-			old_crc32_int = binascii.crc32(old_data) & 0xFFFFFFFF
-		
-		if new_crc32_int == old_crc32_int : return True
-		
-		xn += 1
-		new_name = "%s%s%s.%s" % (name_root, name_tail, xn, name_ext)
-		new_file = "%s%s" % (t_folder, new_name)
-	
-	return False
-
 # Process ctypes Structure Classes
 def get_struct(input_stream, start_offset, class_name, param_list = None) :
 	if param_list is None : param_list = []
@@ -721,7 +664,7 @@ def copy_file_with_warn(work_file) :
 	suffix = 0
 		
 	file_name = os.path.basename(in_file)
-	warn_dir = mce_dir + os_dir + '__Warnings__' + os_dir
+	warn_dir = os.path.join(mce_dir, '__Warnings__', '')
 		
 	if not os.path.isdir(warn_dir) : os.mkdir(warn_dir)
 	
@@ -731,6 +674,16 @@ def copy_file_with_warn(work_file) :
 		
 	shutil.copyfile(in_file, warn_dir + file_name)
 	
+def save_mc_file(mc_path, mc_data, mc_hash) :
+	if not param.ubu_test :
+		if os.path.isfile(mc_path) :
+			with open(mc_path, 'rb') as mc_file : found_data = mc_file.read()
+			
+			if mc_data == found_data : os.remove(mc_path)
+			else : mc_path = '%s_%0.8X.bin' % (mc_path[:-4], mc_hash)
+			
+		with open(mc_path, 'wb') as mc_file : mc_file.write(mc_data)
+
 def mc_upd_chk_intel(mc_upd_chk_rsl, plat_bit, rel_file) :
 	mc_latest = True
 	result = None
@@ -797,7 +750,7 @@ def mc_upd_chk(mc_dates) :
 def build_mc_repo(vendor, mc_upd, rel_file) :
 	if mc_upd == (col_g + 'Yes' + col_e) and ((vendor == 'INTEL' and rel_file == 'PRD') or (vendor in ['AMD','VIA'])) :
 		repo_name = os.path.basename(in_file)
-		repo_dir = mce_dir + os_dir + '__REPO_%s__' % vendor + os_dir
+		repo_dir = os.path.join(mce_dir, '__REPO_%s__' % vendor, '')
 		if not os.path.isdir(repo_dir) : os.mkdir(repo_dir)
 		shutil.copyfile(in_file, repo_dir + repo_name)
 
@@ -820,7 +773,7 @@ def display_sql(cursor,title,header,padd):
 	if param.ubu_test : padd = 0
 	
 	sqlr = prettytable.PrettyTable()
-	sqlr.set_style(prettytable.BOX_CHARS) # Comment out if UnicodeEncodeError
+	sqlr.set_style(prettytable.BOX_CHARS)
 	sqlr.header = header # Boolean
 	sqlr.left_padding_width = padd
 	sqlr.right_padding_width = padd
@@ -862,17 +815,10 @@ def mce_hdr() :
 	hdr_pt,hdr_pt_empty = mc_table([], False, 1)
 	hdr_pt.add_row([col_y + '        %s' % title + col_e + ' %s%s        ' % (db_rev, db_dev)])
 	print(hdr_pt)
-
-# Force string to be printed as ASCII, ignore errors
-def force_ascii(string) :
-	# Input string is bare and only for printing (no open(), no Colorama etc)
-	ascii_str = str((string.encode('ascii', 'ignore')).decode('utf-8', 'ignore'))
-	
-	return ascii_str
 	
 def mass_scan(f_path) :
 	mass_files = []
-	for root, dirs, files in os.walk(f_path, topdown=False):
+	for root, dirs, files in os.walk(f_path):
 		for name in files :
 			mass_files.append(os.path.join(root, name))
 			
@@ -884,7 +830,10 @@ def mass_scan(f_path) :
 mce_dir = get_script_dir()
 
 # Set DB location
-db_path = mce_dir + os_dir + 'MCE.db'
+db_path = os.path.join(mce_dir, 'MCE.db')
+
+# Set MCB location
+mcb_path = os.path.join(mce_dir, 'MCB.bin')
 
 # Get MCE Parameters from input
 param = MCE_Param(sys.argv)
@@ -908,7 +857,7 @@ if not param.skip_intro :
 	
 	if arg_num == 2 :
 		print("Press Enter to skip or input -? to list options\n")
-		print("\nFile:       " + col_g + "%s" % force_ascii(os.path.basename(sys.argv[1])) + col_e)
+		print("\nFile:       " + col_g + "%s" % os.path.basename(sys.argv[1]) + col_e)
 	elif arg_num > 2 :
 		print("Press Enter to skip or input -? to list options\n")
 		print("\nFiles:       " + col_y + "Multiple" + col_e)
@@ -945,7 +894,7 @@ if (arg_num < 2 and not param.help_scr and not param.mass_scan and not param.sea
 	mce_exit()
 
 if param.mass_scan :
-	in_path = input('\nType the full folder path : ')
+	in_path = input('\nEnter the full folder path: ')
 	source = mass_scan(in_path)
 else :
 	source = sys.argv[1:] # Skip script/executable
@@ -1039,12 +988,12 @@ for in_file in source :
 	if not os.path.isfile(in_file) :
 		if any(p in in_file for p in param.val) : continue
 		
-		print(col_r + "\nError" + col_e + ": file %s was not found!\n" % force_ascii(in_file))
+		print(col_r + "\nError" + col_e + ": file %s was not found!\n" % in_file)
 		
 		if not param.mass_scan : mce_exit(1)
 		else : continue
 	
-	if not param.mce_extr and not param.ubu_test : print(col_c + '\n%s (%d/%d)\n' % (force_ascii(os.path.basename(in_file)), cur_count, in_count) + col_e)
+	if not param.mce_extr and not param.ubu_test : print(col_c + '\n%s (%d/%d)\n' % (os.path.basename(in_file), cur_count, in_count) + col_e)
 	
 	# Convert Intel containers (.dat , .inc , .h , .txt) to .bin
 	if param.conv_cont :
@@ -1145,13 +1094,13 @@ for in_file in source :
 			if full_date == '1896-00-07' and patch_u == 0xD1 : pass # Drunk Intel employee 1, Happy 0th month from 19th century Intel!
 			else :
 				msg_i.append(col_m + "\nWarning: Skipped Intel microcode at 0x%X, invalid Date of %s!" % (mc_bgn, full_date) + col_e)
-				copy_file_with_warn(work_file)
+				if not param.mce_extr : copy_file_with_warn(work_file)
 				continue
 		
 		# Remove false results, based on Reserved field
 		if res_field != 0 :
 			msg_i.append(col_m + "\nWarning: Skipped Intel microcode at 0x%X, Reserved field not empty!" % mc_bgn + col_e)
-			copy_file_with_warn(work_file)
+			if not param.mce_extr : copy_file_with_warn(work_file)
 			continue
 		
 		# Detect Extra Header
@@ -1234,8 +1183,7 @@ for in_file in source :
 			
 			continue
 		
-		mc_end = mc_bgn + mc_len
-		mc_data = reading[mc_bgn:mc_end]
+		mc_data = reading[mc_bgn:mc_bgn + mc_len]
 		valid_mc_chk = checksum32(mc_data)
 		
 		# Prepare Microcode Blob
@@ -1253,28 +1201,23 @@ for in_file in source :
 		pt.add_row(row)
 		
 		# Create extraction folder
-		if '-extr' in source : mc_extract = mce_dir + os_dir +  '..\Z_Extract\\CPU\\'
-		else : mc_extract = mce_dir + os_dir + 'Extracted' + os_dir + 'Intel' + os_dir
+		if '-extr' in source : mc_extract = os.path.join(mce_dir, '..', 'Z_Extract', 'CPU', '')
+		else : mc_extract = os.path.join(mce_dir, 'Extracted', 'Intel', '')
 		if not param.ubu_test and not os.path.exists(mc_extract) : os.makedirs(mc_extract)
 		
 		if valid_mc_chk != 0 or valid_ext_chk != 0 :
 			if patch_u == 0xFF and cpu_id == 0x506E3 and full_date == '2016-01-05' : # Someone "fixed" the modded MC checksum wrongfully
-				mc_path = mc_extract + "%s.bin" % mc_name
+				mc_path = '%s%s.bin' % (mc_extract, mc_name)
 			else :
-				msg_i.append(col_m + '\nWarning: Microcode #%s is packed or badly extracted, please report it!' % mc_nr + col_e)
-				mc_path = mc_extract + "!Bad_%s.bin" % mc_name
+				msg_i.append(col_m + '\nWarning: Microcode #%d is corrupted, please report it!' % mc_nr + col_e)
+				mc_path = '%s!Bad_%s.bin' % (mc_extract, mc_name)
 		elif mc_at_db is None :
-			msg_i.append(col_g + "\nNote: Microcode #%s was not found at the database, please report it!" % mc_nr + col_e)
-			mc_path = mc_extract + "!New_%s.bin" % mc_name
+			msg_i.append(col_g + "\nNote: Microcode #%d was not found at the database, please report it!" % mc_nr + col_e)
+			mc_path = '%s!New_%s.bin' % (mc_extract, mc_name)
 		else :
-			mc_path = mc_extract + "%s.bin" % mc_name
+			mc_path = '%s%s.bin' % (mc_extract, mc_name)
 		
-		if not param.ubu_test and not has_duplicate(mc_path, mc_data) :
-			baseName = os.path.basename(mc_path)
-			name_root, name_ext = os.path.splitext(baseName)
-			mc_path = auto_name (mc_extract, name_root, "_nr", "bin")[1]
-			
-			with open(mc_path, 'wb') as mc_file : mc_file.write(mc_data)
+		save_mc_file(mc_path, mc_data, adler32(mc_data))
 	
 	if str(pt) != pt_empty :
 		pt.title = col_b + 'Intel' + col_e
@@ -1336,13 +1279,13 @@ for in_file in source :
 			if (full_date,patch) == ('2011-13-09',0x3000027) : pass # Drunk AMD employee 1, Happy 13th month from AMD!
 			else :
 				msg_a.append(col_m + "\nWarning: Skipped AMD microcode at 0x%X, invalid Date of %s!" % (mc_bgn, full_date) + col_e)
-				copy_file_with_warn(work_file)
+				if not param.mce_extr : copy_file_with_warn(work_file)
 				continue
 		
 		# Remove false results, based on data
 		if reading[mc_bgn + 0x40:mc_bgn + 0x44] == b'\x00' * 4 : # 0x40 has non-null data
 			msg_a.append(col_m + "\nWarning: Skipped AMD microcode at 0x%X, null data at 0x40!" % mc_bgn + col_e)
-			copy_file_with_warn(work_file)
+			if not param.mce_extr : copy_file_with_warn(work_file)
 			continue
 		
 		# Print the Header
@@ -1369,7 +1312,7 @@ for in_file in source :
 		mc_nr += 1
 		
 		if mc_len == 0 :
-			msg_a.append(col_r + "\nError: Microcode #%s %s not extracted at 0x%X, unknown Size!" % (mc_nr, mc_name, mc_bgn) + col_e)
+			msg_a.append(col_r + "\nError: Microcode #%d %s not extracted at 0x%X, unknown Size!" % (mc_nr, mc_name, mc_bgn) + col_e)
 			continue
 		else :
 			mc_len_db = '%0.8X' % mc_len
@@ -1412,25 +1355,20 @@ for in_file in source :
 		pt.add_row(row)
 		
 		# Create extraction folder
-		if '-extr' in source : mc_extract = mce_dir + os_dir +  '..\Z_Extract\\CPU\\'
-		else : mc_extract = mce_dir + os_dir + 'Extracted' + os_dir + 'AMD' + os_dir
+		if '-extr' in source : mc_extract = os.path.join(mce_dir, '..', 'Z_Extract', 'CPU', '')
+		else : mc_extract = os.path.join(mce_dir, 'Extracted', 'AMD', '')
 		if not param.ubu_test and not os.path.exists(mc_extract) : os.makedirs(mc_extract)
 		
 		if int(cpu_id[2:4], 16) < 0x50 and (valid_chk + mc_chk) & 0xFFFFFFFF != 0 :
-			msg_a.append(col_m + '\nWarning: Microcode #%s is packed or badly extracted, please report it!' % mc_nr + col_e)
-			mc_path = mc_extract + "!Bad_%s.bin" % mc_name
+			msg_a.append(col_m + '\nWarning: Microcode #%d is corrupted, please report it!' % mc_nr + col_e)
+			mc_path = '%s!Bad_%s.bin' % (mc_extract, mc_name)
 		elif mc_at_db is None :
-			msg_a.append(col_g + "\nNote: Microcode #%s was not found at the database, please report it!" % mc_nr + col_e)
-			mc_path = mc_extract + "!New_%s.bin" % mc_name
+			msg_a.append(col_g + "\nNote: Microcode #%d was not found at the database, please report it!" % mc_nr + col_e)
+			mc_path = '%s!New_%s.bin' % (mc_extract, mc_name)
 		else :
-			mc_path = mc_extract + "%s.bin" % mc_name
-		
-		if not param.ubu_test and not has_duplicate(mc_path, mc_data) :
-			baseName = os.path.basename(mc_path)
-			name_root, name_ext = os.path.splitext(baseName)
-			mc_path = auto_name (mc_extract, name_root, "_nr", "bin")[1]
+			mc_path = '%s%s.bin' % (mc_extract, mc_name)
 			
-			with open(mc_path, 'wb') as mc_file : mc_file.write(mc_data)
+		save_mc_file(mc_path, mc_data, mc_file_chk)
 		
 	if str(pt) != pt_empty :
 		pt.title = col_r + 'AMD' + col_e
@@ -1479,7 +1417,7 @@ for in_file in source :
 			if date_chk.year > 2020 or date_chk.year < 2006 : raise Exception('WrongDate') # 1st MC from 2008 (Nano), 2006 for safety
 		except :
 			msg_v.append(col_m + "\nWarning: Skipped VIA microcode at 0x%X, invalid Date of %s!\n" % (mc_bgn, full_date) + col_e)
-			copy_file_with_warn(work_file)
+			if not param.mce_extr : copy_file_with_warn(work_file)
 			continue
 		
 		# Print the Header(s)
@@ -1524,35 +1462,29 @@ for in_file in source :
 		row = [mc_nr, '%X' % cpu_id, name, '%X' % patch, full_date, '0x%X' % mc_len, '0x%X' % mc_bgn, mc_upd]
 		pt.add_row(row)
 		
-		mc_end = mc_bgn + mc_len
-		mc_data = reading[mc_bgn:mc_end]
+		mc_data = reading[mc_bgn:mc_bgn + mc_len]
 		valid_chk = checksum32(mc_data)
 		
 		# Create extraction folder
-		if '-extr' in source : mc_extract = mce_dir + os_dir +  '..\Z_Extract\\CPU\\'
-		else : mc_extract = mce_dir + os_dir + 'Extracted' + os_dir + 'VIA' + os_dir
+		if '-extr' in source : mc_extract = os.path.join(mce_dir, '..', 'Z_Extract', 'CPU', '')
+		else : mc_extract = os.path.join(mce_dir, 'Extracted', 'VIA', '')
 		if not param.ubu_test and not os.path.exists(mc_extract) : os.makedirs(mc_extract)
 		
 		if valid_chk != 0 :
 			if full_date == '2011-08-09' and name == '06FA03BB0' and mc_chk == 0x9B86F886 : # Drunk VIA employee 1, Signature is 06FA03BB0 instead of 06FA003BB
-				mc_path = mc_extract + "%s.bin" % mc_name
+				mc_path = '%s%s.bin' % (mc_extract, mc_name)
 			elif full_date == '2011-08-09' and name == '06FE105A' and mc_chk == 0x8F396F73 : # Drunk VIA employee 2, Checksum for Reserved FF*4 instead of 00FF*3
-				mc_path = mc_extract + "%s.bin" % mc_name
+				mc_path = '%s%s.bin' % (mc_extract, mc_name)
 			else :
-				msg_v.append(col_m + '\nWarning: Microcode #%s is packed or badly extracted, please report it!\n' % mc_nr + col_e)
-				mc_path = mc_extract + '!Bad_%s.bin' % mc_name
+				msg_v.append(col_m + '\nWarning: Microcode #%d is corrupted, please report it!\n' % mc_nr + col_e)
+				mc_path = '%s!Bad_%s.bin' % (mc_extract, mc_name)
 		elif mc_at_db is None :
-			msg_v.append(col_g + '\nNote: Microcode #%s was not found at the database, please report it!\n' % mc_nr + col_e)
-			mc_path = mc_extract + '!New_%s.bin' % mc_name
+			msg_v.append(col_g + '\nNote: Microcode #%d was not found at the database, please report it!\n' % mc_nr + col_e)
+			mc_path = '%s!New_%s.bin' % (mc_extract, mc_name)
 		else :
-			mc_path = mc_extract + '%s.bin' % mc_name
+			mc_path = '%s%s.bin' % (mc_extract, mc_name)
 		
-		if not param.ubu_test and not has_duplicate(mc_path, mc_data) :
-			baseName = os.path.basename(mc_path)
-			name_root, name_ext = os.path.splitext(baseName)
-			mc_path = auto_name (mc_extract, name_root, "_nr", "bin")[1]
-			
-			with open(mc_path, 'wb') as mc_file : mc_file.write(mc_data)
+		save_mc_file(mc_path, mc_data, adler32(mc_data))
 
 	if str(pt) != pt_empty :
 		pt.title = col_c + 'VIA' + col_e
@@ -1636,28 +1568,23 @@ for in_file in source :
 		
 		mc_data = reading[mc_bgn:mc_bgn + mc_len]
 		
-		calc_crc = (binascii.crc32(mc_data[0:-4], -1) ^ -1) & 0xFFFFFFFF
+		calc_crc = (binascii.crc32(mc_data[:-4], -1) ^ -1) & 0xFFFFFFFF
 		
 		# Create extraction folder
-		if '-extr' in source : mc_extract = mce_dir + os_dir +  '..\Z_Extract\\CPU\\'
-		else : mc_extract = mce_dir + os_dir + 'Extracted' + os_dir + 'Freescale' + os_dir
+		if '-extr' in source : mc_extract = os.path.join(mce_dir, '..', 'Z_Extract', 'CPU', '')
+		else : mc_extract = os.path.join(mce_dir, 'Extracted', 'Freescale', '')
 		if not param.ubu_test and not os.path.exists(mc_extract) : os.makedirs(mc_extract)
 		
 		if calc_crc != mc_chk :
-			msg_f.append(col_m + '\nWarning: Microcode #%s is packed or badly extracted, please report it!\n' % mc_nr + col_e)
-			mc_path = mc_extract + '!Bad_%s.bin' % mc_name
+			msg_f.append(col_m + '\nWarning: Microcode #%d is corrupted, please report it!\n' % mc_nr + col_e)
+			mc_path = '%s!Bad_%s.bin' % (mc_extract, mc_name)
 		elif mc_at_db is None :
-			msg_f.append(col_g + '\nNote: Microcode #%s was not found at the database, please report it!\n' % mc_nr + col_e)
-			mc_path = mc_extract + '!New_%s.bin' % mc_name
+			msg_f.append(col_g + '\nNote: Microcode #%d was not found at the database, please report it!\n' % mc_nr + col_e)
+			mc_path = '%s!New_%s.bin' % (mc_extract, mc_name)
 		else :
-			mc_path = mc_extract + '%s.bin' % mc_name
+			mc_path = '%s%s.bin' % (mc_extract, mc_name)
 		
-		if not param.ubu_test and not has_duplicate(mc_path, mc_data) :
-			baseName = os.path.basename(mc_path)
-			name_root, name_ext = os.path.splitext(baseName)
-			mc_path = auto_name (mc_extract, name_root, "_nr", "bin")[1]
-			
-			with open(mc_path, 'wb') as mc_file : mc_file.write(mc_data)
+		save_mc_file(mc_path, mc_data, adler32(mc_data))
 	
 	if str(pt) != pt_empty :
 		pt.title = col_y + 'Freescale' + col_e
@@ -1676,11 +1603,13 @@ if param.build_blob and param.search :
 		print(col_y + '\nNote: Microcode is the latest!' + col_e) # Based on DB
 		mce_exit(1)
 	
-	if os.path.isfile(mce_dir + os_dir + 'MCB.bin') :
-		# Delete previous Latest Microcode
-		if os.path.isfile(mce_dir + os_dir + 'last.bin') : os.remove(mce_dir + os_dir + 'last.bin')
+	if os.path.isfile(mcb_path) :
+		last_path = os.path.join(mce_dir, 'last.bin') # Previous Latest MCB Microcode location
+		
+		# Delete previous Latest MCB Microcode
+		if os.path.isfile(last_path) : os.remove(last_path)
 	
-		with open(mce_dir + os_dir + 'MCB.bin', 'rb') as mcb :
+		with open(mcb_path, 'rb') as mcb :
 			mcb_data = mcb.read()
 			file_end = mcb.seek(0,2)
 			mcb.seek(0,0)
@@ -1706,7 +1635,7 @@ if param.build_blob and param.search :
 					mcb_rel = 'PRD' if ctypes.c_int(mcb_lut.Revision).value >= 0 else 'PRE'
 					
 					if (mcb_ven,mcb_cpuid,mcb_plat,mcb_year,mcb_month,mcb_day,mcb_rel) == (0,mc_last[0],mc_last[1],mc_last[2],mc_last[3],mc_last[4],mc_last[5]) :
-						with open(mce_dir + os_dir + 'last.bin', 'wb') as mc : mc.write(mcb_data[mcb_lut.Offset:mcb_lut.Offset + mcb_lut.Size])
+						with open(last_path, 'wb') as mc : mc.write(mcb_data[mcb_lut.Offset:mcb_lut.Offset + mcb_lut.Size])
 						break
 				else :
 					print(col_r + '\nError: Latest microcode not within MCB.bin!' + col_e)
@@ -1736,10 +1665,10 @@ elif param.build_blob :
 	blob_hdr = struct.pack('<4sHBBBBHI', b'$MCB', blob_count, db_rev_now, db_is_dev, 1, 0, 0, crc32(blob_lut_done + blob_data))
 	
 	# Delete previous Microcode Blob
-	if os.path.isfile(mce_dir + os_dir + 'MCB.bin') : os.remove(mce_dir + os_dir + 'MCB.bin')
+	if os.path.isfile(mcb_path) : os.remove(mcb_path)
 	
 	# Generate final Microcode Blob
-	with open(mce_dir + os_dir + 'MCB.bin', 'ab') as mc_blob :
+	with open(mcb_path, 'ab') as mc_blob :
 		mc_blob.write(blob_hdr)
 		mc_blob.write(blob_lut_done)
 		mc_blob.write(blob_data)
