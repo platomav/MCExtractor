@@ -1,3 +1,9 @@
+v1.24.0 r82
+
+Added robust Intel Latest status detection
+Added AMD microcode CPUID 00820F detection
+Added parameter -last to show latest status
+
 v1.21.0 r81
 
 Improved detection of duplicates

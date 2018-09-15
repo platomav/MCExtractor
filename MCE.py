@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2018 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.21.0'
+title = 'MC Extractor v1.24.0'
 
 import os
 import re
@@ -76,6 +76,7 @@ def mce_help() :
 	text += "-dbname : Renames input file based on DB name\n"
 	text += "-cont   : Extracts Intel containers (dat,inc,h,txt)\n"
 	text += "-search : Searches for microcodes based on CPUID\n"
+	text += "-last   : Shows Latest status based on user input\n"
 	text += "-repo   : Builds microcode repositories from input"
 	
 	print(text)
@@ -85,7 +86,7 @@ class MCE_Param :
 
 	def __init__(self,source) :
 	
-		self.all = ['-?','-skip','-info','-add','-extr','-cont','-mass','-search','-dbname','-repo','-exit','-ubutest','-redir','-blob']
+		self.all = ['-?','-skip','-info','-add','-extr','-cont','-mass','-search','-dbname','-repo','-exit','-ubutest','-redir','-blob','-last']
 		self.win = ['-extr'] # Windows only
 		
 		if mce_os == 'win32' : self.val = self.all
@@ -105,6 +106,7 @@ class MCE_Param :
 		self.skip_pause = False
 		self.cli_redirect = False
 		self.build_blob = False
+		self.print_last = False
 		
 		for i in source :
 			if i == '-?' : self.help_scr = True
@@ -120,15 +122,16 @@ class MCE_Param :
 			if i == '-exit' : self.skip_pause = True
 			if i == '-redir' : self.cli_redirect = True
 			if i == '-blob' : self.build_blob = True # Hidden (TBD)
+			if i == '-last' : self.print_last = True
 			
 			# Windows only options
 			if mce_os == 'win32' :
 				if i == '-extr': self.mce_extr = True # Hidden
 			
-		if self.mce_extr or self.mass_scan or self.search or self.build_repo or self.conv_cont or self.build_blob : self.skip_intro = True
+		if self.mce_extr or self.mass_scan or self.search or self.build_repo or self.conv_cont or self.build_blob or self.print_last : self.skip_intro = True
 		if self.conv_cont : self.give_db_name = False
 		if self.mce_extr : self.cli_redirect = True
-		if self.cli_redirect : self.skip_pause = True
+		if self.cli_redirect or self.print_last : self.skip_pause = True
 
 # noinspection PyTypeChecker
 class Intel_MC_Header(ctypes.LittleEndianStructure) :
@@ -684,71 +687,47 @@ def save_mc_file(mc_path, mc_data, mc_hash) :
 			
 		with open(mc_path, 'wb') as mc_file : mc_file.write(mc_data)
 
-def mc_upd_chk_intel(mc_upd_chk_rsl, plat_bit, rel_file) :
-	mc_latest = True
-	result = None
+def mc_upd_chk_intel(mc_upd_chk_rsl, in_pl_bit, in_rel) :
+	is_latest = True
+	mc_latest = None
 	
-	if mc_upd_chk_rsl :
-		for entry in mc_upd_chk_rsl :
-			dd = entry[0][6:8]
-			mm = entry[0][4:6]
-			yyyy = entry[0][:4]
-			mc_pl_val = int(entry[1], 16)
-			mc_pl_bit = intel_plat(int(entry[1], 16)) # Platforms of DB entry with same CPUID as Input
-			mc_rel = 'PRE' if ctypes.c_int(int(entry[2], 16)).value < 0 else 'PRD' # Release of DB entry with same CPUID as Input
-			
-			# Input Platforms less than DB Platforms, but within the latter (ex: Input 0,3,4 within DB 0,1,3,4,7)
-			if rel_file == mc_rel and len(plat_bit) < len(mc_pl_bit) and set(plat_bit).issubset(mc_pl_bit) :
-				if year < yyyy or (year == yyyy and (month < mm or (month == mm and (day == dd or day < dd)))) :
-					# Input within DB Entry, Input date older than DB Entry
-					mc_latest = False # Upon equal Date, DB prevails
-					
-					# Store newest microcode for same CPUID/Release & compatible Platform
-					result = [cpu_id, mc_pl_val, yyyy, mm, dd, mc_rel]
-				# Input within DB Entry, Input date newer than DB Entry
-			# DB Platforms less than Input Platforms, but within the latter (ex: DB 0,3,4 within Input 0,1,3,4,7)
-			elif rel_file == mc_rel and len(plat_bit) > len(mc_pl_bit) and set(mc_pl_bit).issubset(plat_bit) :
-				# Nothing to do, the more Input Platforms the better (Date ignored)
-				pass
-			# Input Platforms != DB Platforms and not within each other, separate Platforms (ex: Input 0,3,4,5 with DB 1,2,6,7)
-			elif rel_file == mc_rel and plat_bit != mc_pl_bit :
-				# Nothing to do, Input & DB Platforms are not affiliated with each other (Date ignored)
-				pass
-			# Input Platforms = DB Platforms, check Date
-			elif rel_file == mc_rel :
-				if year < yyyy or (year == yyyy and (month < mm or (month == mm and day < dd))) :
-					# Input = DB, Input date older than DB Entry
-					mc_latest = False # Equal date at same CPUID & Platform means Last
-					
-					# Store newest microcode for same CPUID/Release & compatible Platform
-					result = [cpu_id, mc_pl_val, yyyy, mm, dd, mc_rel]
-				# Input = DB, Input date newer than DB Entry
+	for entry in mc_upd_chk_rsl :
+		db_day = entry[0][6:8]
+		db_month = entry[0][4:6]
+		db_year = entry[0][:4]
+		db_pl_val = int(entry[1], 16)
+		db_pl_bit = intel_plat(int(entry[1], 16))
+		db_ver = int(entry[2], 16)
+		db_rel = 'PRE' if ctypes.c_int(db_ver).value < 0 else 'PRD'
+		
+		# Same Release, Same or more Platform IDs, Newer Date, Same Date but more Platform IDs (not for -last)
+		if in_rel == db_rel and set(in_pl_bit).issubset(db_pl_bit) and \
+		((year < db_year or (year == db_year and (month < db_month or (month == db_month and day < db_day)))) or
+		((year,month,day) == (db_year,db_month,db_day) and len(in_pl_bit) < len(db_pl_bit)) and not param.print_last) :
+			is_latest = False
+			mc_latest = [cpu_id, db_pl_val, db_ver, db_year, db_month, db_day, db_rel]
 	
-	if mc_latest : mc_upd = col_g + 'Yes' + col_e # Used at build_mc_repo as well
-	else : mc_upd = col_r + 'No' + col_e
+	return is_latest, mc_latest
 	
-	return mc_upd, result
+def mc_upd_chk(mc_upd_chk_rsl) :
+	is_latest = True
+	mc_latest = None
 	
-def mc_upd_chk(mc_dates) :
-	mc_latest = True
+	for entry in mc_upd_chk_rsl :
+		db_day = entry[0][6:8]
+		db_month = entry[0][4:6]
+		db_year = entry[0][:4]
+		db_ver = int(entry[1], 16)
+		
+		# Newer Date
+		if year < db_year or (year == db_year and (month < db_month or (month == db_month and day < db_day))) :
+			is_latest = False
+			mc_latest = [cpu_id, db_ver, db_year, db_month, db_day]
 	
-	if mc_dates is not None :
-		for date in mc_dates :
-			dd = date[0][6:8]
-			mm = date[0][4:6]
-			yyyy = date[0][:4]
-			
-			if year < yyyy or (year == yyyy and (month < mm or (month == mm and day < dd))) :
-				mc_latest = False
-				break # No need for more loops
+	return is_latest, mc_latest
 	
-	if mc_latest : mc_upd = col_g + 'Yes' + col_e # Used at build_mc_repo as well
-	else : mc_upd = col_r + 'No' + col_e
-	
-	return mc_upd
-	
-def build_mc_repo(vendor, mc_upd, rel_file) :
-	if mc_upd == (col_g + 'Yes' + col_e) and ((vendor == 'INTEL' and rel_file == 'PRD') or (vendor in ['AMD','VIA'])) :
+def build_mc_repo(vendor, is_latest, rel_file) :
+	if is_latest and ((vendor == 'INTEL' and rel_file == 'PRD') or (vendor in ['AMD','VIA'])) :
 		repo_name = os.path.basename(in_file)
 		repo_dir = os.path.join(mce_dir, '__REPO_%s__' % vendor, '')
 		if not os.path.isdir(repo_dir) : os.mkdir(repo_dir)
@@ -886,10 +865,10 @@ if not param.skip_intro :
 
 	mce_hdr()
 
-elif not param.mce_extr :
+elif not param.mce_extr and not param.print_last :
 	mce_hdr()
 
-if (arg_num < 2 and not param.help_scr and not param.mass_scan and not param.search) or param.help_scr :
+if (arg_num < 2 and not param.help_scr and not param.mass_scan and not param.search and not param.print_last) or param.help_scr :
 	mce_help()
 	mce_exit()
 
@@ -919,26 +898,87 @@ else :
 
 # Search DB by CPUID (Intel/AMD/VIA) or Model (Freescale)
 if param.search and not param.build_blob :
-	if len(source) >= 2 : i_cpuid = source[1] # -search CPUID expected first
-	else : i_cpuid = input('\nEnter CPUID (Intel, AMD, VIA) or Model (FSL) to search: ')
+	if len(source) >= 2 :
+		cpu_id = source[1]
+	else :
+		cpu_id = input('\nEnter Intel/AMD/VIA CPUID or Freescale Model: ')
 	
 	try :
-		i_cpuid = '%0.8X' % int(i_cpuid, 16)
+		cpu_id = '%0.8X' % int(cpu_id, 16)
 	except :
 		print(col_r + '\nError: Invalid CPUID (Intel, AMD, VIA) or Model (FSL)!' + col_e)
-		mce_exit()
+		mce_exit(1)
 	
-	res_i = c.execute('SELECT cpuid,platform,version,yyyymmdd,size FROM Intel WHERE cpuid=? ORDER BY yyyymmdd DESC', (i_cpuid,))
+	res_i = c.execute('SELECT cpuid,platform,version,yyyymmdd,size FROM Intel WHERE cpuid=? ORDER BY yyyymmdd DESC', (cpu_id,))
 	display_sql(res_i, col_b + 'Intel' + col_e, True, 1)
 	
-	res_a = c.execute('SELECT cpuid,version,yyyymmdd,size FROM AMD WHERE cpuid=? ORDER BY yyyymmdd DESC', (i_cpuid,))
+	res_a = c.execute('SELECT cpuid,version,yyyymmdd,size FROM AMD WHERE cpuid=? ORDER BY yyyymmdd DESC', (cpu_id,))
 	display_sql(res_a, col_r + 'AMD' + col_e, True, 1)
 	
-	res_v = c.execute('SELECT cpuid,signature,version,yyyymmdd,size FROM VIA WHERE cpuid=? ORDER BY yyyymmdd DESC', (i_cpuid,))
+	res_v = c.execute('SELECT cpuid,signature,version,yyyymmdd,size FROM VIA WHERE cpuid=? ORDER BY yyyymmdd DESC', (cpu_id,))
 	display_sql(res_v, col_c + 'VIA' + col_e, True, 1)
 	
-	res_f = c.execute('SELECT name,model,major,minor,size,note FROM FSL WHERE model=? ORDER BY name DESC', (i_cpuid,))
+	res_f = c.execute('SELECT name,model,major,minor,size,note FROM FSL WHERE model=? ORDER BY name DESC', (cpu_id,))
 	display_sql(res_f, col_y + 'Freescale' + col_e, True, 1)
+	
+	mce_exit()
+	
+# Detect latest Intel or AMD microcode via user input
+# Can be used with currently loaded microcode info from OS
+if param.print_last :
+	platform = 0
+	
+	if len(source) == 4 : # Intel
+		vendor = 'Intel'
+		cpu_id = source[1]
+		version = source[2]
+		platform = source[3]
+	elif len(source) == 3 : # AMD
+		vendor = 'AMD'
+		cpu_id = source[1]
+		version = source[2]
+	else :
+		vendor = input('\nEnter Microcode Vendor (Intel, AMD): ')
+		cpu_id = input('\nEnter CPUID (i.e. 406F1): ')
+		version = input('\nEnter Version (i.e. B000021): ')
+		if vendor == 'Intel' : platform = input('\nEnter Platform (i.e. EF): ')
+	
+	try :
+		assert vendor in ('Intel','AMD')
+		cpu_id = int(cpu_id, 16)
+		version = int(version, 16)
+		platform = int(platform, 16) # Microcode IDs or System ID (i.e. 0x12 = 1,4 or 0x02 = 1 or 0x10 = 4)
+	except :
+		print(col_r + '\nError: Invalid Vendor, CPUID, Version or Platform!' + col_e)
+		mce_exit(1)
+	
+	# The input microcode date is required for Latest check, get it from DB
+	# The Latest AMD check is inaccurate for 2002-2003 microcodes due to lack of NB ID & Rev
+	if vendor == 'Intel' :
+		date = (c.execute('SELECT yyyymmdd FROM Intel WHERE cpuid=? AND version=?', ('%0.8X' % cpu_id, '%0.8X' % version,))).fetchall()
+	else :
+		date = (c.execute('SELECT yyyymmdd FROM AMD WHERE cpuid=? AND version=?', ('%0.8X' % cpu_id, '%0.8X' % version,))).fetchall()
+	
+	if not date :
+		print(col_r + '\nError: %s CPUID %0.8X Version %0.8X not found in DB!' % (vendor, cpu_id, version) + col_e)
+		mce_exit(2)
+	
+	day = date[0][0][6:8]
+	month = date[0][0][4:6]
+	year = date[0][0][:4]
+	
+	if vendor == 'Intel' :
+		mc_upd_chk_rsl = (c.execute('SELECT yyyymmdd,platform,version FROM Intel WHERE cpuid=?', ('%0.8X' % cpu_id,))).fetchall()
+		is_latest, mc_latest = mc_upd_chk_intel(mc_upd_chk_rsl, intel_plat(platform), 'PRE' if ctypes.c_int(version).value < 0 else 'PRD')
+	else :
+		mc_upd_chk_rsl = (c.execute('SELECT yyyymmdd,version FROM AMD WHERE cpuid=?', ('%0.8X' % cpu_id,))).fetchall()
+		is_latest, mc_latest = mc_upd_chk(mc_upd_chk_rsl)
+	
+	print('\n%s' % is_latest)
+	if vendor == 'Intel' and mc_latest :
+		print('cpu%0.8X_plat%0.8X_ver%0.8X_%s-%s-%s_%s' % (mc_latest[0],mc_latest[1],mc_latest[2],mc_latest[3],mc_latest[4],mc_latest[5],mc_latest[6]))
+	elif vendor == 'AMD' and mc_latest :
+		print('cpu%0.8X_ver%0.8X_%s-%s-%s' % (mc_latest[0],mc_latest[1],mc_latest[2],mc_latest[3],mc_latest[4]))
 	
 	mce_exit()
 
@@ -951,7 +991,7 @@ blob_lut_init = []
 blob_lut_done = b''
 blob_data = b''
 blob_count = 0
-mc_last = None
+mc_latest = None
 	
 # Intel - HeaderRev 01, LoaderRev 01, ProcesFlags xx00*3 (Intel 64 and IA-32 Architectures Software Developer's Manual Vol 3A, Ch 9.11.1)
 pat_icpu = re.compile(br'\x01\x00{3}.{4}[\x00-\x99](([\x19\x20][\x01-\x31][\x01-\x12])|(\x18\x07\x00)).{8}\x01\x00{3}.\x00{3}', re.DOTALL)
@@ -983,6 +1023,7 @@ for in_file in source :
 	match_list_v = []
 	match_list_f = []
 	mc_conv_data = bytearray()
+	no_yes = [col_r + 'No' + col_e,col_g + 'Yes' + col_e]
 	cur_count += 1
 	
 	if not os.path.isfile(in_file) :
@@ -1175,11 +1216,11 @@ for in_file in source :
 		mc_upd_chk_rsl = (c.execute('SELECT yyyymmdd,platform,version FROM Intel WHERE cpuid=?', ('%0.8X' % cpu_id,))).fetchall()
 		
 		# Determine if MC is Last or Outdated
-		mc_upd, mc_last = mc_upd_chk_intel(mc_upd_chk_rsl, plat_bit, rel_file)
+		is_latest, mc_latest = mc_upd_chk_intel(mc_upd_chk_rsl, plat_bit, rel_file)
 		
 		# Build Microcode Repository (PRD & Last)
 		if param.build_repo :
-			build_mc_repo('INTEL', mc_upd, rel_file)
+			build_mc_repo('INTEL', is_latest, rel_file)
 			
 			continue
 		
@@ -1197,7 +1238,7 @@ for in_file in source :
 				
 			continue
 			
-		row = [mc_nr, '%X' % cpu_id, '%0.2X (%s)' % (plat, ','.join(map(str, plat_bit))), '%X' % patch_u, full_date, rel_file, '0x%X' % mc_len, '0x%X' % mc_bgn, mc_upd]
+		row = [mc_nr, '%X' % cpu_id, '%0.2X (%s)' % (plat, ','.join(map(str, plat_bit))), '%X' % patch_u, full_date, rel_file, '0x%X' % mc_len, '0x%X' % mc_bgn, no_yes[is_latest]]
 		pt.add_row(row)
 		
 		# Create extraction folder
@@ -1301,7 +1342,7 @@ for in_file in source :
 		elif cpu_id[2:4] in ['60','61','63','66','67'] : mc_len = 0xA20
 		elif cpu_id[2:4] in ['68'] : mc_len = 0x980
 		elif cpu_id[2:4] in ['70','73'] : mc_len = 0xD60
-		elif cpu_id[2:4] in ['80','81'] : mc_len = 0xC80
+		elif cpu_id[2:4] in ['80','81','82'] : mc_len = 0xC80
 		else : mc_len = 0
 		
 		mc_data = reading[mc_bgn:mc_bgn + mc_len]
@@ -1340,18 +1381,18 @@ for in_file in source :
 			mc_db_name(work_file, in_file, mc_name)
 			continue
 		
-		mc_upd_chk_rsl = (c.execute('SELECT yyyymmdd FROM AMD WHERE cpuid=? AND nbdevid=? AND sbdevid=? AND nbsbrev=?',
-							 (cpu_id, nb_id, sb_id, nbsb_rev_id,))).fetchall()
+		mc_upd_chk_rsl = (c.execute('SELECT yyyymmdd,version FROM AMD WHERE cpuid=? AND nbdevid=? AND sbdevid=? AND nbsbrev=?',
+						(cpu_id, nb_id, sb_id, nbsb_rev_id,))).fetchall()
 		
 		# Determine if MC is Last or Outdated
-		mc_upd = mc_upd_chk(mc_upd_chk_rsl)
+		is_latest, mc_latest = mc_upd_chk(mc_upd_chk_rsl)
 		
 		# Build Microcode Repository (Last)
 		if param.build_repo :
-			build_mc_repo('AMD', mc_upd, '')
+			build_mc_repo('AMD', is_latest, '')
 			continue
 		
-		row = [mc_nr, cpu_id, '%0.8X' % patch, full_date, '0x%X' % mc_len, '0x%X' % mc_bgn, mc_upd]
+		row = [mc_nr, cpu_id, '%0.8X' % patch, full_date, '0x%X' % mc_len, '0x%X' % mc_bgn, no_yes[is_latest]]
 		pt.add_row(row)
 		
 		# Create extraction folder
@@ -1449,17 +1490,17 @@ for in_file in source :
 			mc_db_name(work_file, in_file, mc_name)
 			continue
 		
-		mc_upd_chk_rsl = (c.execute('SELECT yyyymmdd FROM VIA WHERE cpuid=?', ('%0.8X' % cpu_id,))).fetchall()
+		mc_upd_chk_rsl = (c.execute('SELECT yyyymmdd,version FROM VIA WHERE cpuid=?', ('%0.8X' % cpu_id,))).fetchall()
 		
 		# Determine if MC is Last or Outdated
-		mc_upd = mc_upd_chk(mc_upd_chk_rsl)
+		is_latest, mc_latest = mc_upd_chk(mc_upd_chk_rsl)
 		
 		# Build Microcode Repository (Last)
 		if param.build_repo :
-			build_mc_repo('VIA', mc_upd, '')
+			build_mc_repo('VIA', is_latest, '')
 			continue
 		
-		row = [mc_nr, '%X' % cpu_id, name, '%X' % patch, full_date, '0x%X' % mc_len, '0x%X' % mc_bgn, mc_upd]
+		row = [mc_nr, '%X' % cpu_id, name, '%X' % patch, full_date, '0x%X' % mc_len, '0x%X' % mc_bgn, no_yes[is_latest]]
 		pt.add_row(row)
 		
 		mc_data = reading[mc_bgn:mc_bgn + mc_len]
@@ -1597,9 +1638,9 @@ for in_file in source :
 		
 	if total == 0 : print('File does not contain CPU microcodes')
 
-# Search Microcode Blob for Latest
+# Search Microcode Blob for Latest (-blob -search)
 if param.build_blob and param.search :
-	if mc_last is None :
+	if mc_latest is None :
 		print(col_y + '\nNote: Microcode is the latest!' + col_e) # Based on DB
 		mce_exit(1)
 	
@@ -1629,12 +1670,13 @@ if param.build_blob and param.search :
 					
 					mcb_cpuid = mcb_lut.CPUID
 					mcb_plat = mcb_lut.Platform
+					mcb_ver = mcb_lut.Revision
 					mcb_year = '%0.4X' % mcb_lut.Year
 					mcb_month = '%0.2X' % mcb_lut.Month
 					mcb_day = '%0.2X' % mcb_lut.Day
-					mcb_rel = 'PRD' if ctypes.c_int(mcb_lut.Revision).value >= 0 else 'PRE'
+					mcb_rel = 'PRE' if ctypes.c_int(mcb_lut.Revision).value < 0 else 'PRD'
 					
-					if (mcb_ven,mcb_cpuid,mcb_plat,mcb_year,mcb_month,mcb_day,mcb_rel) == (0,mc_last[0],mc_last[1],mc_last[2],mc_last[3],mc_last[4],mc_last[5]) :
+					if (mcb_ven,mcb_cpuid,mcb_plat,mcb_ver,mcb_year,mcb_month,mcb_day,mcb_rel) == (0,mc_latest[0],mc_latest[1],mc_latest[2],mc_latest[3],mc_latest[4],mc_latest[5],mc_latest[6]) :
 						with open(last_path, 'wb') as mc : mc.write(mcb_data[mcb_lut.Offset:mcb_lut.Offset + mcb_lut.Size])
 						break
 				else :
@@ -1648,7 +1690,7 @@ if param.build_blob and param.search :
 	print(col_g + '\nLatest Microcode extracted!' + col_e)
 	mce_exit(0)
 	
-# Build Microcode Blob
+# Build Microcode Blob (-blob)
 elif param.build_blob :
 	db_rev_now = (c.execute('SELECT revision FROM MCE')).fetchone()[0] # Get DB Revision
 	db_is_dev = (c.execute('SELECT developer FROM MCE')).fetchone()[0] # Get DB Developer

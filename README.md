@@ -66,13 +66,14 @@ There are various parameters which enhance or modify the default behavior of MC 
 * -dbname : Renames input file based on DB name
 * -cont   : Extracts Intel containers (dat,inc,h,txt)
 * -search : Searches for microcodes based on CPUID
+* -last   : Shows Latest status based on user input
 * -repo   : Builds microcode repositories from input
 
 #### **B3. MC Extractor Error Control**
 
 During operation, MC Extractor may encounter issues that can trigger Notes, Warnings and/or Errors. Notes (yellow/green color) provide useful information about a characteristic of this particular firmware. Warnings (purple color) notify the user of possible problems that can cause system instability. Errors (red color) are shown when something unexpected or problematic is encountered.
 
-## **C. Execute/Download MC Extractor**
+## **C. Download MC Extractor**
 
 MC Extractor consists of two files, the executable (MCE.exe or MCE) and the database (MCE.db). An already built/frozen/compiled binary is provided by me for Windows only (icon designed by [Alfredo Hernandez](https://www.alfredocreates.com/)). Thus, **you don't need to manually build/freeze/compile MC Extractor under Windows**. Instead, download the latest version from the [Releases](https://github.com/platomav/MCExtractor/releases) tab, title should be "MC Extractor v1.X.X". You may need to scroll down a bit if there are DB releases at the top. The latter can be used to update the outdated DB which was bundled with the latest executable release, title should be "DB rXX". To extract the already built/frozen/compiled archive, you need to use programs which support RAR5 compression.
 
@@ -85,7 +86,12 @@ MC Extractor should work at all Windows, Linux or macOS operating systems which 
 To run MC Extractor's python script, you need to have the following 3rd party Python modules installed:
 
 * [Colorama](https://pypi.python.org/pypi/colorama/)
+
+> pip3 install colorama
+
 * [PTable](https://github.com/platomav/PTable/tree/boxchar)
+
+> pip3 install https://github.com/platomav/PTable/archive/boxchar.zip
 
 #### **C3. Build/Freeze/Compile with PyInstaller**
 
