@@ -1,3 +1,8 @@
+v1.24.1 r86
+
+Adjusted Intel pattern for old Loader v0
+Fixed issues extracting Intel containers
+
 v1.24.0 r82
 
 Added robust Intel Latest status detection

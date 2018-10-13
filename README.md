@@ -85,7 +85,7 @@ MC Extractor should work at all Windows, Linux or macOS operating systems which 
 
 To run MC Extractor's python script, you need to have the following 3rd party Python modules installed:
 
-* [Colorama](https://pypi.python.org/pypi/colorama/)
+* [Colorama](https://pypi.org/project/colorama/)
 
 > pip3 install colorama
 

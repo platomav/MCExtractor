@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2018 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.24.0'
+title = 'MC Extractor v1.24.1'
 
 import os
 import re
@@ -19,7 +19,6 @@ import ctypes
 import inspect
 import sqlite3
 import colorama
-import tempfile
 import binascii
 import datetime
 import traceback
@@ -994,7 +993,7 @@ blob_count = 0
 mc_latest = None
 	
 # Intel - HeaderRev 01, LoaderRev 01, ProcesFlags xx00*3 (Intel 64 and IA-32 Architectures Software Developer's Manual Vol 3A, Ch 9.11.1)
-pat_icpu = re.compile(br'\x01\x00{3}.{4}[\x00-\x99](([\x19\x20][\x01-\x31][\x01-\x12])|(\x18\x07\x00)).{8}\x01\x00{3}.\x00{3}', re.DOTALL)
+pat_icpu = re.compile(br'\x01\x00{3}.{4}[\x00-\x99](([\x19\x20][\x01-\x31][\x01-\x12])|(\x18\x07\x00)).{8}[\x00\x01]\x00{3}.\x00{3}', re.DOTALL)
 
 # AMD - Year 20xx, Month 1-13, LoaderID 00-04, DataSize 00|10|20, InitFlag 00-01, NorthBridgeVEN_ID 0000|1022, SouthBridgeVEN_ID 0000|1022, BiosApiREV_ID 00-01, Reserved 00|AA
 pat_acpu = re.compile(br'\x20[\x01-\x31][\x01-\x13].{4}[\x00-\x04]\x80[\x00\x20\x10][\x00\x01].{4}((\x00{2})|(\x22\x10)).{2}((\x00{2})|(\x22\x10)).{6}[\x00\x01](\x00{3}|\xAA{3})', re.DOTALL)
@@ -1022,7 +1021,7 @@ for in_file in source :
 	match_list_a = []
 	match_list_v = []
 	match_list_f = []
-	mc_conv_data = bytearray()
+	mc_conv_data = b''
 	no_yes = [col_r + 'No' + col_e,col_g + 'Yes' + col_e]
 	cur_count += 1
 	
@@ -1040,13 +1039,11 @@ for in_file in source :
 	if param.conv_cont :
 		mc_f_ex = open(in_file, 'r', encoding = 'utf-8')
 		
-		temp_file = tempfile.NamedTemporaryFile(mode='ab', delete=False) # No auto delete for scanning after conversion
-		
 		try :
 			for line in mc_f_ex :
 				if type_conv == '' :
-					if '/+++' in line[0:5] or '0x' in line[0:3] : type_conv = '.dat'
-					elif line[0:4] == 'dd 0' : type_conv = '.inc'
+					if '/+++' in line[:5] or '0x' in line[:3] : type_conv = '.dat'
+					elif line[:4] == 'dd 0' : type_conv = '.inc'
 				
 				if type_conv == '.dat' :
 					if line[0] == '/' : continue
@@ -1070,18 +1067,19 @@ for in_file in source :
 						mc_conv_data += bytes.fromhex('%0.8X' % wlp)
 			
 			if type_conv == '' : raise Exception('')
-		
-			temp_file.write(mc_conv_data)
 			
-			in_file = temp_file.name # New in_file for converted container
+			temp_file = os.path.join(mce_dir, '__temp-mc__.temp')
+			with open(temp_file, 'wb') as temp : temp.write(mc_conv_data)
 		
 		except :
 			print(col_r + 'Error: Cannot convert Intel container!\n' + col_e)
-
-	with open(in_file, 'rb') as work_file :
+	
+	with open(temp_file if temp_file else in_file, 'rb') as work_file :
 		reading = work_file.read()
 		file_end = work_file.seek(0,2)
 		work_file.seek(0,0)
+		
+	if temp_file and os.path.isfile(temp_file) : os.remove(temp_file)
 	
 	# Intel Microcodes
 	
@@ -1631,10 +1629,6 @@ for in_file in source :
 		pt.title = col_y + 'Freescale' + col_e
 		print(pt)
 	for msg in msg_f: print(msg)
-	
-	if temp_file is not None :
-		temp_file.close()
-		os.remove(temp_file.name)
 		
 	if total == 0 : print('File does not contain CPU microcodes')
 
