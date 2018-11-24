@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2018 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.24.1'
+title = 'MC Extractor v1.24.2'
 
 import os
 import re
@@ -663,18 +663,16 @@ def db_new_MCE() :
 	
 def copy_file_with_warn(work_file) :
 	work_file.close()
-	suffix = 0
 		
 	file_name = os.path.basename(in_file)
 	warn_dir = os.path.join(mce_dir, '__Warnings__', '')
+	warn_name = os.path.join(warn_dir, file_name)
 		
 	if not os.path.isdir(warn_dir) : os.mkdir(warn_dir)
 	
-	while os.path.exists(warn_dir + file_name) :
-		suffix += 1
-		file_name += '_%s' % suffix
+	if os.path.isfile(warn_name) : warn_name += '_%d' % cur_count
 		
-	shutil.copyfile(in_file, warn_dir + file_name)
+	shutil.copyfile(in_file, warn_name)
 	
 def save_mc_file(mc_path, mc_data, mc_hash) :
 	if not param.ubu_test :

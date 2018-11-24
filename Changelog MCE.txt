@@ -1,3 +1,7 @@
+v1.24.2 r92
+
+Fixed crash when copying files with warnings
+
 v1.24.1 r86
 
 Adjusted Intel pattern for old Loader v0
