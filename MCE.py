@@ -37,7 +37,7 @@ col_e = colorama.Fore.RESET + colorama.Style.RESET_ALL
 mce_os = sys.platform
 if mce_os == 'win32' :
 	cl_wipe = 'cls'
-elif mce_os.startswith('linux') or mce_os == 'darwin' :
+elif mce_os.startswith('linux') or mce_os == 'darwin' or mce_os.find('bsd') != -1  :
 	cl_wipe = 'clear'
 else :
 	print(col_r + '\nError: ' + col_e + 'Unsupported platform "%s"!\n' % mce_os)
