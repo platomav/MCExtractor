@@ -3,10 +3,10 @@
 """
 MC Extractor
 Intel, AMD, VIA & Freescale Microcode Extractor
-Copyright (C) 2016-2018 Plato Mavropoulos
+Copyright (C) 2016-2019 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.24.2'
+title = 'MC Extractor v1.24.3'
 
 import os
 import re
@@ -24,6 +24,7 @@ import datetime
 import traceback
 import prettytable
 
+# Initialize and setup Colorama
 colorama.init()
 col_r = colorama.Fore.RED + colorama.Style.BRIGHT
 col_g = colorama.Fore.GREEN + colorama.Style.BRIGHT
@@ -37,10 +38,10 @@ col_e = colorama.Fore.RESET + colorama.Style.RESET_ALL
 mce_os = sys.platform
 if mce_os == 'win32' :
 	cl_wipe = 'cls'
-elif mce_os.startswith('linux') or mce_os == 'darwin' or mce_os.find('bsd') != -1  :
+elif mce_os.startswith('linux') or mce_os == 'darwin' or mce_os.find('bsd') != -1 :
 	cl_wipe = 'clear'
 else :
-	print(col_r + '\nError: ' + col_e + 'Unsupported platform "%s"!\n' % mce_os)
+	print(col_r + '\nError: Unsupported platform "%s"!\n' % mce_os + col_e)
 	if ' -exit' not in sys.argv : input('Press enter to exit')
 	colorama.deinit()
 	sys.exit(-1)
@@ -50,12 +51,12 @@ mce_py = sys.version_info
 try :
 	assert mce_py >= (3,6)
 except :
-	print(col_r + '\nError: ' + col_e + 'Python >= 3.6 required, not %d.%d!\n' % (mce_py[0],mce_py[1]))
+	print(col_r + '\nError: Python >= 3.6 required, not %d.%d!\n' % (mce_py[0],mce_py[1]) + col_e)
 	if ' -exit' not in sys.argv : input('Press enter to exit')
 	colorama.deinit()
 	sys.exit(-1)
 
-cur_count = 0
+# Set ctypes Structure types
 char = ctypes.c_char
 uint8_t = ctypes.c_ubyte
 uint16_t = ctypes.c_ushort
@@ -83,7 +84,7 @@ def mce_help() :
 
 class MCE_Param :
 
-	def __init__(self,source) :
+	def __init__(self, mce_os, source) :
 	
 		self.all = ['-?','-skip','-info','-add','-extr','-cont','-mass','-search','-dbname','-repo','-exit','-ubutest','-redir','-blob','-last']
 		self.win = ['-extr'] # Windows only
@@ -596,9 +597,10 @@ def show_exception_and_exit(exc_type, exc_value, tb) :
 	if exc_type is KeyboardInterrupt :
 		print('\n')
 	else :
-		print(col_r + '\nError: MCE just crashed, please report the following:\n')
+		print(col_r + '\nError: MC Extractor crashed, please report the following:\n')
 		traceback.print_exception(exc_type, exc_value, tb)
-		if not param.skip_pause : input(col_e + '\nPress enter to exit')
+		print(col_e)
+	if not param.skip_pause : input('Press enter to exit')
 	colorama.deinit() # Stop Colorama
 	sys.exit(-1)
 	
@@ -652,7 +654,7 @@ def mc_db_name(work_file, in_file, mc_name) :
 	work_file.close()
 	if not os.path.exists(new_dir_name) : os.rename(in_file, new_dir_name)
 	elif os.path.basename(in_file) == mc_name + '.bin' : pass
-	else : print(col_r + 'Error: ' + col_e + 'A file with the same name already exists!')
+	else : print(col_r + 'Error: A file with the same name already exists!' + col_e)
 
 def db_new_MCE() :
 	db_is_dev = (c.execute('SELECT developer FROM MCE')).fetchone()[0]
@@ -805,6 +807,18 @@ def mass_scan(f_path) :
 	
 	return mass_files
 	
+# Get MCE Parameters from input
+param = MCE_Param(mce_os, sys.argv)
+	
+# Actions for MCE but not UBU or UEFIStrip
+if not param.mce_extr and not param.ubu_test :
+	# Pause after any unexpected python exception
+	sys.excepthook = show_exception_and_exit
+	
+	# Set console/shell window title
+	if mce_os == 'win32' : ctypes.windll.kernel32.SetConsoleTitleW(title)
+	elif mce_os.startswith('linux') or mce_os == 'darwin' or mce_os.find('bsd') != -1 : sys.stdout.write('\x1b]2;' + title + '\x07')
+	
 # Get script location
 mce_dir = get_script_dir()
 
@@ -814,21 +828,8 @@ db_path = os.path.join(mce_dir, 'MCE.db')
 # Set MCB location
 mcb_path = os.path.join(mce_dir, 'MCB.bin')
 
-# Get MCE Parameters from input
-param = MCE_Param(sys.argv)
-
 # Enumerate parameter input
 arg_num = len(sys.argv)
-
-# Actions for MCE but not UBU or UEFIStrip
-if param.mce_extr or param.ubu_test :
-	pass
-else :
-	sys.excepthook = show_exception_and_exit # Pause after any unexpected python exception
-	# Set console window title
-	if mce_os == 'win32' : ctypes.windll.kernel32.SetConsoleTitleW(title)
-	if mce_os.startswith('linux') or mce_os == 'darwin' or mce_os.find('bsd') != -1 :
-		sys.stdout.write("\x1b]2;" + title + "\x07")
 
 if not param.skip_intro :
 	mce_hdr()
@@ -853,7 +854,7 @@ if not param.skip_intro :
 	input_var = re.split(''' (?=(?:[^'"]|'[^']*'|"[^"]*")*$)''', input_var.strip())
 	
 	# Get MCE Parameters based on given Options
-	param = MCE_Param(input_var)
+	param = MCE_Param(mce_os, input_var)
 	
 	# Non valid parameters are treated as files
 	if input_var[0] != "" :
@@ -984,17 +985,6 @@ if param.print_last :
 		print('cpu%0.8X_ver%0.8X_%s-%s-%s' % (mc_latest[0],mc_latest[1],mc_latest[2],mc_latest[3],mc_latest[4]))
 	
 	mce_exit()
-
-in_count = len(source)
-for arg in source :
-	if arg in param.val : in_count -= 1
-
-# Blob Variables
-blob_lut_init = []
-blob_lut_done = b''
-blob_data = b''
-blob_count = 0
-mc_latest = None
 	
 # Intel - HeaderRev 01, LoaderRev 01, ProcesFlags xx00*3 (Intel 64 and IA-32 Architectures Software Developer's Manual Vol 3A, Ch 9.11.1)
 pat_icpu = re.compile(br'\x01\x00{3}.{4}[\x00-\x99](([\x19\x20][\x01-\x31][\x01-\x12])|(\x18\x07\x00)).{8}[\x00\x01]\x00{3}.\x00{3}', re.DOTALL)
@@ -1008,9 +998,20 @@ pat_vcpu = re.compile(br'\x52\x52\x41\x53.{16}\x01\x00{3}', re.DOTALL)
 # Freescale - Signature QEF, Header Revision 01
 pat_fcpu = re.compile(br'\x51\x45\x46\x01.{62}[\x00-\x01]', re.DOTALL)
 
+# Global Variable Initialization
+mc_latest = None
+blob_lut_init = []
+blob_lut_done = b''
+blob_data = b''
+blob_count = 0
+cur_count = 0
+in_count = len(source)
+for arg in source :
+	if arg in param.val : in_count -= 1
+
 for in_file in source :
 
-	# MC Variables
+	# Microcode Variable Initialization
 	mc_nr = 0
 	total = 0
 	type_conv = ''
@@ -1132,7 +1133,7 @@ for in_file in source :
 		# Remove false results, based on date
 		try :
 			date_chk = datetime.datetime.strptime(full_date, '%Y-%m-%d')
-			if date_chk.year > 2020 or date_chk.year < 1993 : raise Exception('WrongDate') # 1st MC from 1995 (P6), 1993 for safety
+			if date_chk.year > 2021 or date_chk.year < 1993 : raise Exception('WrongDate') # 1st MC from 1995 (P6), 1993 for safety
 		except :
 			if full_date == '1896-00-07' and patch_u == 0xD1 : pass # Drunk Intel employee 1, Happy 0th month from 19th century Intel!
 			else :
@@ -1317,7 +1318,7 @@ for in_file in source :
 		try :
 			date_chk = datetime.datetime.strptime(full_date, '%Y-%m-%d')
 			
-			if date_chk.year > 2020 : raise Exception('WrongDate') # 1st MC from 1999 (K7), 2000 for K7 Erratum and performance
+			if date_chk.year > 2021 : raise Exception('WrongDate') # 1st MC from 1999 (K7), 2000 for K7 Erratum and performance
 		except :
 			if (full_date,patch) == ('2011-13-09',0x3000027) : pass # Drunk AMD employee 1, Happy 13th month from AMD!
 			else :
@@ -1457,7 +1458,7 @@ for in_file in source :
 		# Remove false results, based on date
 		try :
 			date_chk = datetime.datetime.strptime(full_date, '%Y-%m-%d')
-			if date_chk.year > 2020 or date_chk.year < 2006 : raise Exception('WrongDate') # 1st MC from 2008 (Nano), 2006 for safety
+			if date_chk.year > 2021 or date_chk.year < 2006 : raise Exception('WrongDate') # 1st MC from 2008 (Nano), 2006 for safety
 		except :
 			msg_v.append(col_m + "\nWarning: Skipped VIA microcode at 0x%X, invalid Date of %s!\n" % (mc_bgn, full_date) + col_e)
 			if not param.mce_extr : copy_file_with_warn(work_file)

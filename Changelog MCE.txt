@@ -1,3 +1,8 @@
+v1.24.3 r94
+
+Added BSD operating system support
+Improved code exception handling
+
 v1.24.2 r92
 
 Fixed crash when copying files with warnings
