@@ -593,9 +593,12 @@ def get_script_dir(follow_symlinks=True) :
 
 # https://stackoverflow.com/a/781074
 def show_exception_and_exit(exc_type, exc_value, tb) :
-	print(col_r + '\nError: MCE just crashed, please report the following:\n')
-	traceback.print_exception(exc_type, exc_value, tb)
-	if not param.skip_pause : input(col_e + '\nPress enter to exit')
+	if exc_type is KeyboardInterrupt :
+		print('\n')
+	else :
+		print(col_r + '\nError: MCE just crashed, please report the following:\n')
+		traceback.print_exception(exc_type, exc_value, tb)
+		if not param.skip_pause : input(col_e + '\nPress enter to exit')
 	colorama.deinit() # Stop Colorama
 	sys.exit(-1)
 	
