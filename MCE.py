@@ -822,7 +822,10 @@ if param.mce_extr or param.ubu_test :
 	pass
 else :
 	sys.excepthook = show_exception_and_exit # Pause after any unexpected python exception
-	if mce_os == 'win32' : ctypes.windll.kernel32.SetConsoleTitleW(title) # Set console window title
+	# Set console window title
+	if mce_os == 'win32' : ctypes.windll.kernel32.SetConsoleTitleW(title)
+	if mce_os.startswith('linux') or mce_os == 'darwin' or mce_os.find('bsd') != -1 :
+		sys.stdout.write("\x1b]2;" + title + "\x07")
 
 if not param.skip_intro :
 	mce_hdr()
