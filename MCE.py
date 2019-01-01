@@ -593,9 +593,12 @@ def get_script_dir(follow_symlinks=True) :
 
 # https://stackoverflow.com/a/781074
 def show_exception_and_exit(exc_type, exc_value, tb) :
-	print(col_r + '\nError: MCE just crashed, please report the following:\n')
-	traceback.print_exception(exc_type, exc_value, tb)
-	if not param.skip_pause : input(col_e + '\nPress enter to exit')
+	if exc_type is KeyboardInterrupt :
+		print('\n')
+	else :
+		print(col_r + '\nError: MCE just crashed, please report the following:\n')
+		traceback.print_exception(exc_type, exc_value, tb)
+		if not param.skip_pause : input(col_e + '\nPress enter to exit')
 	colorama.deinit() # Stop Colorama
 	sys.exit(-1)
 	
@@ -822,7 +825,10 @@ if param.mce_extr or param.ubu_test :
 	pass
 else :
 	sys.excepthook = show_exception_and_exit # Pause after any unexpected python exception
-	if mce_os == 'win32' : ctypes.windll.kernel32.SetConsoleTitleW(title) # Set console window title
+	# Set console window title
+	if mce_os == 'win32' : ctypes.windll.kernel32.SetConsoleTitleW(title)
+	if mce_os.startswith('linux') or mce_os == 'darwin' or mce_os.find('bsd') != -1 :
+		sys.stdout.write("\x1b]2;" + title + "\x07")
 
 if not param.skip_intro :
 	mce_hdr()
