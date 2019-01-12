@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2019 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.24.3'
+title = 'MC Extractor v1.24.4'
 
 import os
 import re
@@ -728,8 +728,8 @@ def mc_upd_chk(mc_upd_chk_rsl) :
 	
 	return is_latest, mc_latest
 	
-def build_mc_repo(vendor, is_latest, rel_file) :
-	if is_latest and ((vendor == 'INTEL' and rel_file == 'PRD') or (vendor in ['AMD','VIA'])) :
+def build_mc_repo(vendor, is_latest, rel_file, cpu_id) :
+	if is_latest and ((vendor == 'INTEL' and rel_file == 'PRD' and cpu_id != 0) or (vendor in ['AMD','VIA'])) :
 		repo_name = os.path.basename(in_file)
 		repo_dir = os.path.join(mce_dir, '__REPO_%s__' % vendor, '')
 		if not os.path.isdir(repo_dir) : os.mkdir(repo_dir)
@@ -1223,7 +1223,7 @@ for in_file in source :
 		
 		# Build Microcode Repository (PRD & Last)
 		if param.build_repo :
-			build_mc_repo('INTEL', is_latest, rel_file)
+			build_mc_repo('INTEL', is_latest, rel_file, cpu_id)
 			
 			continue
 		
@@ -1392,7 +1392,7 @@ for in_file in source :
 		
 		# Build Microcode Repository (Last)
 		if param.build_repo :
-			build_mc_repo('AMD', is_latest, '')
+			build_mc_repo('AMD', is_latest, '', 0)
 			continue
 		
 		row = [mc_nr, cpu_id, '%0.8X' % patch, full_date, '0x%X' % mc_len, '0x%X' % mc_bgn, no_yes[is_latest]]
@@ -1500,7 +1500,7 @@ for in_file in source :
 		
 		# Build Microcode Repository (Last)
 		if param.build_repo :
-			build_mc_repo('VIA', is_latest, '')
+			build_mc_repo('VIA', is_latest, '', 0)
 			continue
 		
 		row = [mc_nr, '%X' % cpu_id, name, '%X' % patch, full_date, '0x%X' % mc_len, '0x%X' % mc_bgn, no_yes[is_latest]]
