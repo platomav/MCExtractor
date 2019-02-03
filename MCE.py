@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2019 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.24.4'
+title = 'MC Extractor v1.24.5'
 
 import os
 import re
@@ -146,20 +146,16 @@ class Intel_MC_Header(ctypes.LittleEndianStructure) :
 		("Checksum",                  uint32_t),  # 10 OEM validation only
 		("LoaderRevision",            uint32_t),  # 14 00000001 (Pattern)
 		("ProcessorFlags",            uint8_t),   # 18 Supported Platforms
-		("Reserved0",                 uint8_t*3), # 19 000000 (Pattern)
+		("Reserved0",                 uint8_t*3), # 19 00 * 3 (Pattern)
 		("DataSize",                  uint32_t),  # 1C Extra + Patch
 		("TotalSize",                 uint32_t),  # 20 Header + Extra + Patch + Extended
-		("Reserved1",                 uint32_t),  # 24 00000000 (Pattern)
-		("Reserved2",                 uint32_t),  # 28 00000000 (Pattern)
-		("Reserved3",                 uint32_t),  # 2C 00000000 (Pattern)
+		("Reserved1",                 uint32_t*3),# 24 00 * 12 (Pattern)
 		# 30
 	]
 
 	def mc_print(self) :
 		Reserved0 = ''.join('%0.2X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.Reserved0))
-		
-		if self.Reserved1 == self.Reserved2 == self.Reserved3 == 0 : reserv_str = '0x0'
-		else : reserv_str = '%0.8X %0.8X %0.8X' % (self.Reserved1, self.Reserved2, self.Reserved3)
+		Reserved1 = ''.join('%0.8X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.Reserved1))
 		
 		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
 		
@@ -171,10 +167,10 @@ class Intel_MC_Header(ctypes.LittleEndianStructure) :
 		pt.add_row(['Checksum', '%0.8X' % self.Checksum])
 		pt.add_row(['Loader Version', '%d' % self.LoaderRevision])
 		pt.add_row(['Platform', '%0.2X (%s)' % (self.ProcessorFlags, ','.join(map(str, intel_plat(mc_hdr.ProcessorFlags))))])
-		pt.add_row(['Reserved', '0x0' if Reserved0 == '000000' else Reserved0])
+		pt.add_row(['Reserved 0', '0x0' if Reserved0 == '00' * 3 else Reserved0])
 		pt.add_row(['Data Size', '0x%X' % self.DataSize])
 		pt.add_row(['Total Size', '0x%X' % self.TotalSize])
-		pt.add_row(['Reserved', reserv_str])
+		pt.add_row(['Reserved 1', '0x0' if Reserved1 == '00' * 12 else Reserved1])
 		
 		print(pt)
 
@@ -409,7 +405,7 @@ class VIA_MC_Header(ctypes.LittleEndianStructure) :
 			pt.add_row(['CNR Revision', '001 A%d' % self.CNRRevision])
 			pt.add_row(['Reserved', reserv_str])
 		else :
-			pt.add_row(['Reserved', 'FFFFFFFF'])
+			pt.add_row(['Reserved', '0xFFFFFFFF'])
 		pt.add_row(['Data Size', '0x%X' % self.DataSize])
 		pt.add_row(['Total Size', '0x%X' % self.TotalSize])
 		pt.add_row(['Name', self.Name.replace(b'\x7f', b'\x2e').decode('utf-8')])
@@ -452,10 +448,10 @@ class FSL_MC_Header(ctypes.BigEndianStructure) :
 		pt.add_row(['SoC Model', '%0.4d' % self.Model])
 		pt.add_row(['SoC Major', '%d' % self.Major])
 		pt.add_row(['SoC Minor', '%d' % self.Minor])
-		pt.add_row(['Reserved', '0x%X' % self.Reserved0])
+		pt.add_row(['Reserved 0', '0x%X' % self.Reserved0])
 		pt.add_row(['Extended Modes', '0x%X' % self.ExtendedModes])
 		pt.add_row(['Virtual Traps', vtraps_str])
-		pt.add_row(['Reserved', '0x%X' % self.Reserved1])
+		pt.add_row(['Reserved 1', '0x%X' % self.Reserved1])
 		
 		print(pt)
 		
@@ -987,7 +983,7 @@ if param.print_last :
 	mce_exit()
 	
 # Intel - HeaderRev 01, LoaderRev 01, ProcesFlags xx00*3 (Intel 64 and IA-32 Architectures Software Developer's Manual Vol 3A, Ch 9.11.1)
-pat_icpu = re.compile(br'\x01\x00{3}.{4}[\x00-\x99](([\x19\x20][\x01-\x31][\x01-\x12])|(\x18\x07\x00)).{8}[\x00\x01]\x00{3}.\x00{3}', re.DOTALL)
+pat_icpu = re.compile(br'\x01\x00{3}.{4}[\x00-\x99](([\x19\x20][\x01-\x31][\x01-\x12])|(\x18\x07\x00)).{8}[\x00\x01]\x00{3}.\x00{3}.{8}\x00{12}', re.DOTALL)
 
 # AMD - Year 20xx, Month 1-13, LoaderID 00-04, DataSize 00|10|20, InitFlag 00-01, NorthBridgeVEN_ID 0000|1022, SouthBridgeVEN_ID 0000|1022, BiosApiREV_ID 00-01, Reserved 00|AA
 pat_acpu = re.compile(br'\x20[\x01-\x31][\x01-\x13].{4}[\x00-\x04]\x80[\x00\x20\x10][\x00\x01].{4}((\x00{2})|(\x22\x10)).{2}((\x00{2})|(\x22\x10)).{6}[\x00\x01](\x00{3}|\xAA{3})', re.DOTALL)
@@ -1117,18 +1113,14 @@ for in_file in source :
 		plat = mc_hdr.ProcessorFlags
 		plat_bit = intel_plat(mc_hdr.ProcessorFlags)
 		
-		mc_len = mc_hdr.TotalSize
-		if mc_len == 0 : mc_len = 2048
+		mc_len = 0x800 if mc_hdr.TotalSize == 0 else mc_hdr.TotalSize
 		
 		mc_chk = mc_hdr.Checksum # For OEM validation, not checked by CPU
 		
-		res_field = mc_hdr.Reserved1 + mc_hdr.Reserved2 + mc_hdr.Reserved3
-		
-		full_date = "%s-%s-%s" % (year, month, day)
+		full_date = '%s-%s-%s' % (year, month, day)
 		
 		# Detect Release based on Patch signature
-		if patch_s >= 0 : rel_file = 'PRD'
-		else : rel_file = 'PRE'
+		rel_file = 'PRD' if patch_s >= 0 else 'PRE'
 		
 		# Remove false results, based on date
 		try :
@@ -1140,12 +1132,6 @@ for in_file in source :
 				msg_i.append(col_m + "\nWarning: Skipped Intel microcode at 0x%X, invalid Date of %s!" % (mc_bgn, full_date) + col_e)
 				if not param.mce_extr : copy_file_with_warn(work_file)
 				continue
-		
-		# Remove false results, based on Reserved field
-		if res_field != 0 :
-			msg_i.append(col_m + "\nWarning: Skipped Intel microcode at 0x%X, Reserved field not empty!" % mc_bgn + col_e)
-			if not param.mce_extr : copy_file_with_warn(work_file)
-			continue
 		
 		# Detect Extra Header
 		if reading[mc_bgn + 0x30:mc_bgn + 0x38] == b'\x00\x00\x00\x00\xA1\x00\x00\x00' :
