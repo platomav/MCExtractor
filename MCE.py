@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2019 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.24.5'
+title = 'MC Extractor v1.24.6'
 
 import os
 import re
@@ -1331,7 +1331,7 @@ for in_file in source :
 		elif cpu_id[2:4] in ['60','61','63','66','67'] : mc_len = 0xA20
 		elif cpu_id[2:4] in ['68'] : mc_len = 0x980
 		elif cpu_id[2:4] in ['70','73'] : mc_len = 0xD60
-		elif cpu_id[2:4] in ['80','81','82'] : mc_len = 0xC80
+		elif cpu_id[2:4] in ['80','81','82','87'] : mc_len = 0xC80
 		else : mc_len = 0
 		
 		mc_data = reading[mc_bgn:mc_bgn + mc_len]
@@ -1342,7 +1342,8 @@ for in_file in source :
 		mc_nr += 1
 		
 		if mc_len == 0 :
-			msg_a.append(col_r + "\nError: Microcode #%d %s not extracted at 0x%X, unknown Size!" % (mc_nr, mc_name, mc_bgn) + col_e)
+			msg_a.append(col_r + '\nError: Microcode #%d %s not extracted at 0x%X, unknown Size!' % (mc_nr, mc_name, mc_bgn) + col_e)
+			if not param.mce_extr : copy_file_with_warn(work_file)
 			continue
 		else :
 			mc_len_db = '%0.8X' % mc_len
