@@ -1,3 +1,10 @@
+v1.30.0 r102
+
+Added Intel Extended Header Microcode extraction
+Added Intel Extra Header RSA Key Size detection
+Added Intel Container full automatic extraction
+Added Intel & Freescale Reserved field checks
+
 v1.24.6 r101
 
 Added AMD microcode CPUID 00870F00 detection
