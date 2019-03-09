@@ -21,11 +21,12 @@ MC Extractor is a tool which parses Intel, AMD, VIA and Freescale processor micr
 - Scans for all Intel, AMD, VIA & Freescale microcodes in one run
 - Verifies all extracted microcode integrity via Checksums
 - Checks if all Intel, AMD & VIA microcodes are Latest or Outdated
-- Converts Intel containers (dat,inc,txt,h) to binary images
 - Searches on demand for all microcodes based on CPUID
 - Shows microcode Header structures and details on demand
 - Ignores most false positives based on sanity checks
 - Supports known special, fixed or modded microcodes
+- Ability to automatically extract Intel Extended microcodes
+- Ability to automatically extract Intel Containers (dat,inc,txt,h)
 - Ability to quickly add new microcode entries to the database
 - Ability to detect Intel Production/Pre-Production Release tag
 - Ability to analyze multiple files by drag & drop or by input path
@@ -64,7 +65,6 @@ There are various parameters which enhance or modify the default behavior of MC 
 * -info   : Displays microcode header(s)
 * -add    : Adds new input microcode to DB
 * -dbname : Renames input file based on DB name
-* -cont   : Extracts Intel containers (dat,inc,h,txt)
 * -search : Searches for microcodes based on CPUID
 * -last   : Shows Latest status based on user input
 * -repo   : Builds microcode repositories from input
