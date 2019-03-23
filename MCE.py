@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2019 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.30.0'
+title = 'MC Extractor v1.30.1'
 
 import os
 import re
@@ -85,7 +85,7 @@ class MCE_Param :
 
 	def __init__(self, mce_os, source) :
 	
-		self.all = ['-?','-skip','-info','-add','-extr','-mass','-search','-dbname','-repo','-exit','-ubutest','-redir','-blob','-last']
+		self.all = ['-?','-skip','-info','-add','-extr','-mass','-search','-dbname','-repo','-exit','-ubu','-redir','-blob','-last']
 		self.win = ['-extr'] # Windows only
 		
 		if mce_os == 'win32' : self.val = self.all
@@ -115,7 +115,7 @@ class MCE_Param :
 			if i == '-search' : self.search = True
 			if i == '-dbname' : self.give_db_name = True
 			if i == '-repo' : self.build_repo = True
-			if i == '-ubutest' : self.mce_ubu = True # Hidden
+			if i == '-ubu' : self.mce_ubu = True # Hidden
 			if i == '-exit' : self.skip_pause = True
 			if i == '-redir' : self.cli_redirect = True
 			if i == '-blob' : self.build_blob = True # Hidden (TBD)
@@ -1242,8 +1242,8 @@ for in_file in source :
 			
 			# RSA Signature cannot be validated because Hash is probably derived from Header + Decrypted Patch
 			rsa_pexp = mc_hdr_extra.RSAExponent if ctypes.sizeof(mc_hdr_extra) == 0x284 else 65537 # 17 for RSA 2048-bit or 65537 for RSA 3072-bit
-			rsa_pkey = int((''.join('%0.8X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(mc_hdr_extra.RSAPublicKey))), 16)
-			rsa_sign = int((''.join('%0.8X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(mc_hdr_extra.RSASignature))), 16)
+			rsa_pkey = int.from_bytes(mc_hdr_extra.RSAPublicKey, 'little')
+			rsa_sign = int.from_bytes(mc_hdr_extra.RSASignature, 'little')
 			if rsa_pexp and rsa_pkey and rsa_sign : mc_sign = '%X' % pow(rsa_sign, rsa_pexp, rsa_pkey) # SHA-1 or SHA-256 or Unknown + SHA-256
 			
 			if param.print_hdr : mc_hdr_extra.mc_print()
@@ -1295,7 +1295,7 @@ for in_file in source :
 					AND checksum=?', ('%0.8X' % cpu_id, '%0.8X' % plat, '%0.8X' % patch_u, year + month + day, '%0.8X' % mc_len, '%0.8X' % mc_chk,))).fetchone()
 		
 		if param.build_db :
-			if mc_at_db is None :
+			if mc_at_db is None and in_file not in temp_mc_paths :
 				db_new_MCE()
 				
 				c.execute('INSERT INTO Intel (cpuid, platform, version, yyyymmdd, size, checksum) VALUES (?,?,?,?,?,?)',
@@ -1309,7 +1309,7 @@ for in_file in source :
 			
 		# Rename input file based on the DB structured name
 		if param.give_db_name :
-			mc_db_name(work_file, in_file, mc_name)
+			if in_file not in temp_mc_paths : mc_db_name(work_file, in_file, mc_name)
 			continue
 		
 		mc_upd_chk_rsl = (c.execute('SELECT yyyymmdd,platform,version FROM Intel WHERE cpuid=?', ('%0.8X' % cpu_id,))).fetchall()
@@ -1320,18 +1320,18 @@ for in_file in source :
 		# Build Microcode Repository (PRD & Last)
 		if param.build_repo :
 			if in_file not in temp_mc_paths : build_mc_repo('INTEL', is_latest, rel_file, cpu_id)
-			
 			continue
 		
 		# Prepare Microcode Blob
 		if param.build_blob :
-			blob_count += 1
-			
-			# CPUID [0x4] + Platform [0x4] + Version [0x4] + Date [0x4] + Offset [0x4] + Size [0x4] + Checksum [0x4] + Reserved [0x4]
-			blob_lut_init.append([cpu_id, plat, patch_u, mc_hdr.Year, mc_hdr.Month, mc_hdr.Day, 0, mc_len, mc_chk, 0])
-			
-			blob_data += mc_data
+			if in_file not in temp_mc_paths :
+				blob_count += 1
 				
+				# CPUID [0x4] + Platform [0x4] + Version [0x4] + Date [0x4] + Offset [0x4] + Size [0x4] + Checksum [0x4] + Reserved [0x4]
+				blob_lut_init.append([cpu_id, plat, patch_u, mc_hdr.Year, mc_hdr.Month, mc_hdr.Day, 0, mc_len, mc_chk, 0])
+				
+				blob_data += mc_data
+					
 			continue
 			
 		row = [mc_nr, '%X' % cpu_id, '%0.2X (%s)' % (plat, ','.join(map(str, plat_bit))), '%X' % patch_u, full_date, rel_file, '0x%X' % mc_len, '0x%X' % mc_bgn, no_yes[is_latest]]
@@ -1821,5 +1821,5 @@ elif param.build_blob :
 		mc_blob.write(blob_hdr)
 		mc_blob.write(blob_lut_done)
 		mc_blob.write(blob_data)
-
+		
 mce_exit()
