@@ -29,6 +29,7 @@ MC Extractor is a tool which parses Intel, AMD, VIA and Freescale processor micr
 - Ability to automatically extract Intel Containers (dat,inc,txt,h)
 - Ability to quickly add new microcode entries to the database
 - Ability to detect Intel Production/Pre-Production Release tag
+- Ability to check for MC Extractor and/or DB updates on demand
 - Ability to analyze multiple files by drag & drop or by input path
 - Ability to ignore extracted duplicates based on name and contents
 - Reports all microcodes which are not found at the Microcode Repositories
@@ -66,7 +67,8 @@ There are various parameters which enhance or modify the default behavior of MC 
 * -add    : Adds new input microcode to DB
 * -dbname : Renames input file based on DB name
 * -search : Searches for microcodes based on CPUID
-* -last   : Shows Latest status based on user input
+* -updchk : Checks for MC Extractor & DB updates
+* -last   : Shows "Last" status based on user input
 * -repo   : Builds microcode repositories from input
 
 #### **B3. MC Extractor Error Control**
@@ -156,3 +158,5 @@ At dist folder you should find the final MCE executable
 ![](https://i.imgur.com/T1mLYm7.png)
 
 ![](https://i.imgur.com/zXdm2Xo.png)
+
+![](https://i.imgur.com/zfEpxUv.png)

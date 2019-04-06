@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2019 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.30.1'
+title = 'MC Extractor v1.32.0'
 
 import os
 import re
@@ -23,6 +23,7 @@ import binascii
 import datetime
 import traceback
 import prettytable
+from urllib import request
 
 # Initialize and setup Colorama
 colorama.init()
@@ -75,7 +76,8 @@ def mce_help() :
 	text += "-add    : Adds new input microcode to DB\n"
 	text += "-dbname : Renames input file based on DB name\n"
 	text += "-search : Searches for microcodes based on CPUID\n"
-	text += "-last   : Shows Latest status based on user input\n"
+	text += "-updchk : Checks for MC Extractor & DB updates\n"
+	text += "-last   : Shows \"Last\" status based on user input\n"
 	text += "-repo   : Builds microcode repositories from input"
 	
 	print(text)
@@ -85,7 +87,7 @@ class MCE_Param :
 
 	def __init__(self, mce_os, source) :
 	
-		self.all = ['-?','-skip','-info','-add','-extr','-mass','-search','-dbname','-repo','-exit','-ubu','-redir','-blob','-last']
+		self.all = ['-?','-skip','-info','-add','-extr','-mass','-search','-dbname','-repo','-exit','-ubu','-redir','-blob','-last','-updchk']
 		self.win = ['-extr'] # Windows only
 		
 		if mce_os == 'win32' : self.val = self.all
@@ -105,6 +107,7 @@ class MCE_Param :
 		self.cli_redirect = False
 		self.build_blob = False
 		self.print_last = False
+		self.upd_check = False
 		
 		for i in source :
 			if i == '-?' : self.help_scr = True
@@ -120,13 +123,17 @@ class MCE_Param :
 			if i == '-redir' : self.cli_redirect = True
 			if i == '-blob' : self.build_blob = True # Hidden (TBD)
 			if i == '-last' : self.print_last = True
+			if i == '-updchk' : self.upd_check = True
 			
 			# Windows only options
 			if mce_os == 'win32' :
 				if i == '-extr': self.mce_extr = True # Hidden
 			
-		if self.mce_extr or self.mass_scan or self.search or self.build_repo or self.build_blob or self.print_last : self.skip_intro = True
+		if self.mce_extr or self.mass_scan or self.search or self.build_repo or self.build_blob \
+		or self.print_last or self.upd_check : self.skip_intro = True
+		
 		if self.mce_extr : self.cli_redirect = True
+		
 		if self.cli_redirect or self.print_last : self.skip_pause = True
 
 # noinspection PyTypeChecker
@@ -141,7 +148,7 @@ class Intel_MC_Header(ctypes.LittleEndianStructure) :
 		("ProcessorSignature",        uint32_t),  # 0x0C
 		("Checksum",                  uint32_t),  # 0x10 OEM validation only
 		("LoaderRevision",            uint32_t),  # 0x14 00000001 (Pattern)
-		("ProcessorFlags",            uint8_t),   # 0x18 Supported Platforms
+		("PlatformIDs",               uint8_t),   # 0x18 Supported Platforms
 		("Reserved0",                 uint8_t*3), # 0x19 00 * 3 (Pattern)
 		("DataSize",                  uint32_t),  # 0x1C Extra + Patch
 		("TotalSize",                 uint32_t),  # 0x20 Header + Extra + Patch + Extended
@@ -149,6 +156,8 @@ class Intel_MC_Header(ctypes.LittleEndianStructure) :
 		# 0x30
 	]
 
+	# Intel 64 and IA-32 Architectures Software Developer's Manual Vol 3A, Ch 9.11.1
+	
 	def mc_print(self) :
 		Reserved0 = ''.join('%0.2X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.Reserved0))
 		Reserved1 = ''.join('%0.8X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.Reserved1))
@@ -162,7 +171,7 @@ class Intel_MC_Header(ctypes.LittleEndianStructure) :
 		pt.add_row(['CPUID', '%0.5X' % self.ProcessorSignature])
 		pt.add_row(['Checksum', '%0.8X' % self.Checksum])
 		pt.add_row(['Loader Version', '%d' % self.LoaderRevision])
-		pt.add_row(['Platform', '%0.2X (%s)' % (self.ProcessorFlags, ','.join(map(str, intel_plat(mc_hdr.ProcessorFlags))))])
+		pt.add_row(['Platform', '%0.2X (%s)' % (self.PlatformIDs, ','.join(map(str, intel_plat(mc_hdr.PlatformIDs))))])
 		pt.add_row(['Reserved 0', '0x0' if Reserved0 == '00' * 3 else Reserved0])
 		pt.add_row(['Data Size', '0x%X' % self.DataSize])
 		pt.add_row(['Total Size', '0x%X' % self.TotalSize])
@@ -226,7 +235,7 @@ class Intel_MC_Header_Extra_R1(ctypes.LittleEndianStructure) :
 		pt.add_row(['RSA Key Size', self.RSAKeySize * 1024])
 		pt.add_row(['Update Version', '%X' % self.UpdateRevision])
 		pt.add_row(['Version Control Number', '%d' % self.VCN])
-		if self.MultiPurpose1 == mc_hdr.ProcessorFlags : pt.add_row(['Platform (MP1)', '%0.2X (%s)' % (self.MultiPurpose1, ','.join(map(str, intel_plat(mc_hdr.ProcessorFlags))))])
+		if self.MultiPurpose1 == mc_hdr.PlatformIDs : pt.add_row(['Platform (MP1)', '%0.2X (%s)' % (self.MultiPurpose1, ','.join(map(str, intel_plat(mc_hdr.PlatformIDs))))])
 		elif self.MultiPurpose1 * 4 == self.UpdateSize * 4 : pt.add_row(['Update Size (MP1)', '0x%X' % (self.MultiPurpose1 * 4)])
 		elif self.MultiPurpose1 * 4 == mc_len - 0x30 : pt.add_row(['Padded Size (MP1)', '0x%X' % (self.MultiPurpose1 * 4)])
 		else : pt.add_row(['Multi Purpose 1', '0x%X' % self.MultiPurpose1])
@@ -241,7 +250,7 @@ class Intel_MC_Header_Extra_R1(ctypes.LittleEndianStructure) :
 		if self.ProcessorSignature5 != 0 : pt.add_row(['CPUID 5', '%0.5X' % self.ProcessorSignature5])
 		if self.ProcessorSignature6 != 0 : pt.add_row(['CPUID 6', '%0.5X' % self.ProcessorSignature6])
 		if self.ProcessorSignature7 != 0 : pt.add_row(['CPUID 7', '%0.5X' % self.ProcessorSignature7])
-		if self.MultiPurpose2 == mc_hdr.ProcessorFlags : pt.add_row(['Platform (MP2)', '%0.2X (%s)' % (self.MultiPurpose2, ','.join(map(str, intel_plat(mc_hdr.ProcessorFlags))))])
+		if self.MultiPurpose2 == mc_hdr.PlatformIDs : pt.add_row(['Platform (MP2)', '%0.2X (%s)' % (self.MultiPurpose2, ','.join(map(str, intel_plat(mc_hdr.PlatformIDs))))])
 		elif self.MultiPurpose2 * 4 == self.UpdateSize * 4 : pt.add_row(['Update Size (MP2)', '0x%X' % (self.MultiPurpose2 * 4)])
 		elif self.MultiPurpose2 * 4 == mc_len - 0x30 : pt.add_row(['Padded Size (MP2)', '0x%X' % (self.MultiPurpose2 * 4)])
 		else : pt.add_row(['Multi Purpose 2', '0x%X' % self.MultiPurpose2])
@@ -315,7 +324,7 @@ class Intel_MC_Header_Extra_R2(ctypes.LittleEndianStructure) :
 		pt.add_row(['RSA Key Size', self.RSAKeySize * 1024])
 		pt.add_row(['Update Version', '%X' % self.UpdateRevision])
 		pt.add_row(['Version Control Number', '%d' % self.VCN])
-		if self.MultiPurpose1 == mc_hdr.ProcessorFlags : pt.add_row(['Platform (MP1)', '%0.2X (%s)' % (self.MultiPurpose1, ','.join(map(str, intel_plat(mc_hdr.ProcessorFlags))))])
+		if self.MultiPurpose1 == mc_hdr.PlatformIDs : pt.add_row(['Platform (MP1)', '%0.2X (%s)' % (self.MultiPurpose1, ','.join(map(str, intel_plat(mc_hdr.PlatformIDs))))])
 		elif self.MultiPurpose1 * 4 == self.UpdateSize * 4 : pt.add_row(['Update Size (MP1)', '0x%X' % (self.MultiPurpose1 * 4)])
 		elif self.MultiPurpose1 * 4 == mc_len - 0x30 : pt.add_row(['Padded Size (MP1)', '0x%X' % (self.MultiPurpose1 * 4)])
 		else : pt.add_row(['Multi Purpose 1', '0x%X' % self.MultiPurpose1])
@@ -330,7 +339,7 @@ class Intel_MC_Header_Extra_R2(ctypes.LittleEndianStructure) :
 		if self.ProcessorSignature5 != 0 : pt.add_row(['CPUID 5', '%0.5X' % self.ProcessorSignature5])
 		if self.ProcessorSignature6 != 0 : pt.add_row(['CPUID 6', '%0.5X' % self.ProcessorSignature6])
 		if self.ProcessorSignature7 != 0 : pt.add_row(['CPUID 7', '%0.5X' % self.ProcessorSignature7])
-		if self.MultiPurpose2 == mc_hdr.ProcessorFlags : pt.add_row(['Platform (MP2)', '%0.2X (%s)' % (self.MultiPurpose2, ','.join(map(str, intel_plat(mc_hdr.ProcessorFlags))))])
+		if self.MultiPurpose2 == mc_hdr.PlatformIDs : pt.add_row(['Platform (MP2)', '%0.2X (%s)' % (self.MultiPurpose2, ','.join(map(str, intel_plat(mc_hdr.PlatformIDs))))])
 		elif self.MultiPurpose2 * 4 == self.UpdateSize * 4 : pt.add_row(['Update Size (MP2)', '0x%X' % (self.MultiPurpose2 * 4)])
 		elif self.MultiPurpose2 * 4 == mc_len - 0x30 : pt.add_row(['Padded Size (MP2)', '0x%X' % (self.MultiPurpose2 * 4)])
 		else : pt.add_row(['Multi Purpose 2', '0x%X' % self.MultiPurpose2])
@@ -391,7 +400,7 @@ class Intel_MC_Header_Extended_Field(ctypes.LittleEndianStructure) :
 	_pack_ = 1
 	_fields_ = [
 		('ProcessorSignature',        uint32_t),  # 0x00
-		('ProcessorFlags',            uint32_t),  # 0x04
+		('PlatformIDs',            uint32_t),  # 0x04
 		('Checksum',                  uint32_t),  # 0x08 replace CPUID, Platform, Checksum at Main Header w/o Extended
 		# 0x0C
 	]
@@ -403,7 +412,7 @@ class Intel_MC_Header_Extended_Field(ctypes.LittleEndianStructure) :
 		
 		pt.title = col_b + 'Intel Header Extended Field' + col_e
 		pt.add_row(['CPUID', '%0.5X' % self.ProcessorSignature])
-		pt.add_row(['Platform', '%0.2X %s' % (self.ProcessorFlags, intel_plat(self.ProcessorFlags))])
+		pt.add_row(['Platform', '%0.2X %s' % (self.PlatformIDs, intel_plat(self.PlatformIDs))])
 		pt.add_row(['Checksum', '%0.8X' % self.Checksum])
 		
 		print(pt)
@@ -639,25 +648,13 @@ class MCB_Entry(ctypes.LittleEndianStructure) :
 		pt.add_row(['Reserved', self.Reserved])
 		
 		print(pt)
-
-# Setup DB Tables
-def create_tables():
-	c.execute('CREATE TABLE IF NOT EXISTS MCE(revision INTEGER, developer INTEGER, date INTEGER)')
-	c.execute('CREATE TABLE IF NOT EXISTS Intel(cpuid BLOB, platform BLOB, version BLOB, yyyymmdd TEXT, size BLOB, checksum BLOB)')
-	c.execute('CREATE TABLE IF NOT EXISTS VIA(cpuid BLOB, signature TEXT, version BLOB, yyyymmdd TEXT, size BLOB, checksum BLOB)')
-	c.execute('CREATE TABLE IF NOT EXISTS FSL(name TEXT, model BLOB, major BLOB, minor BLOB, size BLOB, checksum BLOB, note TEXT)')
-	c.execute('CREATE TABLE IF NOT EXISTS AMD(cpuid BLOB, nbdevid BLOB, sbdevid BLOB, nbsbrev BLOB, version BLOB,\
-				yyyymmdd TEXT, size BLOB, chkbody BLOB, chkmc BLOB)')
-	
-	conn.commit()
-	
-	return
 		
 def mce_exit(code=0) :
 	if not param.mce_extr and not param.skip_pause : input("\nPress enter to exit")
+	
 	try :
-		c.close()
-		conn.close() # Close DB connection
+		cursor.close() # Close DB Cursor
+		connection.close() # Close DB Connection
 	except :
 		pass
 	colorama.deinit() # Stop Colorama
@@ -737,15 +734,65 @@ def mc_db_name(work_file, in_file, mc_name) :
 	elif os.path.basename(in_file) == mc_name + '.bin' : pass
 	else : print(col_r + 'Error: A file with the same name already exists!' + col_e)
 
-def db_new_MCE() :
-	db_is_dev = (c.execute('SELECT developer FROM MCE')).fetchone()[0]
-	db_rev_now = (c.execute('SELECT revision FROM MCE')).fetchone()[0]
+def update_check() :
+	try :
+		latest_mce = request.urlopen('https://raw.githubusercontent.com/platomav/MCExtractor/master/MCE.py').read().decode('utf-8')
+		latest_mce_idx = latest_mce.find('title = \'MC Extractor v')
+		if latest_mce_idx != -1 :
+			latest_mce_ver = latest_mce[latest_mce_idx:][23:].split('\'')[0].split('_')[0]
+			script_mce_ver = title[14:].split('_')[0]
+			mce_is_upd = mce_is_latest(script_mce_ver.split('.')[:3], latest_mce_ver.split('.')[:3])
+		else :
+			raise()
+		
+		latest_db = request.urlopen('https://raw.githubusercontent.com/platomav/MCExtractor/master/MCE.db').read()
+		with open('__MCE_DB__.temp', 'wb') as temp_db : temp_db.write(latest_db)
+		connection_temp = sqlite3.connect('__MCE_DB__.temp')
+		cursor_temp = connection_temp.cursor()
+		cursor_temp.execute('PRAGMA quick_check')
+		latest_db_rev = (cursor_temp.execute('SELECT revision FROM MCE')).fetchone()[0]
+		cursor_temp.close()
+		connection_temp.close()
+		if os.path.isfile('__MCE_DB__.temp') : os.remove('__MCE_DB__.temp')
+		
+		script_db_rev = (cursor.execute('SELECT revision FROM MCE')).fetchone()[0]
+		db_is_upd = True if script_db_rev >= latest_db_rev else False
+		
+		pt, pt_empty = mc_table(['#','Current','Latest','Updated'], True, 1)
+		pt.title = col_y + 'MC Extractor & DB Update Check' + col_e
+		pt.add_row(['MCE', script_mce_ver, latest_mce_ver, col_g + 'Yes' + col_e if mce_is_upd else col_r + 'No' + col_e])
+		pt.add_row(['DB', script_db_rev, latest_db_rev, col_g + 'Yes' + col_e if db_is_upd else col_r + 'No' + col_e])
+		print('\n%s' % pt)
+		
+		mce_github = 'Download the latest from https://github.com/platomav/MCExtractor/'
+		if mce_is_upd and db_is_upd : print(col_g + '\nMC Extractor & Database are up to date!' + col_e)
+		elif not mce_is_upd and not db_is_upd : print(col_m + '\nMC Extractor & Database are outdated!\n\n%s' % mce_github + col_e)
+		elif not mce_is_upd : print(col_m + '\nMC Extractor is outdated!\n\n%s' % mce_github + col_e)
+		elif not db_is_upd : print(col_m + '\nMC Extractor Database is outdated!\n\n%s' % mce_github + col_e)
 	
-	c.execute('UPDATE MCE SET date=?', (int(time.time()),))
+	except :
+		print(col_r + '\nError: Failed to check for MC Extractor & Database updates!' + col_e)
+	
+	mce_exit(0)
+	
+def mce_is_latest(ver_before, ver_after) :
+	# ver_before/ver_after = [X.X.X]
+	
+	if int(ver_before[0]) > int(ver_after[0]) or (int(ver_before[0]) == int(ver_after[0]) and (int(ver_before[1]) > int(ver_after[1])
+	or (int(ver_before[1]) == int(ver_after[1]) and int(ver_before[2]) >= int(ver_after[2])))) :
+		return True
+	else :
+		return False
+	
+def db_new_MCE() :
+	db_is_dev = (cursor.execute('SELECT developer FROM MCE')).fetchone()[0]
+	db_rev_now = (cursor.execute('SELECT revision FROM MCE')).fetchone()[0]
+	
+	cursor.execute('UPDATE MCE SET date=?', (int(time.time()),))
 	
 	if db_is_dev == 0 :
-		c.execute('UPDATE MCE SET revision=?', (db_rev_now + 1,))
-		c.execute('UPDATE MCE SET developer=1')
+		cursor.execute('UPDATE MCE SET revision=?', (db_rev_now + 1,))
+		cursor.execute('UPDATE MCE SET developer=1')
 	
 def copy_file_with_warn(work_file) :
 	work_file.close()
@@ -857,20 +904,20 @@ def mce_hdr() :
 	
 	if os.path.isfile(db_path) :
 		try :
-			hdr_conn = sqlite3.connect(db_path)
-			hdr_c = hdr_conn.cursor()
+			connection_header = sqlite3.connect(db_path)
+			cursor_header = connection_header.cursor()
 			
-			hdr_c.execute('PRAGMA quick_check')
+			cursor_header.execute('PRAGMA quick_check')
 			
-			hdr_res = (hdr_c.execute('SELECT revision, developer FROM MCE')).fetchone()
+			hdr_res = (cursor_header.execute('SELECT revision, developer FROM MCE')).fetchone()
 			db_rev = col_y + 'r' + str(hdr_res[0]) + col_e
 			db_dev = hdr_res[1]
 		
 			if db_dev == 1 : db_dev = col_y + ' Dev' + col_e
 			else : db_dev = ''
 		
-			hdr_c.close()
-			hdr_conn.close()
+			cursor_header.close()
+			connection_header.close()
 		except :
 			pass
 	
@@ -953,7 +1000,8 @@ if not param.skip_intro :
 elif not param.mce_extr and not param.print_last :
 	mce_hdr()
 
-if (arg_num < 2 and not param.help_scr and not param.mass_scan and not param.search and not param.print_last) or param.help_scr :
+if (arg_num < 2 and not param.upd_check and not param.help_scr and not param.mass_scan
+and not param.search and not param.print_last) or param.help_scr :
 	mce_help()
 	mce_exit()
 
@@ -965,21 +1013,37 @@ else :
 	
 # Connect to DB, if it exists
 if os.path.isfile(db_path) :
-	conn = sqlite3.connect(db_path)
-	c = conn.cursor()
+	connection = sqlite3.connect(db_path)
+	cursor = connection.cursor()
 	
 	try :
-		c.execute('PRAGMA quick_check')
+		cursor.execute('PRAGMA quick_check')
 	except :
-		print(col_r + "\nError: MCE.db file is corrupted!" + col_e)
+		print(col_r + '\nError: MCE.db file is corrupted!' + col_e)
 		mce_exit(1)
 	
-	create_tables()
+	db_rev = (cursor.execute('SELECT revision FROM MCE')).fetchone()[0]
+	db_min = (cursor.execute('SELECT minimum FROM MCE')).fetchone()[0]
+	
+	if not mce_is_latest(title[14:].split('_')[0].split('.')[:3], db_min.split('_')[0].split('.')[:3]) :
+		print(col_r + '\nError: DB r%d requires MCE >= v%s!' % (db_rev,db_min) + col_e)
+		mce_exit(1)
+	
+	cursor.execute('CREATE TABLE IF NOT EXISTS MCE(revision INTEGER, developer INTEGER, date INTEGER, minimum BLOB)')
+	cursor.execute('CREATE TABLE IF NOT EXISTS Intel(cpuid BLOB, platform BLOB, version BLOB, yyyymmdd TEXT, size BLOB, checksum BLOB)')
+	cursor.execute('CREATE TABLE IF NOT EXISTS VIA(cpuid BLOB, signature TEXT, version BLOB, yyyymmdd TEXT, size BLOB, checksum BLOB)')
+	cursor.execute('CREATE TABLE IF NOT EXISTS FSL(name TEXT, model BLOB, major BLOB, minor BLOB, size BLOB, checksum BLOB, note TEXT)')
+	cursor.execute('CREATE TABLE IF NOT EXISTS AMD(cpuid BLOB, nbdevid BLOB, sbdevid BLOB, nbsbrev BLOB, version BLOB,\
+				yyyymmdd TEXT, size BLOB, chkbody BLOB, chkmc BLOB)')
+	
+	connection.commit()
 else :
-	c = None
-	conn = None
-	print(col_r + "\nError: MCE.db file is missing!" + col_e)
+	cursor = None
+	connection = None
+	print(col_r + '\nError: MCE.db file is missing!' + col_e)
 	mce_exit(1)
+	
+if param.upd_check : update_check()
 
 # Search DB by CPUID (Intel/AMD/VIA) or Model (Freescale)
 if param.search and not param.build_blob :
@@ -994,16 +1058,16 @@ if param.search and not param.build_blob :
 		print(col_r + '\nError: Invalid CPUID (Intel, AMD, VIA) or Model (FSL)!' + col_e)
 		mce_exit(1)
 	
-	res_i = c.execute('SELECT cpuid,platform,version,yyyymmdd,size FROM Intel WHERE cpuid=? ORDER BY yyyymmdd DESC', (cpu_id,))
+	res_i = cursor.execute('SELECT cpuid,platform,version,yyyymmdd,size FROM Intel WHERE cpuid=? ORDER BY yyyymmdd DESC', (cpu_id,))
 	display_sql(res_i, col_b + 'Intel' + col_e, True, 1)
 	
-	res_a = c.execute('SELECT cpuid,version,yyyymmdd,size FROM AMD WHERE cpuid=? ORDER BY yyyymmdd DESC', (cpu_id,))
+	res_a = cursor.execute('SELECT cpuid,version,yyyymmdd,size FROM AMD WHERE cpuid=? ORDER BY yyyymmdd DESC', (cpu_id,))
 	display_sql(res_a, col_r + 'AMD' + col_e, True, 1)
 	
-	res_v = c.execute('SELECT cpuid,signature,version,yyyymmdd,size FROM VIA WHERE cpuid=? ORDER BY yyyymmdd DESC', (cpu_id,))
+	res_v = cursor.execute('SELECT cpuid,signature,version,yyyymmdd,size FROM VIA WHERE cpuid=? ORDER BY yyyymmdd DESC', (cpu_id,))
 	display_sql(res_v, col_c + 'VIA' + col_e, True, 1)
 	
-	res_f = c.execute('SELECT name,model,major,minor,size,note FROM FSL WHERE model=? ORDER BY name DESC', (cpu_id,))
+	res_f = cursor.execute('SELECT name,model,major,minor,size,note FROM FSL WHERE model=? ORDER BY name DESC', (cpu_id,))
 	display_sql(res_f, col_y + 'Freescale' + col_e, True, 1)
 	
 	mce_exit()
@@ -1040,9 +1104,9 @@ if param.print_last :
 	# The input microcode date is required for Latest check, get it from DB
 	# The Latest AMD check is inaccurate for 2002-2003 microcodes due to lack of NB ID & Rev
 	if vendor == 'Intel' :
-		date = (c.execute('SELECT yyyymmdd FROM Intel WHERE cpuid=? AND version=?', ('%0.8X' % cpu_id, '%0.8X' % version,))).fetchall()
+		date = (cursor.execute('SELECT yyyymmdd FROM Intel WHERE cpuid=? AND version=?', ('%0.8X' % cpu_id, '%0.8X' % version,))).fetchall()
 	else :
-		date = (c.execute('SELECT yyyymmdd FROM AMD WHERE cpuid=? AND version=?', ('%0.8X' % cpu_id, '%0.8X' % version,))).fetchall()
+		date = (cursor.execute('SELECT yyyymmdd FROM AMD WHERE cpuid=? AND version=?', ('%0.8X' % cpu_id, '%0.8X' % version,))).fetchall()
 	
 	if not date :
 		print(col_r + '\nError: %s CPUID %0.8X Version %0.8X not found in DB!' % (vendor, cpu_id, version) + col_e)
@@ -1053,10 +1117,10 @@ if param.print_last :
 	year = date[0][0][:4]
 	
 	if vendor == 'Intel' :
-		mc_upd_chk_rsl = (c.execute('SELECT yyyymmdd,platform,version FROM Intel WHERE cpuid=?', ('%0.8X' % cpu_id,))).fetchall()
+		mc_upd_chk_rsl = (cursor.execute('SELECT yyyymmdd,platform,version FROM Intel WHERE cpuid=?', ('%0.8X' % cpu_id,))).fetchall()
 		is_latest, mc_latest = mc_upd_chk_intel(mc_upd_chk_rsl, intel_plat(platform), 'PRE' if ctypes.c_int(version).value < 0 else 'PRD')
 	else :
-		mc_upd_chk_rsl = (c.execute('SELECT yyyymmdd,version FROM AMD WHERE cpuid=?', ('%0.8X' % cpu_id,))).fetchall()
+		mc_upd_chk_rsl = (cursor.execute('SELECT yyyymmdd,version FROM AMD WHERE cpuid=?', ('%0.8X' % cpu_id,))).fetchall()
 		is_latest, mc_latest = mc_upd_chk(mc_upd_chk_rsl)
 	
 	print('\n%s' % is_latest)
@@ -1067,17 +1131,17 @@ if param.print_last :
 	
 	mce_exit()
 	
-# Intel - HeaderRev 01, LoaderRev 01, ProcesFlags xx00*3 (Intel 64 and IA-32 Architectures Software Developer's Manual Vol 3A, Ch 9.11.1)
-pat_icpu = re.compile(br'\x01\x00{3}.{4}[\x00-\x99](([\x19\x20][\x01-\x31][\x01-\x12])|(\x18\x07\x00)).{8}[\x00\x01]\x00{3}.\x00{3}.{8}\x00{12}', re.DOTALL)
+# Intel - HeaderRev 01, Year 1993-2021, Day 01-31, Month 01-12, CPUID xxxxxx00, LoaderRev 00-01, PlatformIDs 000000xx, DataSize xxxxxx00, TotalSize xxxxxx00, Reserved1
+pat_icpu = re.compile(br'\x01\x00{3}.{4}(([\x00-\x21]\x20)|([\x93-\x99]\x19))[\x01-\x31][\x01-\x12].{3}\x00.{4}[\x01\x00]\x00{3}.\x00{3}.{3}\x00.{3}\x00{13}', re.DOTALL)
 
-# AMD - Year 20xx, Month 1-13, LoaderID 00-04, DataSize 00|10|20, InitFlag 00-01, NorthBridgeVEN_ID 0000|1022, SouthBridgeVEN_ID 0000|1022, BiosApiREV_ID 00-01, Reserved 00|AA
+# AMD - Year 20xx, Month 01-13, LoaderID 00-04, DataSize 00|10|20, InitFlag 00-01, NorthBridgeVEN_ID 0000|1022, SouthBridgeVEN_ID 0000|1022, BiosApiREV_ID 00-01, Reserved 00|AA
 pat_acpu = re.compile(br'\x20[\x01-\x31][\x01-\x13].{4}[\x00-\x04]\x80[\x00\x20\x10][\x00\x01].{4}((\x00{2})|(\x22\x10)).{2}((\x00{2})|(\x22\x10)).{6}[\x00\x01](\x00{3}|\xAA{3})', re.DOTALL)
 
-# VIA - Signature RRAS, Loader Revision 01
-pat_vcpu = re.compile(br'\x52\x52\x41\x53.{16}\x01\x00{3}', re.DOTALL)
+# VIA - Signature RRAS, Year 2006-2021 (0x07D6-0x07E5), Day 01-31, Month 01-12, LoaderRev 01, Reserved, DataSize xxxxxx00, TotalSize xxxxxx00
+pat_vcpu = re.compile(br'\x52\x52\x41\x53.{4}[\xD6-\xE5]\x07[\x01-\x1F][\x01-\x0C].{3}\x00.{4}\x01\x00{3}.\xFF{3}.{3}\x00.{3}\x00', re.DOTALL)
 
-# Freescale - Signature QEF, Header Revision 01
-pat_fcpu = re.compile(br'\x51\x45\x46\x01.{62}[\x00-\x01]', re.DOTALL)
+# Freescale - Signature QEF, HeaderRev 01, IRAM 00-01, Reserved0, Reserved1
+pat_fcpu = re.compile(br'\x51\x45\x46\x01.{62}[\x00\x01].{5}\x00{4}.{40}\x00{4}', re.DOTALL)
 
 # Global Variable Initialization
 mc_latest = None
@@ -1090,7 +1154,7 @@ cur_count = 0
 in_count = len(source)
 for arg in source :
 	if arg in param.val : in_count -= 1
-
+	
 for in_file in source :
 	
 	# Microcode Variable Initialization
@@ -1114,7 +1178,7 @@ for in_file in source :
 	if not os.path.isfile(in_file) :
 		if any(p in in_file for p in param.val) : continue
 		
-		print(col_r + '\nError: file %s was not found!\n' % in_file + col_e)
+		print(col_r + '\nError: file %s was not found!' % in_file + col_e)
 		
 		if not param.mass_scan : mce_exit(1)
 		else : continue
@@ -1204,8 +1268,8 @@ for in_file in source :
 		
 		cpu_id = mc_hdr.ProcessorSignature
 		
-		plat = mc_hdr.ProcessorFlags
-		plat_bit = intel_plat(mc_hdr.ProcessorFlags)
+		plat = mc_hdr.PlatformIDs
+		plat_bit = intel_plat(mc_hdr.PlatformIDs)
 		
 		mc_len = 0x800 if mc_hdr.TotalSize == 0 else mc_hdr.TotalSize
 		
@@ -1224,13 +1288,10 @@ for in_file in source :
 		# Remove false results, based on date
 		try :
 			date_chk = datetime.datetime.strptime(full_date, '%Y-%m-%d')
-			if date_chk.year > 2021 or date_chk.year < 1993 : raise Exception('WrongDate') # 1st MC from 1995 (P6), 1993 for safety
 		except :
-			if full_date == '1896-00-07' and patch_u == 0xD1 : pass # Drunk Intel employee 1, Happy 0th month from 19th century Intel!
-			else :
-				msg_i.append(col_m + "\nWarning: Skipped Intel microcode at 0x%X, invalid Date of %s!" % (mc_bgn, full_date) + col_e)
-				if not param.mce_extr : copy_file_with_warn(work_file)
-				continue
+			msg_i.append(col_m + '\nWarning: Skipped Intel microcode at 0x%X, invalid Date of %s!' % (mc_bgn, full_date) + col_e)
+			if not param.mce_extr : copy_file_with_warn(work_file)
+			continue
 		
 		# Analyze Extra Header
 		if reading[mc_bgn + 0x30:mc_bgn + 0x38] == b'\x00\x00\x00\x00\xA1\x00\x00\x00' : mc_hdr_extra = get_struct(reading, mc_bgn + 0x30, Intel_MC_Header_Extra_R1)
@@ -1272,7 +1333,7 @@ for in_file in source :
 				ext_mc_data = bytearray(mc_data) # Duplicate main Microcode container data for Extended replacements
 				ext_mc_data[0xC:0x10] = struct.pack('<I', mc_hdr_ext_field.ProcessorSignature) # Extended CPUID
 				ext_mc_data[0x10:0x14] = struct.pack('<I', mc_hdr_ext_field.Checksum) # Extended Checksum
-				ext_mc_data[0x18:0x1C] = struct.pack('<I', mc_hdr_ext_field.ProcessorFlags) # Extended Platform IDs
+				ext_mc_data[0x18:0x1C] = struct.pack('<I', mc_hdr_ext_field.PlatformIDs) # Extended Platform IDs
 				
 				ext_mc_path = os.path.join(mce_dir, 'Extended_%s_%d_%0.8X.temp' % (os.path.basename(in_file), ext_idx + 1, mc_hdr_ext_field.Checksum))
 				temp_mc_paths.append(ext_mc_path) # Store Extended microcode binary path to parse once and delete at the end
@@ -1280,7 +1341,7 @@ for in_file in source :
 				with open(ext_mc_path, 'wb') as ext_mc : ext_mc.write(ext_mc_data)
 				
 				mc_ext_field_off += ext_fld_size
-					
+				
 		if param.print_hdr : continue # No more info to print, next MC of input file
 		
 		# Check if any Reserved fields are not empty/0
@@ -1291,17 +1352,17 @@ for in_file in source :
 		mc_name = 'cpu%0.5X_plat%0.2X_ver%0.8X_%s_%s_%0.8X' % (cpu_id, plat, patch_u, full_date, rel_file, mc_chk)
 		mc_nr += 1
 		
-		mc_at_db = (c.execute('SELECT * FROM Intel WHERE cpuid=? AND platform=? AND version=? AND yyyymmdd=? AND size=? \
+		mc_at_db = (cursor.execute('SELECT * FROM Intel WHERE cpuid=? AND platform=? AND version=? AND yyyymmdd=? AND size=? \
 					AND checksum=?', ('%0.8X' % cpu_id, '%0.8X' % plat, '%0.8X' % patch_u, year + month + day, '%0.8X' % mc_len, '%0.8X' % mc_chk,))).fetchone()
 		
 		if param.build_db :
 			if mc_at_db is None and in_file not in temp_mc_paths :
 				db_new_MCE()
 				
-				c.execute('INSERT INTO Intel (cpuid, platform, version, yyyymmdd, size, checksum) VALUES (?,?,?,?,?,?)',
+				cursor.execute('INSERT INTO Intel (cpuid, platform, version, yyyymmdd, size, checksum) VALUES (?,?,?,?,?,?)',
 						('%0.8X' % cpu_id, '%0.8X' % plat, '%0.8X' % patch_u, year + month + day, '%0.8X' % mc_len, '%0.8X' % mc_chk))
 				
-				conn.commit()
+				connection.commit()
 			
 				print(col_g + "\nAdded Intel: %s\n" % mc_name + col_e)
 			
@@ -1312,7 +1373,7 @@ for in_file in source :
 			if in_file not in temp_mc_paths : mc_db_name(work_file, in_file, mc_name)
 			continue
 		
-		mc_upd_chk_rsl = (c.execute('SELECT yyyymmdd,platform,version FROM Intel WHERE cpuid=?', ('%0.8X' % cpu_id,))).fetchall()
+		mc_upd_chk_rsl = (cursor.execute('SELECT yyyymmdd,platform,version FROM Intel WHERE cpuid=?', ('%0.8X' % cpu_id,))).fetchall()
 		
 		# Determine if MC is Last or Outdated
 		is_latest, mc_latest = mc_upd_chk_intel(mc_upd_chk_rsl, plat_bit, rel_file)
@@ -1455,7 +1516,7 @@ for in_file in source :
 		else :
 			mc_len_db = '%0.8X' % mc_len
 		
-		mc_at_db = (c.execute('SELECT * FROM AMD WHERE cpuid=? AND nbdevid=? AND sbdevid=? AND nbsbrev=? AND version=? \
+		mc_at_db = (cursor.execute('SELECT * FROM AMD WHERE cpuid=? AND nbdevid=? AND sbdevid=? AND nbsbrev=? AND version=? \
 								AND yyyymmdd=? AND size=? AND chkbody=? AND chkmc=?', (cpu_id, nb_id, sb_id, nbsb_rev_id,
 								'%0.8X' % patch, year + month + day, mc_len_db, '%0.8X' % mc_chk, '%0.8X' % mc_file_chk, ))).fetchone()
 		
@@ -1463,11 +1524,11 @@ for in_file in source :
 			if mc_at_db is None :
 				db_new_MCE()
 				
-				c.execute('INSERT INTO AMD (cpuid, nbdevid, sbdevid, nbsbrev, version, yyyymmdd, size, chkbody, chkmc) \
+				cursor.execute('INSERT INTO AMD (cpuid, nbdevid, sbdevid, nbsbrev, version, yyyymmdd, size, chkbody, chkmc) \
 							VALUES (?,?,?,?,?,?,?,?,?)', (cpu_id, nb_id, sb_id, nbsb_rev_id, '%0.8X' % patch, year + month + day,
 							mc_len_db, '%0.8X' % mc_chk, '%0.8X' % mc_file_chk))
 				
-				conn.commit()
+				connection.commit()
 				
 				print(col_g + "\nAdded AMD: %s\n" % mc_name + col_e)
 			
@@ -1478,7 +1539,7 @@ for in_file in source :
 			mc_db_name(work_file, in_file, mc_name)
 			continue
 		
-		mc_upd_chk_rsl = (c.execute('SELECT yyyymmdd,version FROM AMD WHERE cpuid=? AND nbdevid=? AND sbdevid=? AND nbsbrev=?',
+		mc_upd_chk_rsl = (cursor.execute('SELECT yyyymmdd,version FROM AMD WHERE cpuid=? AND nbdevid=? AND sbdevid=? AND nbsbrev=?',
 						(cpu_id, nb_id, sb_id, nbsb_rev_id,))).fetchall()
 		
 		# Determine if MC is Last or Outdated
@@ -1553,7 +1614,6 @@ for in_file in source :
 		# Remove false results, based on date
 		try :
 			date_chk = datetime.datetime.strptime(full_date, '%Y-%m-%d')
-			if date_chk.year > 2021 or date_chk.year < 2006 : raise Exception('WrongDate') # 1st MC from 2008 (Nano), 2006 for safety
 		except :
 			msg_v.append(col_m + "\nWarning: Skipped VIA microcode at 0x%X, invalid Date of %s!\n" % (mc_bgn, full_date) + col_e)
 			if not param.mce_extr : copy_file_with_warn(work_file)
@@ -1567,17 +1627,17 @@ for in_file in source :
 		mc_name = 'cpu%0.5X_ver%0.8X_sig[%s]_%s_%0.8X' % (cpu_id, patch, name, full_date, mc_chk)
 		mc_nr += 1
 		
-		mc_at_db = (c.execute('SELECT * FROM VIA WHERE cpuid=? AND signature=? AND version=? AND yyyymmdd=? AND size=? AND checksum=?',
+		mc_at_db = (cursor.execute('SELECT * FROM VIA WHERE cpuid=? AND signature=? AND version=? AND yyyymmdd=? AND size=? AND checksum=?',
 				  ('%0.8X' % cpu_id, name, '%0.8X' % patch, year + month + day, '%0.8X' % mc_len, '%0.8X' % mc_chk,))).fetchone()
 		
 		if param.build_db :
 			if mc_at_db is None :
 				db_new_MCE()
 				
-				c.execute('INSERT INTO VIA (cpuid, signature, version, yyyymmdd, size, checksum) VALUES (?,?,?,?,?,?)',
+				cursor.execute('INSERT INTO VIA (cpuid, signature, version, yyyymmdd, size, checksum) VALUES (?,?,?,?,?,?)',
 						('%0.8X' % cpu_id, name, '%0.8X' % patch, year + month + day, '%0.8X' % mc_len, '%0.8X' % mc_chk))
 				
-				conn.commit()
+				connection.commit()
 			
 				print(col_g + "\nAdded VIA: %s\n" % mc_name + col_e)
 			
@@ -1588,7 +1648,7 @@ for in_file in source :
 			mc_db_name(work_file, in_file, mc_name)
 			continue
 		
-		mc_upd_chk_rsl = (c.execute('SELECT yyyymmdd,version FROM VIA WHERE cpuid=?', ('%0.8X' % cpu_id,))).fetchall()
+		mc_upd_chk_rsl = (cursor.execute('SELECT yyyymmdd,version FROM VIA WHERE cpuid=?', ('%0.8X' % cpu_id,))).fetchall()
 		
 		# Determine if MC is Last or Outdated
 		is_latest, mc_latest = mc_upd_chk(mc_upd_chk_rsl)
@@ -1687,17 +1747,17 @@ for in_file in source :
 		
 		mc_nr += 1
 		
-		mc_at_db = (c.execute('SELECT * FROM FSL WHERE name=? AND model=? AND major=? AND minor=? AND size=? AND checksum=?',
+		mc_at_db = (cursor.execute('SELECT * FROM FSL WHERE name=? AND model=? AND major=? AND minor=? AND size=? AND checksum=?',
 				  (name, model, major, minor, '%0.8X' % mc_len, '%0.8X' % mc_chk,))).fetchone()
 		
 		if param.build_db :
 			if mc_at_db is None :
 				db_new_MCE()
 				
-				c.execute('INSERT INTO FSL (name, model, major, minor, size, checksum) VALUES (?,?,?,?,?,?)',
+				cursor.execute('INSERT INTO FSL (name, model, major, minor, size, checksum) VALUES (?,?,?,?,?,?)',
 						(name, model, major, minor, '%0.8X' % mc_len, '%0.8X' % mc_chk))
 				
-				conn.commit()
+				connection.commit()
 			
 				print(col_g + "\nAdded Freescale: %s\n" % mc_name + col_e)
 			
@@ -1799,8 +1859,8 @@ if param.build_blob and param.search :
 	
 # Build Microcode Blob (-blob)
 elif param.build_blob :
-	db_rev_now = (c.execute('SELECT revision FROM MCE')).fetchone()[0] # Get DB Revision
-	db_is_dev = (c.execute('SELECT developer FROM MCE')).fetchone()[0] # Get DB Developer
+	db_rev_now = (cursor.execute('SELECT revision FROM MCE')).fetchone()[0] # Get DB Revision
+	db_is_dev = (cursor.execute('SELECT developer FROM MCE')).fetchone()[0] # Get DB Developer
 	
 	# Determine Microcode Blob offsets
 	blob_offset = 0x10 + blob_count * 0x20 # Header Length = 0x10, Entry Length = 0x20
