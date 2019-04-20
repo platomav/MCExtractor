@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2019 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.32.0'
+title = 'MC Extractor v1.32.1'
 
 import os
 import re
@@ -1011,32 +1011,36 @@ if param.mass_scan :
 else :
 	source = sys.argv[1:] # Skip script/executable
 	
-# Connect to DB, if it exists
+# Connect to DB, if valid
 if os.path.isfile(db_path) :
 	connection = sqlite3.connect(db_path)
 	cursor = connection.cursor()
 	
+	# Validate DB health
 	try :
 		cursor.execute('PRAGMA quick_check')
 	except :
 		print(col_r + '\nError: MCE.db file is corrupted!' + col_e)
 		mce_exit(1)
 	
-	db_rev = (cursor.execute('SELECT revision FROM MCE')).fetchone()[0]
-	db_min = (cursor.execute('SELECT minimum FROM MCE')).fetchone()[0]
-	
-	if not mce_is_latest(title[14:].split('_')[0].split('.')[:3], db_min.split('_')[0].split('.')[:3]) :
-		print(col_r + '\nError: DB r%d requires MCE >= v%s!' % (db_rev,db_min) + col_e)
-		mce_exit(1)
-	
-	cursor.execute('CREATE TABLE IF NOT EXISTS MCE(revision INTEGER, developer INTEGER, date INTEGER, minimum BLOB)')
+	# Initialize DB, if found empty
+	cursor.execute('CREATE TABLE IF NOT EXISTS MCE(revision INTEGER DEFAULT 0, developer INTEGER DEFAULT 1, date INTEGER DEFAULT 0,\
+					minimum BLOB DEFAULT "0.0.0")')
 	cursor.execute('CREATE TABLE IF NOT EXISTS Intel(cpuid BLOB, platform BLOB, version BLOB, yyyymmdd TEXT, size BLOB, checksum BLOB)')
 	cursor.execute('CREATE TABLE IF NOT EXISTS VIA(cpuid BLOB, signature TEXT, version BLOB, yyyymmdd TEXT, size BLOB, checksum BLOB)')
 	cursor.execute('CREATE TABLE IF NOT EXISTS FSL(name TEXT, model BLOB, major BLOB, minor BLOB, size BLOB, checksum BLOB, note TEXT)')
 	cursor.execute('CREATE TABLE IF NOT EXISTS AMD(cpuid BLOB, nbdevid BLOB, sbdevid BLOB, nbsbrev BLOB, version BLOB,\
-				yyyymmdd TEXT, size BLOB, chkbody BLOB, chkmc BLOB)')
-	
+					yyyymmdd TEXT, size BLOB, chkbody BLOB, chkmc BLOB)')
+	if not cursor.execute('SELECT EXISTS(SELECT 1 FROM MCE)').fetchone()[0] : cursor.execute('INSERT INTO MCE DEFAULT VALUES')
 	connection.commit()
+	
+	# Check for MCE & DB incompatibility
+	db_rev = (cursor.execute('SELECT revision FROM MCE')).fetchone()[0]
+	db_min = (cursor.execute('SELECT minimum FROM MCE')).fetchone()[0]
+	if not mce_is_latest(title[14:].split('_')[0].split('.')[:3], db_min.split('_')[0].split('.')[:3]) :
+		print(col_r + '\nError: DB r%d requires MCE >= v%s!' % (db_rev,db_min) + col_e)
+		mce_exit(1)
+	
 else :
 	cursor = None
 	connection = None
