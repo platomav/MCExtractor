@@ -1,0 +1,1167 @@
+r109
+
+Intel cpu50654_platB7_ver0200005E_2019-04-02_PRD_13470AAF
+Intel cpu806EA_platC0_ver000000B4_2019-04-01_PRD_C8EF90C9
+Intel cpu806E9_platC0_ver000000B4_2019-04-01_PRD_3D6ECAB4
+Intel cpu806E9_plat10_ver000000B4_2019-04-01_PRD_25F78252
+Intel cpu406E3_platC0_ver000000CC_2019-04-01_PRD_95AEDE54
+Intel cpu50665_plat10_ver0E00000D_2019-03-23_PRD_B2F30EAC
+Intel cpu50664_plat10_ver0F000015_2019-03-23_PRD_398C07E6
+Intel cpu50663_plat10_ver07000017_2019-03-23_PRD_5C2C7D16
+Intel cpu50662_plat10_ver0000001A_2019-03-23_PRD_FB784BD6
+Intel cpu50654_platB7_ver02000047_2018-03-07_PRD_E2030852
+Intel cpu40671_plat22_ver00000020_2019-03-07_PRD_5246E87E
+Intel cpu306D4_platC0_ver0000002D_2019-03-07_PRD_CDB7ABE3
+Intel cpu40661_plat32_ver0000001B_2019-02-26_PRD_4BA26389
+Intel cpu40651_plat72_ver00000025_2019-02-26_PRD_F145AD45
+Intel cpu506CA_plat03_ver00000014_2019-02-15_PRD_E5E203C1
+
+v1.32.1
+
+Improved handling of initial/empty MCE SQLite database
+
+r108
+
+Intel cpu906EB_plat02_ver000000B4_2019-04-01_PRD_C9AD2768
+Intel cpu906EA_plat22_ver000000B4_2019-04-01_PRD_B2B10713
+Intel cpu30661_plat08_ver0000010A_2011-10-31_PRD_FAD3D7C0
+
+r107
+
+Intel cpu906E9_plat2A_ver000000B4_2019-04-01_PRD_DACDA920
+Intel cpu506E3_plat36_ver000000CC_2019-04-01_PRD_DFA96B26
+Intel cpu306E7_platED_ver00000715_2019-03-14_PRD_AD89AC0D
+Intel cpu306E4_platED_ver0000042E_2019-03-14_PRD_3C222CE1
+Intel cpu506F1_plat01_ver0000002A_2019-02-11_PRD_40664937
+Intel cpu50665_plat10_ver0E00000C_2018-11-17_PRD_C753C422
+Intel cpu306F4_plat80_ver00000013_2018-11-06_PRD_71D2446E
+
+v1.32.0
+
+Added MC Extractor & DB updates check parameter (-updchk)
+Improved Intel, VIA & Freescale microcode detection patterns
+
+r106
+
+Intel cpu506CA_plat03_ver00000016_2019-03-01_PRD_A1AC5A6B
+Intel cpu50657_platBF_ver05000021_2019-02-27_PRD_14AE68DF
+Intel cpu50656_platBF_ver04000021_2019-02-27_PRD_C39E535E
+Intel cpu406F1_platEF_ver0B000030_2018-07-17_PRD_40820856
+Intel cpu306F2_plat6F_ver0000003E_2018-06-29_PRD_50345F87
+
+r105
+
+Intel cpu50656_platB7_ver0400000A_2018-09-18_PRD_8B2F05F6
+
+v1.30.1
+
+Improved Intel Extended Header Microcode parsing
+
+r104
+
+Intel cpu50654_platB7_ver0200005D_2019-03-07_PRD_2C268A86
+Intel cpu406F1_platEF_ver0B000036_2019-03-02_PRD_29675A19
+Intel cpu306F4_plat80_ver00000014_2019-03-01_PRD_85B6966D
+Intel cpu306F2_plat6F_ver00000043_2019-03-01_PRD_6413577D
+Intel cpu806E9_plat10_ver000000AE_2019-02-17_PRD_CF96EB6F
+Intel cpu906EC_plat22_ver000000AE_2019-02-14_PRD_FA8DD1F3
+Intel cpu906EB_plat02_ver000000AE_2019-02-14_PRD_C798F303
+Intel cpu906E9_plat2A_ver000000AE_2019-02-14_PRD_563E9FCB
+Intel cpu806EB_platD0_ver000000AE_2019-02-14_PRD_312B6AC8
+Intel cpu806EA_platC0_ver000000AE_2019-02-14_PRD_1F4465BF
+Intel cpu806E9_platC0_ver000000AE_2019-02-14_PRD_9C9A3464
+Intel cpu306A9_plat12_ver00000021_2019-02-13_PRD_A8DF9213
+Intel cpu706E2_plat80_ver0000003C_2019-02-10_PRD_84E050F3
+Intel cpu706E1_plat80_ver0000003C_2019-02-10_PRD_84E050F4
+Intel cpu706E4_plat80_ver00000010_2019-02-07_PRD_D36618F1
+Intel cpu906EA_plat22_ver000000AE_2019-02-03_PRD_AC969BCF
+Intel cpu506E3_plat36_ver000000CA_2019-02-03_PRD_F9CC2CD4
+Intel cpu406E3_platC0_ver000000CA_2019-02-03_PRD_63C319AC
+Intel cpu506C9_plat03_ver00000038_2019-01-15_PRD_99AA67D7
+Intel cpu706A1_plat01_ver0000002E_2019-01-02_PRD_3A0D61E4
+Intel cpu706A1_plat01_ver0000002C_2018-09-21_PRD_6565F9BE
+Intel cpu306F2_plat6F_ver00000040_2018-08-21_PRD_6AE16445
+
+r103
+
+Intel cpu906ED_plat22_ver000000B0_2019-02-04_PRD_43D86662
+Intel cpu50657_platBF_ver0500001C_2019-01-28_PRD_E5C5BC5E
+Intel cpu50656_platBF_ver0400001C_2019-01-28_PRD_08A85E0F
+Intel cpu50654_platB7_ver0200005A_2019-01-28_PRD_D28981EB
+Intel cpu50657_platBF_ver05000017_2019-01-17_PRD_639FE8CD
+Intel cpu50656_platBF_ver04000017_2019-01-17_PRD_1E327AA7
+Intel cpu50663_plat10_ver07000016_2018-12-06_PRD_5965F027
+Intel cpu50662_plat10_ver00000019_2018-12-06_PRD_FA0F9CB5
+Intel cpu50664_plat10_ver0F000014_2018-11-17_PRD_441E1E1D
+Intel cpu506CA_plat03_ver00000010_2018-09-20_PRD_C2DD4FDC
+Intel cpu506C9_plat03_ver00000036_2018-09-14_PRD_98CF60E7
+
+v1.30.0
+
+Added Intel Extended Header Microcode extraction
+Added Intel Extra Header RSA Key Size detection
+Added Intel Container full automatic extraction
+Added Intel & Freescale Reserved field checks
+
+r102
+
+Intel cpu806EC_plat94_ver000000B2_2019-02-12_PRD_12BD9F8D
+Intel cpu706E4_plat80_ver0000000C_2019-01-24_PRD_2AD12231
+Intel cpu706E2_plat80_ver0000003A_2019-01-24_PRD_8E0825C2
+Intel cpu706E1_plat80_ver0000003A_2019-01-24_PRD_8E0825C3
+Intel cpu906EA_plat22_ver000000A4_2018-10-24_PRD_2C61903D
+Intel cpu806E9_platC0_ver0000009C_2018-08-15_PRD_BD97836A
+AMD cpu00870F00_ver08700003_2018-10-15_3EFCD601
+
+v1.24.6
+
+Added AMD microcode CPUID 00870F00 detection
+
+r101
+
+AMD cpu00870F00_ver08700004_2018-12-06_E66FCD57
+
+r100
+
+Intel cpu706E4_plat80_ver0000000A_2019-01-14_PRD_0AB4315B
+Intel cpu706E2_plat80_ver00000036_2019-01-08_PRD_4DE58757
+Intel cpu706E1_plat80_ver00000036_2019-01-08_PRD_4DE58758
+Intel cpu706E2_plat80_ver00000032_2018-12-11_PRD_CCE98758
+Intel cpu706E1_plat80_ver00000032_2018-12-11_PRD_CCE98759
+AMD cpu00810F11_ver08101102_2018-11-06_CF4DA414
+AMD cpu00810F81_ver08108102_2018-08-13_E07EA649
+
+r99
+
+Intel cpu906ED_plat22_ver000000AA_2018-11-29_PRD_05A0A797
+
+r98
+
+Intel cpu50657_platBF_ver05000010_2018-11-06_PRD_38E2CE16
+Intel cpu50656_platBF_ver04000010_2018-11-06_PRD_5A82BF22
+Intel cpu50655_platB7_ver0300000F_2018-10-08_PRD_C4C6AC65
+
+v1.24.5
+
+Improved Intel microcode detection pattern
+
+r97.1
+
+Intel cpu50654_platB7_ver02000059_2018-12-20_PRD_D2B4FBC1
+Intel cpu50657_platBF_ver05000014_2018-12-17_PRD_E1FFC46B
+Intel cpu50656_platBF_ver04000014_2018-12-17_PRD_6AC0F5A2
+Intel cpu806EC_plat90_ver000000AA_2018-11-29_PRD_D5273BEF
+Intel cpu306F2_plat6F_ver00000041_2018-11-20_PRD_C3A11E45
+Intel cpu406F1_platEF_ver0B000033_2018-10-22_PRD_D206AB6E
+
+r96
+
+Intel cpu906EB_plat02_ver000000AA_2018-12-12_PRD_287F7318
+Intel cpu906EA_plat22_ver000000AA_2018-12-12_PRD_7D298E0D
+Intel cpu806EB_platD0_ver000000A4_2018-10-25_PRD_CEFB81AB
+
+v1.24.4
+
+Improved building repositories from input (-repo)
+
+r95
+
+Intel cpu50657_platBF_ver05000013_2018-12-03_PRD_3B5B26B8
+Intel cpu50656_platBF_ver04000013_2018-12-03_PRD_ABD27E3C
+Intel cpu706E2_plat80_ver0000002E_2018-11-19_PRD_97A57C57
+Intel cpu706E1_plat80_ver0000002E_2018-11-19_PRD_97A57C58
+Intel cpu50655_platB7_ver03000010_2018-11-16_PRD_7587C182
+Intel cpu50654_platB7_ver02000057_2018-10-22_PRD_26B11B5A
+Intel cpu706E2_plat80_ver00000028_2018-10-16_PRD_B197FDD6
+Intel cpu706E1_plat80_ver00000028_2018-10-16_PRD_B197FDD7
+Intel cpu706E0_platC0_ver0000002A_2018-05-28_PRD_7BB6D287
+
+v1.24.3
+
+Added BSD operating system support
+Improved code exception handling
+
+r94
+
+Improvements
+
+r93
+
+Intel cpu50655_platB7_ver0300000D_2018-06-15_PRD_3A8A57A1
+AMD cpu00800F12_ver08001230_2018-08-04_D7A449AE
+
+v1.24.2
+
+Fixed crash when copying files with warnings
+
+r92
+
+Intel cpu50654_platB7_ver02000055_2018-10-08_PRD_43EA874C
+Intel cpu50653_plat97_ver01000146_2018-08-24_PRD_9F52DEC6
+Intel cpu806E9_platC0_ver0000007A_2017-11-16_PRD_63F7363E
+
+r91
+
+Intel cpu906EB_plat02_ver000000A4_2018-10-24_PRD_EDDD5F72
+Intel cpu906EC_plat22_ver000000A2_2018-09-29_PRD_FCAF004B
+Intel cpu806EB_platC0_ver0000009A_2018-07-16_PRD_BA3B71D5
+Intel cpu806EA_platC0_ver0000008E_2018-03-24_PRD_BACF0CE6
+
+r90
+
+Intel cpu806E9_plat10_ver0000009A_2018-07-16_PRD_06F065EC
+Intel cpu30679_plat0F_ver00000909_2017-09-11_PRD_7F1AB1F1
+
+r89
+
+Intel cpu806E9_plat10_ver0000009E_2018-10-18_PRD_A630DC64
+Intel cpu906EC_plat22_ver000000A0_2018-09-17_PRD_8CDAD79E
+
+r88
+
+Intel cpu806EA_platC0_ver0000009E_2018-10-18_PRD_B04F551D
+Intel cpu406F1_platEF_ver0B000031_2018-09-05_PRD_BB03FDF6
+Intel cpu906E9_plat2A_ver0000009A_2018-07-16_PRD_8F717636
+Intel cpu806EA_platC0_ver0000009A_2018-07-16_PRD_525CD81C
+Intel cpu806E9_platC0_ver0000009A_2018-07-16_PRD_DDFC5B64
+VIA cpu10690_ver00000001_sig[10690_BJ020A]_2016-05-25_3C34FC1A
+VIA cpu006FE_ver00000001_sig[6FE_BJ020A]_2016-05-25_7214D1E1
+
+r87
+
+Intel cpu50654_platB7_ver02000050_2018-08-09_PRD_88EFAF9F
+Intel cpu506F0_plat01_ver00000010_2016-06-07_PRD_4ED9573A
+
+v1.24.1
+
+Adjusted Intel pattern for old Loader v0
+Fixed issues extracting Intel containers
+
+r86
+
+Intel cpu00611_plat00_ver000B0026_1995-09-05_PRD_56520B61
+
+r85
+
+Intel cpu906EC_plat22_ver0000009C_2018-08-15_PRD_2B6731E8
+Intel cpu906EB_plat02_ver0000009A_2018-07-16_PRD_897E4FBC
+Intel cpu906EA_plat22_ver0000009A_2018-07-16_PRD_6EF96FE7
+
+r84
+
+Intel cpu806E9_plat10_ver0000008E_2018-05-22_PRD_950AEEE0
+
+r83
+
+Intel cpu706A1_plat01_ver0000002A_2018-07-25_PRD_08495F56
+Intel cpu806E9_plat10_ver00000098_2018-06-26_PRD_0134AEB8
+Intel cpu50655_platB7_ver0300000B_2018-04-27_PRD_2CD37A5C
+
+v1.24.0
+
+Added robust Intel Latest status detection
+Added AMD microcode CPUID 00820F detection
+Added parameter -last to show latest status
+
+r82
+
+Intel cpu906EC_plat22_ver0000009E_2018-08-26_PRD_1813F262
+AMD cpu00810F80_ver08108002_2018-06-05_30365AA5
+AMD cpu00820F00_ver08200002_2018-02-14_417C54AD
+
+v1.21.0
+
+Improved detection of duplicates
+Improved support for multiple OS
+Various code cleanup improvements
+
+r81
+
+Intel cpu00695_plat20_ver00000002_2002-09-26_PRD_267FE6E2
+
+r80
+
+Intel cpu30678_plat0C_ver00000837_2018-01-25_PRD_D9314ECB
+
+r79
+
+AMD cpu00800F82_ver0800820B_2018-06-20_60B7577B
+
+r78
+
+Intel cpu706A1_plat01_ver00000028_2018-05-22_PRD_1E608391
+Intel cpu506F1_plat01_ver00000024_2018-05-11_PRD_A1B0E19C
+Intel cpu506C2_plat01_ver00000014_2018-05-11_PRD_BD3490B6
+
+r77
+
+Intel cpu906EC_plat22_ver00000098_2018-05-31_PRD_37B87C7F
+Intel cpu506CA_plat03_ver0000000C_2018-05-11_PRD_ACEA9DD5
+Intel cpu20652_plat12_ver00000011_2018-05-08_PRD_6E121A49
+Intel cpu106E5_plat13_ver0000000A_2018-05-08_PRD_B16FCEEB
+Intel cpu20655_plat92_ver00000007_2018-04-23_PRD_8B585C97
+
+r76
+
+Intel cpu50653_plat97_ver01000144_2018-04-20_PRD_5F6D2EC3
+
+r75
+
+Intel cpu806EB_platC0_ver00000098_2018-05-30_PRD_CAB32ECF
+Intel cpu206F2_plat05_ver0000003B_2018-05-16_PRD_28612AC4
+Intel cpu206E6_plat04_ver0000000D_2018-05-15_PRD_09B7B395
+Intel cpu60663_plat80_ver0000002A_2018-04-17_PRD_C7B6F35C
+Intel cpu906EA_plat22_ver00000086_2018-02-05_PRD_DC5A3CD3
+
+r74.1
+
+Intel cpu50662_plat10_ver00000017_2018-05-25_PRD_B1395A48
+Intel cpu106A5_plat03_ver0000001D_2018-05-11_PRD_AB179397
+Intel cpu906EC_plat22_ver00000096_2018-05-08_PRD_9EF46607
+Intel cpu206C2_plat03_ver0000001F_2018-05-08_PRD_77DADA73
+Intel cpu50665_plat10_ver0E00000A_2018-04-20_PRD_902B7544
+Intel cpu50664_plat10_ver0F000012_2018-04-20_PRD_73AF85F3
+Intel cpu50663_plat10_ver07000013_2018-04-20_PRD_21F1FC62
+
+r73
+
+Intel cpu506C9_plat03_ver00000032_2018-05-11_PRD_2F66EBE0
+Intel cpu206D7_plat6D_ver00000714_2018-05-08_PRD_5A3BF81F
+Intel cpu206D6_plat6D_ver0000061D_2018-05-08_PRD_441342A4
+Intel cpu306A9_plat12_ver00000020_2018-04-10_PRD_732E4C38
+Intel cpu206A7_plat12_ver0000002E_2018-04-10_PRD_576F65DE
+Intel cpu40671_plat22_ver0000001E_2018-04-03_PRD_FFFE5286
+Intel cpu50655_platB7_ver03000009_2018-03-14_PRD_FB05E744
+
+r72
+
+Intel cpu706A1_plat01_ver00000026_2018-05-11_PRD_3E765922
+Intel cpu306E4_platED_ver0000042D_2018-04-25_PRD_25AD26F7
+Intel cpu40651_plat72_ver00000024_2018-04-02_PRD_BBA860C4
+Intel cpu306D4_platC0_ver0000002B_2018-03-22_PRD_0B0DD00D
+Intel cpu60662_plat80_ver00000022_2017-11-29_PRD_D6CC7995
+
+r71
+
+Intel cpu806EA_platC0_ver00000096_2018-05-15_PRD_BE814658
+Intel cpu906EA_plat22_ver00000096_2018-05-02_PRD_730E6662
+Intel cpu306E7_platED_ver00000714_2018-04-25_PRD_8F3DE4DE
+Intel cpu306F4_plat80_ver00000012_2018-04-20_PRD_98C4A4C4
+Intel cpu506E3_plat36_ver000000C6_2018-04-17_PRD_92427988
+Intel cpu406E3_platC0_ver000000C6_2018-04-17_PRD_4E06C9D9
+Intel cpu40661_plat32_ver0000001A_2018-04-02_PRD_01C421B5
+Intel cpu306C3_plat32_ver00000025_2018-04-02_PRD_5F430452
+Intel cpu50654_platB7_ver0200004A_2018-03-28_PRD_F98D6178
+Intel cpu806EA_platC0_ver0000008C_2018-03-16_PRD_E827C737
+Intel cpu806EB_platC0_ver00000084_2018-02-11_PRD_59F69C91
+Intel cpu906EA_plat22_ver0000007E_2017-12-07_PRD_845DA278
+
+r70
+
+Intel cpu50654_platB7_ver0200004D_2018-05-15_PRD_205C031D
+Intel cpu306F2_plat6F_ver0000003D_2018-04-20_PRD_A5D0CFB1
+Intel cpu406F1_platEF_ver0B00002E_2018-04-19_PRD_1AAFEDCE
+Intel cpu906EB_plat02_ver0000008E_2018-03-24_PRD_26138472
+Intel cpu50654_platB7_ver0200003E_2017-12-22_PRD_5D60B462
+
+v1.20.0
+
+Added MCE Microcode Blob format support
+
+r69
+
+Intel cpu906E9_plat2A_ver0000008E_2018-03-24_PRD_5BB5F3CD
+Intel cpu806E9_platC0_ver0000008E_2018-03-24_PRD_44706881
+Intel cpu906EC_plat22_ver00000084_2018-02-19_PRD_F3514131
+
+r68
+
+Intel cpu906EA_plat22_ver00000094_2018-04-26_PRD_9197C986
+
+r67
+
+Intel cpu50654_platB7_ver02000049_2018-03-27_PRD_DC30919B
+Intel cpu60663_plat80_ver00000016_2018-01-25_PRD_CF0DB425
+Intel cpu60662_plat80_ver0000001A_2017-09-27_PRD_0BFC2D8A
+
+v1.16.3
+
+Fixed issues under rare circumstances
+
+r66
+
+Intel cpu406F1_platEF_ver0B00002C_2018-03-21_PRD_3F315D44
+Intel cpu906EA_plat22_ver0000005E_2017-04-20_PRD_85015AEF
+AMD cpu00600F12_ver0600063E_2018-02-07_8187EA3E
+AMD cpu00600F20_ver06000852_2018-02-06_893C1544
+
+v1.16.2
+
+Added Drunk AMD employee 3, wrong MC date
+Fixed a crash under rare circumstances
+
+r65
+
+AMD cpu00610F01_ver0600111F_2018-03-05_AC55EB96
+AMD cpu00630F01_ver06003109_2018-02-27_16D608D9
+AMD cpu00670F00_ver06006705_2018-02-20_1026F331
+AMD cpu00730F01_ver07030106_2018-02-09_88EDFAA0
+AMD cpu00700F01_ver07000110_2018-02-09_1F2B007F
+AMD cpu00660F01_ver0600611A_2018-01-26_6ADE0289
+
+r64
+
+Intel cpu30678_plat02_ver00000837_2018-01-25_PRD_F0D56486
+
+r63
+
+Intel cpu20652_plat12_ver00000010_2018-02-04_PRD_AC3A178A
+Intel cpu106E5_plat13_ver00000009_2018-01-24_PRD_01EAEE93
+Intel cpu106A5_plat03_ver0000001C_2018-01-24_PRD_77105048
+Intel cpu206C2_plat03_ver0000001E_2018-01-23_PRD_B8C45629
+Intel cpu20655_plat92_ver00000006_2018-01-23_PRD_74A55BFF
+Intel cpu206F2_plat05_ver0000003A_2018-01-19_PRD_9CAD50BA
+Intel cpu206E6_plat04_ver0000000C_2018-01-18_PRD_AFAC8230
+Intel cpu30673_plat01_ver00000326_2018-01-10_PRD_491E7BB6
+AMD cpu00800F11_ver08001137_2018-02-14_25F07D57
+AMD cpu00810F10_ver0810100B_2018-02-12_A9605AEB
+AMD cpu00800F82_ver08008206_2018-02-12_C23A4F0A
+AMD cpu00800F12_ver08001227_2018-02-09_C0D9543C
+
+v1.16.1
+
+Fixed crashes under rare circumstances
+
+v1.16.0
+
+Added parameter -redir for Console Redirection
+Fixed missing MCE header when using -skip
+
+r62
+
+Intel cpu50653_plat97_ver01000140_2018-01-29_PRD_4981DEEA
+Intel cpu50665_plat10_ver0E000009_2018-01-22_PRD_20320635
+
+r61
+
+Intel cpu306E7_platED_ver00000713_2018-02-16_PRD_B2A3833C
+Intel cpu306A9_plat12_ver0000001E_2018-01-27_PRD_DAFE585B
+
+r60
+
+Intel cpu306A9_plat12_ver0000001F_2018-02-07_PRD_3023E347
+Intel cpu206A7_plat12_ver0000002D_2018-02-07_PRD_1BDB79EA
+Intel cpu206D6_plat6D_ver0000061C_2018-01-30_PRD_2ED60C71
+Intel cpu206D7_plat6D_ver00000713_2018-01-26_PRD_C3EF7065
+Intel cpu306E4_platED_ver0000042C_2018-01-25_PRD_4221080D
+Intel cpu306F4_plat80_ver00000011_2018-01-22_PRD_9BB88980
+
+r59
+
+Intel cpu50664_plat10_ver0F000011_2018-01-22_PRD_297499EB
+Intel cpu50663_plat10_ver07000012_2018-01-22_PRD_08EBB212
+Intel cpu50662_plat10_ver00000015_2018-01-22_PRD_5DD3FD7A
+Intel cpu40671_plat22_ver0000001D_2018-01-21_PRD_A34C93F0
+Intel cpu40661_plat32_ver00000019_2018-01-21_PRD_B89B9F8D
+
+r58
+
+Intel cpu50654_platB7_ver02000043_2018-01-26_PRD_4840163E
+Intel cpu50653_plat97_ver0100013F_2018-01-26_PRD_91976925
+Intel cpu306C3_plat32_ver00000024_2018-01-21_PRD_FCD4700E
+Intel cpu406F1_platEF_ver0B00002A_2018-01-19_PRD_06390BF1
+Intel cpu306F2_plat6F_ver0000003C_2018-01-19_PRD_20E09DE3
+Intel cpu306D4_platC0_ver0000002A_2018-01-18_PRD_CC79BBDA
+
+r57
+
+Intel cpu906EB_plat02_ver00000084_2018-01-21_PRD_23C48ABA
+Intel cpu906EA_plat22_ver00000084_2018-01-21_PRD_05E7D428
+AMD cpu00800F82_ver08008204_2018-01-22_B79F4E2F
+AMD cpu00800F11_ver08001136_2018-01-18_24878BCA
+AMD cpu00800F12_ver08001213_2017-12-05_C1D5503C
+
+v1.15.0
+
+Improved scan performance by up to 300%
+Improved AMD microcode detection pattern
+
+r56
+
+Intel cpu906E9_plat2A_ver00000084_2018-01-21_PRD_A1B7222B
+Intel cpu806EA_platC0_ver00000084_2018-01-21_PRD_701254C0
+Intel cpu806E9_platC0_ver00000084_2018-01-21_PRD_BC332364
+Intel cpu40651_plat72_ver00000023_2018-01-18_PRD_0A6E6647
+Intel cpu30678_plat02_ver00000836_2018-01-10_PRD_DB1696C4
+Intel cpu30673_plat02_ver00000326_2018-01-10_PRD_90B9591E
+Intel cpu80650_plat08_ver00000018_2018-01-08_PRD_19B5F433
+Intel cpu50671_plat78_ver000001B6_2018-01-08_PRD_A1921B5B
+Intel cpu506D1_plat02_ver00000101_2014-11-20_PRD_BAB05F5F
+Intel cpu506D1_plat04_ver00000101_2014-11-20_PRD_DC71937D
+
+v1.14.1
+
+Improved AMD microcode detection pattern
+Improved table text & line output visuals
+Improved parameter -search output & error handling
+Added parameter -exit to skip Press enter to exit prompt
+MCE now checks & allows supported Python versions only
+
+r55
+
+Intel cpu30679_plat0F_ver0000090A_2018-01-10_PRD_252563C5
+Intel cpu30673_plat0C_ver00000326_2018-01-10_PRD_0A5D3660
+Intel cpu406D8_plat01_ver0000012A_2018-01-04_PRD_7CACB989
+Intel cpu80650_plat08_ver0000000E_2017-09-13_PRD_BC0B9463
+Intel cpu50671_plat78_ver000001AE_2017-09-08_PRD_45B014CA
+Intel cpu30661_plat08_ver0000010F_2015-07-21_PRD_0E2514F3
+Intel cpu30661_plat04_ver0000010F_2015-07-21_PRD_F422CDF9
+
+r54
+
+Intel cpu30678_plat0C_ver00000836_2018-01-10_PRD_B221B0E8
+AMD cpu00810F10_ver08101007_2017-12-12_FACD50F0
+
+r53
+
+Intel cpu406C4_plat01_ver00000410_2018-01-04_PRD_EA01F4E4
+Intel cpu50653_plat97_ver0100013E_2017-11-21_PRD_E2B950BA
+
+v1.13.2
+
+Improved parameter -search input & result order
+
+v1.13.1
+
+Fixed crash when converting Intel containers
+Fixed wrong file enumeration at command prompt
+Fixed wrong Latest Yes/No status text display
+
+r52
+
+Intel cpu906EB_plat02_ver00000080_2018-01-04_PRD_D24EDB7F
+Intel cpu906EA_plat22_ver00000080_2018-01-04_PRD_84CABC68
+Intel cpu806EA_platC0_ver00000080_2018-01-04_PRD_F6263DAE
+Intel cpu706A1_plat01_ver00000022_2017-12-26_PRD_CA264967
+Intel cpu406C3_plat01_ver00000367_2017-12-25_PRD_C22C65F8
+Intel cpu506CA_plat03_ver00000008_2017-11-22_PRD_32F41375
+Intel cpu50663_plat10_ver07000011_2017-12-16_PRD_B17C1102
+Intel cpu50662_plat10_ver00000014_2017-12-16_PRD_9161527A
+Intel cpu50654_platB7_ver0200003C_2017-12-08_PRD_A4059069
+Intel cpu306E4_platED_ver0000042A_2017-12-01_PRD_9B215C1F
+Intel cpu10676_plat40_ver00000612_2015-08-02_PRD_B6F50E9C
+Intel cpu10676_plat04_ver00000612_2015-08-02_PRD_AEAA6CC1
+Intel cpu1067A_plat44_ver00000A0E_2015-07-29_PRD_A3107D75
+Intel cpu206F2_plat05_ver00000039_2015-07-26_PRD_5C4EB85E
+Intel cpu206E6_plat04_ver0000000B_2015-07-24_PRD_176A1E69
+Intel cpu206C2_plat03_ver0000001C_2015-06-27_PRD_CEBA2319
+
+v1.13.0
+
+Fixed bug which skipped all 2018 microcodes
+Removed parameter -file, now default action
+Removed parameter -check, now default action
+Removed parameter -verbose, now default action
+
+r51
+
+Intel cpu906E9_plat2A_ver00000080_2018-01-04_PRD_6AA1DE93
+Intel cpu806E9_platC0_ver00000080_2018-01-04_PRD_6961A256
+Intel cpu906EA_plat22_ver00000074_2017-10-16_PRD_F4E3A421
+AMD cpu00800F82_ver08008202_2017-10-03_B95D2272
+
+v1.12.0
+
+Added parameter -repo to build Repositories from input
+Intel Latest/Outdated Status now minds PRD/PRE Release
+Parameter -add can now update DB Revision & Status
+
+r50
+
+Intel cpu706A1_plat01_ver00000020_2017-11-29_PRD_8FB11B75
+Intel cpu506F1_plat01_ver00000020_2017-11-22_PRD_1B275D2A
+Intel cpu506C9_plat03_ver0000002E_2017-11-22_PRD_2798C414
+Intel cpu40671_plat22_ver0000001B_2017-11-17_PRD_4763E424
+Intel cpu306F4_plat80_ver00000010_2017-11-17_PRD_40551AAB
+Intel cpu306D4_platC0_ver00000028_2017-11-17_PRD_734956F1
+Intel cpu30679_plat01_ver00000908_2017-04-14_PRD_C0154A2E
+
+r49
+
+Intel cpu906EB_plat02_ver0000007C_2017-12-03_PRD_5046D998
+Intel cpu906EA_plat22_ver0000007C_2017-12-03_PRD_55695D1F
+Intel cpu906E9_plat2A_ver0000007C_2017-12-03_PRD_6CF72404
+Intel cpu806EA_platC0_ver0000007C_2017-12-03_PRD_B81BC926
+Intel cpu806E9_platC0_ver0000007C_2017-12-03_PRD_5C75A5FE
+Intel cpu40661_plat32_ver00000018_2017-11-20_PRD_A2AC454C
+Intel cpu40651_plat72_ver00000021_2017-11-20_PRD_2B637CE4
+Intel cpu306C3_plat32_ver00000023_2017-11-20_PRD_16535FE4
+Intel cpu406E3_platC0_ver000000C2_2017-11-16_PRD_C6C6F699
+Intel cpu80650_plat08_ver00000011_2017-10-11_PRD_2C3FF1D0
+Intel cpu50671_plat78_ver000001B0_2017-10-11_PRD_4506A257
+
+r48
+
+Intel cpu50654_platB7_ver0200003A_2017-11-21_PRD_C088D252
+Intel cpu406F1_platEF_ver0B000025_2017-11-18_PRD_F0B0963D
+Intel cpu306F2_plat6F_ver0000003B_2017-11-17_PRD_B4A4C42D
+Intel cpu506E3_plat36_ver000000C2_2017-11-16_PRD_328B43AF
+Intel cpu506F1_plat01_ver0000001C_2017-10-27_PRD_3F1981DB
+Intel cpu506F1_plat01_ver0000001A_2017-08-18_PRD_F7C4D9CF
+
+r47
+
+Intel cpu706A1_plat01_ver00000016_2017-09-15_PRD_0DD15770
+Intel cpu50653_plat97_ver0100013A_2017-07-27_PRD_342EE670
+
+r46
+
+Intel cpu50654_platB7_ver02000032_2017-09-27_PRD_A712CA10
+Intel cpu506CA_plat03_ver00000006_2017-03-31_PRD_DE5C6D65
+
+v1.11.1
+
+Updated Intel Extra Header undocumented fields
+
+r45
+
+Intel cpu706A1_plat01_ver0000001E_2017-10-31_PRD_9A929C5F
+Intel cpu50654_platB7_ver02000035_2017-10-17_PRD_0D66C8E3
+Intel cpu506F1_plat01_ver00000018_2017-06-07_PRD_CEDC8434
+
+v1.11.0
+
+Added AMD microcode CPUID 00810F size detection
+Updated Intel Extra Header undocumented fields
+Improved Intel Extra Undocumented Header detection
+
+r44
+
+AMD cpu00810F10_ver08101004_2017-06-27_30261CF3
+AMD cpu00810F00_ver08100004_2016-11-20_70D8F43B
+
+v1.10.0
+
+Added Intel Production/Pre-Production Release detection
+Added better Intel Status detection based on Platforms
+Improved all microcode info & structure display
+Improved all microcode extracted file names
+
+r43
+
+Intel cpu50654_platB7_ver02000030_2017-09-19_PRD_C64836CD
+Intel cpu50653_plat97_ver0100013B_2017-08-09_PRD_984E6F2D
+
+r42
+
+cpu000906EB_plat02_ver00000072_date2017-09-20
+cpu00050654_plat97_ver0200002E_date2017-09-01
+cpu000906EA_plat22_ver00000070_date2017-08-23
+cpu000406E3_platC0_ver000000BC_date2017-05-23
+cpu000506C9_plat03_ver0000002C_date2017-03-25
+cpu000406E3_platC0_ver00000016_date2015-05-13
+
+v1.9.0
+
+Improved AMD Ryzen microcode size detection
+Improved microcode info & structure display
+Removed parameter -padd to keep AMD padding
+Various code & text fixes and improvements
+
+r41
+
+cpu000406E3_platC0_ver000000BE_date2017-08-20
+cpu00030678_plat02_ver882E0100_date2014-09-25
+cpu00030678_plat02_ver00000820_date2014-07-02
+cpu00030678_plat02_ver0000081B_date2014-06-04
+cpu00030651_plat01_ver00000110_date2013-10-14
+
+v1.8.0
+
+Added Drunk VIA employee 1, wrong MC Signature
+Added Drunk VIA employee 2, wrong MC Checksum
+Improved VIA_MC_Header, added CNRRev & fixed Name
+Improved VIA file naming, added Version & Checksum
+Fixed VIA Signature unicode character display issue
+
+r40
+
+cpu00050654_plat97_ver0200002C_date2017-08-18
+cpu000806E9_platC0_ver00000070_date2017-08-09
+cpu00080650_plat08_verFFFF0009_date2017-04-25
+cpu00800F12_ver08001207_date2017-06-20
+cpu00010690_ver00000001_sigBJ_10690.020_chkA8B24DC2_date2017-01-09
+cpu000006FE_ver00000001_sigBJ_6FE_0205_chk25646399_date2017-01-09
+cpu000006FE_ver00000000_sig06FE105A_chk8F397072_date2011-08-09
+cpu000006FA_ver00000000_sig06FA003BB_chk9B86F886_date2011-08-09
+
+r39
+
+cpu000706A0_plat01_ver00000026_date2017-07-12
+cpu00060661_plat80_ver0000000E_date2017-01-28
+cpu00060661_plat80_ver8000000C_date2017-01-04
+
+v1.7.1
+
+Parameter -verbose now shows Intel Platform bits
+Fixed crash at input files initialization
+
+v1.7.0
+
+Added input file scanning progress counter (x/y)
+Added parameter -dbname to rename MC based on DB
+Added parameter -check to copy skipped MC files
+Fixed AMD detection pattern at Reserved fields
+Fixed Intel Extended Header checksum calculation
+Fixed wrong bytefield display at -info parameter
+Improved performance by x2.5 compared to 1.6.0
+
+r38
+
+cpu000906E9_plat2A_ver00000070_date2017-08-09
+cpu00050654_plat97_ver0200002B_date2017-08-09
+cpu000906EA_plat22_ver0000006E_date2017-07-20
+cpu000406A9_plat01_ver0000081F_date2014-08-12
+cpu000306F1_platEF_verB8010100_date2013-03-04
+cpu000306F0_platEF_verB8010100_date2013-03-04
+cpu00000000_plat00_verB8010100_date2013-03-04
+cpu00000F31_plat0D_ver00000004_date2003-08-13
+
+r37
+
+cpu000806EA_platC0_ver00000070_date2017-08-03
+cpu00050654_plat97_ver02000029_date2017-07-26
+cpu000406F1_platEF_ver0B000022_date2017-06-21
+cpu000906EA_plat22_ver0000006A_date2017-06-20
+cpu000906EB_plat02_ver0000005E_date2017-05-30
+cpu000906EA_plat22_ver0000005C_date2017-04-06
+cpu00060661_plat80_ver0000000C_date2017-01-04
+cpu00060660_plat80_ver0000000C_date2016-08-21
+
+r36
+
+cpu000506F1_plat01_ver00000016_date2017-05-12
+
+r35
+
+cpu00050653_plat97_ver01000138_date2017-06-15
+cpu000506E3_plat36_ver000000B8_date2017-03-26
+cpu000406E3_platC0_ver000000B8_date2017-03-26
+cpu000806EA_plat80_ver0000005C_date2017-03-21
+cpu00800F11_ver08001129_date2017-07-14
+cpu00800F12_ver08001206_date2017-06-12
+cpu00800F11_ver08001127_date2017-06-12
+
+r34
+
+cpu000506C2_plat01_ver0000000E_date2017-06-06
+
+r33
+
+cpu00050654_plat97_ver02000022_date2017-06-01
+cpu000806EA_platC0_ver00000066_date2017-05-23
+cpu00050652_plat97_ver80000037_date2017-05-02
+cpu00050653_plat97_ver01000137_date2017-05-01
+cpu00050654_plat97_ver0200001A_date2017-04-19
+cpu00050654_plat97_ver02000009_date2016-11-10
+cpu00050652_plat97_ver80000031_date2016-11-02
+cpu00050653_plat97_ver01000030_date2016-10-27
+cpu000406E8_plat80_ver0000000E_date2015-12-09
+
+v1.6.0
+
+Added support for Freescale QEF Microcodes
+Parameter -search now orders results by Date
+Parameter -olddb now stores only Intel entries
+
+r32
+
+cpu00050654_plat97_ver0200001C_date2017-04-28
+cpu000806E9_platC0_ver00000062_date2017-04-27
+cpu000406E3_platC0_ver000000AE_date2016-11-09
+cpu000506E3_plat36_ver000000AC_date2016-09-27
+cpu000406E3_platC0_ver000000A0_date2016-06-27
+cpu000506E8_plat22_ver0000001E_date2016-03-14
+cpu000506E3_plat36_ver00000058_date2015-10-28
+cpu000506E1_plat22_ver00000022_date2015-04-01
+cpu000306E4_platED_ver00000423_date2013-12-06
+cpu000206F0_plat05_ver00000004_date2010-06-30
+cpu00000650_plat02_ver00000044_date1999-05-25
+soc1021_rev1.0_chk215B3FC5
+soc1021_rev1.0_chkC3F0B655
+soc1021_rev1.0_chkEE744201
+soc1024_rev1.0_chkA6BD07A9
+soc1040_rev1.0_chkE92A33D8
+soc8323_rev1.0_chkA68C7A80
+soc8323_rev1.1_chk849FC909
+soc8360_rev2.0_chk1C75CC78
+soc8360_rev2.1_chk3725F40B
+soc8569_rev1.0_chk1873A745
+
+v1.5.3
+
+Fixed jumbled date display at -info parameter
+
+r31
+
+cpu00050654_plat97_ver02000023_date2017-06-09
+cpu000806EA_platC0_ver00000064_date2017-05-17
+cpu000406D8_plat01_ver0000011E_date2013-11-13
+cpu000306E4_platED_ver0000040D_date2013-04-26
+cpu000206D5_plat6D_ver0000050D_date2011-08-22
+cpu00000695_plat20_ver00000003_date2002-10-07
+cpu00580F20_ver05000100_date2010-11-30
+cpu00500F20_ver05000100_date2010-11-30
+
+r30
+
+cpu000806EA_plat80_ver0000005E_date2017-04-06
+cpu000806E9_platC0_ver00000058_date2017-03-09
+cpu00000F30_plat01_ver00000006_date2003-05-30
+cpu00800F10_ver0800100C_date2017-01-31
+
+r29
+
+cpu00050654_plat97_ver02000021_date2017-05-25
+cpu00050654_plat97_ver0200001E_date2017-05-12
+cpu00050652_plat97_ver80000036_date2017-03-21
+cpu00050652_plat97_ver80000035_date2017-02-22
+cpu000506D1_plat04_ver00000102_date2015-06-05
+
+v1.5.2
+
+All dates now follow ISO8601 YYYY-MM-DD format
+Fixed crash due to missing field at AMD DB table
+
+r28
+
+cpu000806E9_platC0_ver0000005E_date2017-04-06
+cpu00800F12_ver08001203_date2017-04-07
+cpu00800F11_ver08001122_date2017-04-03
+
+r27
+
+cpu000906E9_plat2A_ver0000005E_date06-04-2017
+cpu000506C9_plat03_ver0000002A_date04-03-2017
+cpu000506C9_plat03_ver00000028_date18-01-2017
+cpu000406E3_platC0_ver000000AA_date22-09-2016
+
+r26
+
+cpu000406E3_platC0_ver000000BA_date09-04-2017
+cpu000506E3_plat36_ver000000BA_date09-04-2017
+cpu000906E9_plat22_ver00000058_date09-03-2017
+cpu00050653_plat97_ver01000136_date02-03-2017
+cpu00050662_plat10_ver00000011_date24-02-2017
+cpu00050654_plat97_ver02000013_date21-02-2017
+cpu00050664_plat10_ver0F00000C_date15-02-2017
+cpu00050663_plat10_ver0700000E_date07-02-2017
+cpu000306F4_plat80_ver0000000F_date30-01-2017
+cpu000306C3_plat32_ver00000022_date27-01-2017
+cpu000306D4_platC0_ver00000025_date27-01-2017
+cpu00040651_plat72_ver00000020_date27-01-2017
+cpu00040661_plat32_ver00000017_date27-01-2017
+cpu00040671_plat22_ver00000017_date27-01-2017
+cpu00050652_plat97_ver80000034_date02-12-2016
+cpu00050664_plat10_ver0F00000B_date03-11-2016
+cpu000406E3_platC0_ver000000A4_date15-08-2016
+cpu00050662_plat10_ver00000010_date22-07-2016
+cpu00800F11_ver0800111A_date03-03-2017
+cpu00600F20_ver06000829_date23-05-2014
+
+r25
+
+cpu000506E3_plat36_ver000000AE_date09-11-2016
+cpu000506C2_plat01_ver00000006_date26-07-2016
+cpu000506E3_plat36_ver0000008C_date21-04-2016
+cpu000406E3_platC0_ver0000008C_date21-04-2016
+cpu000506E1_plat22_ver00000028_date21-05-2015
+cpu000506E2_plat14_ver00000028_date21-05-2015
+cpu000506E3_plat36_ver00000018_date20-05-2015
+cpu000406E3_platC0_ver00000018_date20-05-2015
+cpu00030672_plat02_ver0000022E_date01-04-2014
+
+v1.5.1
+
+Fixed issue in which Microcode headers were not shown
+
+r24
+
+cpu000406F1_platEF_ver0B000021_date01-03-2017
+cpu000506C2_plat01_ver0000000C_date06-02-2017
+cpu000406E3_platC0_ver000000B2_date01-02-2017
+cpu000506C2_plat01_ver0000000A_date09-12-2016
+cpu000506C2_plat01_ver00000008_date19-10-2016
+
+v1.5.0
+
+Greatly improved the analysis of Intel undocumented Extra header
+Added validation of Intel Extended header Checksum
+Parameter -info now shows detailed Intel Platform info
+Fixed two crashes under rare circumstances
+Slight performance and visual improvements
+
+r23
+
+cpu000406F1_platEF_ver0B000020_date02-02-2017
+cpu000306F2_plat6F_ver0000003A_date30-01-2017
+
+r22
+
+cpu000506E3_plat36_ver000000B2_date01-02-2017
+cpu00800F11_ver0800111C_date06-03-2017
+
+v1.4.4
+
+Fixed crash when input files could not be found
+
+r21
+
+cpu000506C9_plat03_ver00000026_date10-12-2016
+cpu000506C9_plat03_ver00000024_date18-10-2016
+cpu000506C8_plat01_ver90011010_date23-03-2016
+
+v1.4.3
+
+Fixed crash at Intel microcodes with Extended Signature
+
+r20
+
+cpu000106D1_plat08_ver0000002A_date03-08-2015
+cpu000506A0_plat01_ver00000038_date12-01-2015
+cpu000506A0_plat01_ver00000034_date22-10-2014
+cpu000406A8_plat01_ver0000081F_date12-08-2014
+cpu00030678_plat0C_ver00000816_date29-04-2014
+cpu000406A8_plat01_ver00000810_date21-02-2014
+cpu00030673_plat0C_ver00000316_date01-10-2013
+cpu00030673_plat0C_ver00000313_date13-09-2013
+cpu00030673_plat0C_ver0000030F_date13-08-2013
+cpu000406A0_plat01_ver80124001_date21-05-2013
+cpu00030671_plat02_ver00000117_date10-04-2013
+cpu00040651_plat72_ver00000006_date22-02-2013
+cpu000306C2_plat32_verFFFF0003_date10-07-2012
+cpu00040660_plat32_verFFFF000B_date10-07-2012
+cpu00010661_plat04_ver00000045_date04-10-2010
+cpu000106A5_plat03_ver00000010_date12-03-2009
+cpu00010650_plat02_ver00000002_date13-05-2006
+cpu00010650_plat10_ver00000002_date18-09-2005
+cpu00010650_plat20_ver00000002_date18-09-2005
+cpu00010650_plat01_ver00000002_date18-09-2005
+
+v1.4.2
+
+Fixed issue that caused wrong Latest/Outdated detection
+
+r19
+
+cpu00030651_plat08_ver00000105_date03-07-2012
+cpu000206D5_plat6D_ver0000050B_date29-07-2011
+cpu00030661_plat08_ver00000103_date04-05-2011
+cpu000206C0_plat13_verFFFF001C_date14-12-2009
+cpu000206E5_plat05_verE4486504_date03-08-2009
+cpu000206E3_plat05_verE4486547_date01-07-2009
+cpu000206E1_plat05_verE3493402_date24-02-2009
+cpu000106E1_plat13_verFFFF000B_date16-01-2009
+cpu000206E0_plat05_verE3493401_date08-01-2009
+cpu000106A4_plat03_ver00000008_date17-09-2008
+cpu000106C2_plat01_ver00000203_date24-01-2008
+cpu000006F5_plat04_ver00000032_date27-04-2006
+cpu00000F65_plat04_ver00000005_date31-03-2006
+cpu000006E4_plat20_ver00000023_date08-06-2005
+cpu00000F48_plat5F_ver00000003_date11-04-2005
+cpu00000F34_plat1D_ver0000000D_date19-04-2004
+cpu00000F34_plat8D_ver00000005_date15-10-2003
+cpu00000F11_plat02_ver00000002_date11-04-2001
+cpu00000F11_plat02_ver00000001_date03-04-2001
+cpu00000F08_plat02_ver00000008_date01-11-2000
+cpu00000F48_ver00000046_date19-07-2004
+cpu00000F11_ver0000001B_date06-11-2002
+cpu00000F50_ver00000023_date01-11-2002
+cpu00000F11_ver0000001A_date31-10-2002
+
+v1.4.1
+
+Added Drunk AMD Employee #2, fixed Ryzen year typo
+
+r18
+
+cpu000206F1_plat05_ver00000004_date30-06-2010
+cpu000106A5_plat03_ver00000006_date20-12-2008
+cpu00800F11_ver0800110E_date27-01-2017
+cpu00800F10_ver0800100B_date13-01-2017
+cpu00800F11_ver08001103_date08-12-2016
+
+v1.4.0
+
+All results are now displayed in nice tables and colors
+Added ability to see if a microcode is Latest or Outdated
+Added parameter -add to quickly add microcode to DB
+Added parameter -search to search DB based on CPUID
+Expanded parameter -verbose to show more details
+Transitioned database to SQLite3, now obligatory
+Transitioned to Python 3.6, Windows XP dropped
+Transitioned to PyInstaller, msvcr100 not needed
+Fixed issue where filenames were missing letters
+
+r17
+
+cpu000806EA_plat80_ver00000048_date15-11-2016
+
+v1.3.0
+
+Added Linux and macOS support
+Added -verbose parameter
+Fixed AMD date validation
+
+r16
+
+cpu000406E3_platC0_ver000000B0_date20-12-2016
+cpu000806E9_platC0_ver0000004A_date22-11-2016
+cpu00050652_plat97_ver80000028_date05-08-2016
+cpu00050651_plat13_ver8000002B_date08-02-2016
+cpu00050650_plat13_ver8000002B_date08-02-2016
+cpu000206F0_plat05_ver00000003_date15-06-2010
+cpu000206E5_plat05_verFFFF0018_date15-12-2009
+cpu000206E4_plat05_verFFFF0008_date19-06-2009
+
+v1.2.0
+
+Added support for AMD Ryzen CPU microcodes
+Fixed AMD issue occuring after finding one MC with unknown size
+
+r15
+
+cpu000506C8_plat01_ver00000010_date04-03-2016
+cpu00800F10_nb00000000_sb00000000_rev0000_ver08001009_date30-11-2016
+cpu00800F00_nb00000000_sb00000000_rev0000_ver0800002A_date06-10-2016
+cpu00800F11_nb00000000_sb00000000_rev0000_ver08001105_date04-01-2016
+
+r14
+
+cpu000806E9_platC0_ver0000004E_date21-12-2016
+cpu00040651_plat72_ver0000000B_date03-04-2013
+
+v1.1.3
+
+Fixed crash at Intel Extra Microcode Header analysis
+Adjusted date validation checks from 2016 to 2017
+MCE now pauses automatically at unexpected exceptions
+
+r13
+
+cpu00050671_plat78_ver000001A5_date15-12-2016
+cpu000806E9_platC0_ver00000048_date15-11-2016
+cpu000806E9_platC0_ver00000044_date27-10-2016
+cpu000806E9_platC0_ver00000038_date15-08-2016
+
+v1.1.2
+
+Fixed crash at Intel Extended Microcode Header analysis
+Fixed various code issues and errors under rare cases
+Improved "Skipped Microcode" text with Intel,AMD,VIA
+
+r12
+
+cpu000906E9_plat22_ver00000048_date15-11-2016
+cpu00050671_plat78_verFFFF01A0_date12-10-2016
+cpu000306F4_plat80_ver0000000E_date07-10-2016
+cpu000506C9_plat01_ver00000020_date09-09-2016
+cpu000906E9_plat22_ver0000002C_date16-06-2016
+
+r11
+
+cpu00050671_plat78_ver000001A1_date20-10-2016
+cpu000406C4_plat01_ver0000040E_date14-10-2016
+cpu000406E3_platC0_ver000000A2_date27-07-2016
+
+r10
+
+cpu000806E9_platC0_ver00000042_date02-10-2016
+cpu000506C9_plat01_ver0000001E_date07-09-2016
+cpu000906E9_plat22_ver0000003C_date05-09-2016
+
+r9
+
+cpu00050663_plat10_ver0700000D_date12-10-2016
+cpu000406F1_platEF_ver0B00001F_date07-10-2016
+cpu000306F2_plat6F_ver00000039_date07-10-2016
+
+r8
+
+cpu000906E9_plat22_ver00000042_date02-10-2016
+cpu000806E9_platC0_ver0000003C_date05-09-2016
+cpu00050664_plat10_ver0F00000A_date02-06-2016
+
+r7
+
+cpu000906E9_plat22_ver0000003E_date16-09-2016
+cpu000506E3_plat36_ver000000A0_date27-06-2016
+cpu000806E9_platC0_ver00000026_date14-04-2016
+
+r6
+
+cpu000806E9_platC0_ver0000003A_date22-08-2016
+cpu000506E3_plat36_ver000000A6_date21-08-2016
+cpu000506E8_plat22_ver0000002C_date16-06-2016
+cpu000306D4_platC0_ver00000020_date18-03-2015
+
+v1.1.0
+
+Major performance improvement, up to x10 times faster
+
+r5
+
+cpu000406F1_platEF_ver0B00001E_date24-08-2016
+cpu000906E9_plat22_ver0000003A_date22-08-2016
+cpu000506C9_plat01_ver00000018_date28-06-2016
+cpu00030678_plat0C_ver00000834_date01-10-2015
+
+v1.0.3
+
+Added ability to type input filename or filepath at Intro
+Improved handling of non-standard filename characters
+Improved handling of file errors during Mass scan
+
+r4
+
+cpu000406C4_plat01_ver0000040C_date18-04-2016
+cpu000406C4_plat01_ver0000040B_date22-03-2016
+cpu00030672_plat0C_ver00000213_date13-06-2013
+cpu000206A6_plat12_ver90030028_date24-09-2010
+cpu000106C2_plat04_ver00000203_date24-01-2008
+cpu000106C1_plat01_ver00000108_date01-11-2007
+cpu00000F32_plat0D_ver00000006_date09-10-2003
+cpu00000F25_plat02_ver0000000B_date27-05-2003
+cpu000F0F00_nb00000000_sb00000000_rev0000_ver00000005_date21-06-2002
+cpu00000F11_nb00000000_sb00000000_rev0000_ver00000015_date21-06-2002
+
+v1.0.2
+
+Fixed issue that caused no deletion of temporary files
+
+r3
+
+cpu000506C9_plat01_ver0000001C_date28-07-2016
+cpu000506E3_plat36_ver000000A2_date27-07-2016
+cpu000506C9_plat01_ver0000001A_date30-06-2016
+cpu000806E9_platC0_ver0000002A_date06-06-2016
+cpu000406C3_plat01_ver00000364_date18-04-2016
+
+v1.0.1
+
+Intel containers are now extracted in one step
+Fixed missing AMD loose pattern (-false)
+
+r2
+
+cpu000906E9_plat22_ver00000034_date10-07-2016
+cpu00050663_plat10_ver0700000C_date24-05-2016
+cpu000306C3_plat32_ver00000021_date10-05-2016
+
+v1.0.0
+
+Initial MC Extractor release
+
+r1
+
+Initial Microcode Repository Database release
