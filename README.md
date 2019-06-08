@@ -70,8 +70,17 @@ There are various parameters which enhance or modify the default behavior of MC 
 * -updchk : Checks for MC Extractor & DB updates
 * -last   : Shows "Last" status based on user input
 * -repo   : Builds microcode repositories from input
+* -blob   : Builds a Microcode Blob (MCB) from input
 
-#### **B3. MC Extractor Error Control**
+#### **B3. MC Extractor Microcode Blob (MCB)**
+
+MC Extractor can build its own Microcode Blob (MCB) format, which combines multiple Intel or AMD microcode binaries into one file. This mainly allows quick & automatic extraction of the latest compatible microcode binary based on the equivalent user microcode binary input. The MCB consists of an identifiable Header and an Entry Look Up Table (LUT) followed by the actual Microcode binary data. The Header includes info such as Microcode Vendor (Intel or AMD), Number of Microcodes, MCE DB Revision and a Checksum which covers the entire blob. The LUT entries include details for each microcode binary such as CPUID, Platform, Revision, Date, Size, Checksum and blob Offset.
+
+![](https://i.imgur.com/B0YOrpw.png)
+
+To build a MCE Microcode Blob (MCB.bin), input the desired Intel or AMD microcode binaries and use -blob parameter. You can use your own microcodes or find the Latest Production Intel and AMD ones at the [Intel, AMD & VIA CPU Microcodes](https://github.com/platomav/CPUMicrocodes/) repository. To extract the latest microcode from a MCB, input a single microcode binary and use -blob -search parameters. MC Extractor will validate the detected MCB, check if the microcode is already up-to-date before extracting the latest and notify accordingly.
+
+#### **B4. MC Extractor Error Control**
 
 During operation, MC Extractor may encounter issues that can trigger Notes, Warnings and/or Errors. Notes (yellow/green color) provide useful information about a characteristic of this particular firmware. Warnings (purple color) notify the user of possible problems that can cause system instability. Errors (red color) are shown when something unexpected or problematic is encountered.
 
