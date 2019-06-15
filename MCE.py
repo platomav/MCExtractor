@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2019 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.34.0'
+title = 'MC Extractor v1.34.1'
 
 import os
 import re
@@ -86,7 +86,7 @@ class MCE_Param :
 
 	def __init__(self, mce_os, source) :
 	
-		self.all = ['-?','-skip','-info','-add','-extr','-mass','-search','-dbname','-repo','-exit','-redir','-blob','-last','-updchk']
+		self.all = ['-?','-skip','-info','-add','-extr','-ubu','-mass','-search','-dbname','-repo','-exit','-redir','-blob','-last','-updchk']
 		self.win = ['-extr','-ubu'] # Windows only
 		
 		if mce_os == 'win32' : self.val = self.all
@@ -397,7 +397,7 @@ class Intel_MC_Header_Extended_Field(ctypes.LittleEndianStructure) :
 	_pack_ = 1
 	_fields_ = [
 		('ProcessorSignature',        uint32_t),  # 0x00
-		('PlatformIDs',            uint32_t),  # 0x04
+		('PlatformIDs',               uint32_t),  # 0x04
 		('Checksum',                  uint32_t),  # 0x08 replace CPUID, Platform, Checksum at Main Header w/o Extended
 		# 0x0C
 	]
