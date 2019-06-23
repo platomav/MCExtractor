@@ -1,3 +1,12 @@
+v1.34.2
+
+Fixed Intel & Freescale microcode variable initialization
+
+r115
+
+Intel cpu206D6_plat6D_ver0000061F_2019-05-21_PRD_990D3CF1
+Intel cpu906E9_plat2A_ver0000005E_2017-04-06_PRD_89811134
+
 v1.34.1
 
 Fixed UEFI BIOS Updater integration issue (-ubu)
