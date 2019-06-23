@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2019 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.34.1'
+title = 'MC Extractor v1.34.2'
 
 import os
 import re
@@ -861,6 +861,7 @@ def build_mc_repo(vendor, is_latest, rel_file, cpu_id) :
 def mc_table(row_col_names,header,padd) :
 	pt = prettytable.PrettyTable(row_col_names)
 	if not param.cli_redirect : pt.set_style(prettytable.BOX_CHARS)
+	pt.xhtml = True
 	pt.header = header # Boolean
 	pt.left_padding_width = padd if not param.mce_ubu else 0
 	pt.right_padding_width = padd if not param.mce_ubu else 0
@@ -877,7 +878,8 @@ def display_sql(cursor,title,header,padd):
 	if param.mce_ubu : padd = 0
 	
 	sqlr = prettytable.PrettyTable()
-	sqlr.set_style(prettytable.BOX_CHARS)
+	if not param.cli_redirect : sqlr.set_style(prettytable.BOX_CHARS)
+	sqlr.xhtml = True
 	sqlr.header = header # Boolean
 	sqlr.left_padding_width = padd
 	sqlr.right_padding_width = padd
@@ -1143,7 +1145,7 @@ pat_fcpu = re.compile(br'\x51\x45\x46\x01.{62}[\x00\x01].{5}\x00{4}.{40}\x00{4}'
 
 # Global Variable Initialization
 mc_latest = None
-match_list_i = []
+match_list_i = None
 temp_mc_paths = []
 blob_lut_init = []
 blob_lut_done = b''
@@ -1156,11 +1158,9 @@ for arg in source :
 	
 for in_file in source :
 	
-	# Microcode Variable Initialization
+	# File Variable Initialization
 	mc_nr = 0
 	total = 0
-	valid_ext_chk = 0
-	mc_reserved_all = 0
 	type_conv = ''
 	msg_i = []
 	msg_a = []
@@ -1249,6 +1249,11 @@ for in_file in source :
 	pt, pt_empty = mc_table(col_names, True, 1)
 	
 	for match_ucode in match_list_i :
+		
+		# Microcode Variable Initialization
+		valid_ext_chk = 0
+		mc_reserved_all = 0
+		mc_latest = None
 		
 		# noinspection PyRedeclaration
 		(mc_bgn, end_mc_match) = match_ucode.span()
@@ -1342,13 +1347,13 @@ for in_file in source :
 				
 		if param.print_hdr : continue # No more info to print, next MC of input file
 		
-		# Check if any Reserved fields are not empty/0
-		if mc_reserved_all != 0 :
-			msg_i.append(col_m + '\nWarning: Intel microcode at 0x%X has non-empty Reserved fields!' % mc_bgn + col_e)
-			if not param.mce_extr : copy_file_with_warn(work_file)
-		
 		mc_name = 'cpu%0.5X_plat%0.2X_ver%0.8X_%s_%s_%0.8X' % (cpu_id, plat, patch_u, full_date, rel_file, mc_chk)
 		mc_nr += 1
+		
+		# Check if any Reserved fields are not empty/0
+		if mc_reserved_all != 0 :
+			msg_i.append(col_m + '\nWarning: Microcode #%d has non-empty Reserved fields, please report it!' % mc_nr + col_e)
+			if not param.mce_extr : copy_file_with_warn(work_file)
 		
 		mc_at_db = (cursor.execute('SELECT * FROM Intel WHERE cpuid=? AND platform=? AND version=? AND yyyymmdd=? AND size=? \
 					AND checksum=?', ('%0.8X' % cpu_id, '%0.8X' % plat, '%0.8X' % patch_u, year + month + day, '%0.8X' % mc_len, '%0.8X' % mc_chk,))).fetchone()
@@ -1432,6 +1437,9 @@ for in_file in source :
 	pt, pt_empty = mc_table(col_names, True, 1)
 	
 	for match_ucode in match_list_a :
+		
+		# Microcode Variable Initialization
+		mc_latest = None
 		
 		# noinspection PyRedeclaration
 		(mc_bgn, end_mc_match) = match_ucode.span()
@@ -1597,6 +1605,9 @@ for in_file in source :
 	
 	for match_ucode in match_list_v :
 		
+		# Microcode Variable Initialization
+		mc_latest = None
+		
 		# noinspection PyRedeclaration
 		(mc_bgn, end_mc_match) = match_ucode.span()
 		
@@ -1713,6 +1724,10 @@ for in_file in source :
 	
 	for match_ucode in match_list_f :
 		
+		# Microcode Variable Initialization
+		mc_reserved_all = 0
+		mc_latest = None
+		
 		if param.build_repo : continue
 		
 		# noinspection PyRedeclaration
@@ -1747,14 +1762,13 @@ for in_file in source :
 			
 		if param.print_hdr : continue # No more info to print, next MC of input file
 		
+		mc_name = 'soc%s_rev%s.%s_sig[%s]_%0.8X' % (model, major, minor, name, mc_chk)
+		mc_nr += 1
+		
 		# Check if any Reserved fields are not empty/0
 		if mc_reserved_all != 0 :
-			msg_i.append(col_m + '\nWarning: Freescale microcode at 0x%X has non-empty Reserved fields!' % mc_bgn + col_e)
+			msg_i.append(col_m + '\nWarning: Microcode #%d has non-empty Reserved fields, please report it!' % mc_nr + col_e)
 			if not param.mce_extr : copy_file_with_warn(work_file)
-		
-		mc_name = 'soc%s_rev%s.%s_sig[%s]_%0.8X' % (model, major, minor, name, mc_chk)
-		
-		mc_nr += 1
 		
 		mc_at_db = (cursor.execute('SELECT * FROM FSL WHERE name=? AND model=? AND major=? AND minor=? AND size=? AND checksum=?',
 				  (name, model, major, minor, '%0.8X' % mc_len, '%0.8X' % mc_chk,))).fetchone()
