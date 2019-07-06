@@ -1,3 +1,11 @@
+r116
+
+Intel cpu50665_plat10_ver0E00000E_2019-05-25_PRD_034F51AD
+Intel cpu50664_plat10_ver0F000016_2019-05-25_PRD_1AE3BBC9
+Intel cpu50663_plat10_ver07000018_2019-05-25_PRD_1C63F3E4
+Intel cpu50662_plat10_ver0000001B_2019-05-25_PRD_AA2CED7F
+AMD cpu00870F10_ver08701013_2019-06-11_F86D190A
+
 v1.34.2
 
 Fixed Intel & Freescale microcode variable initialization
