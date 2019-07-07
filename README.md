@@ -100,9 +100,9 @@ To run MC Extractor's python script, you need to have the following 3rd party Py
 
 > pip3 install colorama
 
-* [PTable](https://github.com/platomav/PTable/tree/boxchar)
+* [PLTable](https://github.com/platomav/PLTable/)
 
-> pip3 install https://github.com/platomav/PTable/archive/boxchar.zip
+> pip3 install pltable
 
 #### **C3. Build/Freeze/Compile with PyInstaller**
 
@@ -120,9 +120,9 @@ PyInstaller can build/freeze/compile MC Extractor at all three supported platfor
 
 > pip3 install colorama
 
-4. Use pip to install PTable:
+4. Use pip to install PLTable:
 
-> pip3 install https://github.com/platomav/PTable/archive/boxchar.zip
+> pip3 install pltable
 
 5. Build/Freeze/Compile MC Extractor:
 

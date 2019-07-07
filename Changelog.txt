@@ -1,3 +1,7 @@
+v1.35.0
+
+Changed PTable dependency to PLTable, get from pip
+
 r116
 
 Intel cpu50665_plat10_ver0E00000E_2019-05-25_PRD_034F51AD

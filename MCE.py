@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2019 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.34.2'
+title = 'MC Extractor v1.35.0'
 
 import os
 import re
@@ -860,7 +860,7 @@ def build_mc_repo(vendor, is_latest, rel_file, cpu_id) :
 
 def mc_table(row_col_names,header,padd) :
 	pt = prettytable.PrettyTable(row_col_names)
-	if not param.cli_redirect : pt.set_style(prettytable.BOX_CHARS)
+	if not param.cli_redirect : pt.set_style(prettytable.UNICODE_LINES)
 	pt.xhtml = True
 	pt.header = header # Boolean
 	pt.left_padding_width = padd if not param.mce_ubu else 0
@@ -878,7 +878,7 @@ def display_sql(cursor,title,header,padd):
 	if param.mce_ubu : padd = 0
 	
 	sqlr = prettytable.PrettyTable()
-	if not param.cli_redirect : sqlr.set_style(prettytable.BOX_CHARS)
+	if not param.cli_redirect : sqlr.set_style(prettytable.UNICODE_LINES)
 	sqlr.xhtml = True
 	sqlr.header = header # Boolean
 	sqlr.left_padding_width = padd
