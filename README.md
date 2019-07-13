@@ -61,7 +61,6 @@ There are various parameters which enhance or modify the default behavior of MC 
 * -?      : Displays help & usage screen
 * -skip   : Skips welcome & options screen
 * -exit   : Skips Press enter to exit prompt
-* -redir  : Enables console redirection support
 * -mass   : Scans all files of a given directory
 * -info   : Displays microcode header(s)
 * -add    : Adds new input microcode to DB
@@ -90,7 +89,7 @@ MC Extractor consists of two files, the executable (MCE.exe or MCE) and the data
 
 #### **C1. Compatibility**
 
-MC Extractor should work at all Windows, Linux, macOS or BSD operating systems which have Python 3.6 support. Windows users who plan to use the already built/frozen/compiled binaries must make sure that they have the latest Windows Updates installed which include all required "Universal C Runtime (CRT)" libraries.
+MC Extractor should work at all Windows, Linux, macOS or BSD operating systems which have Python >= 3.6 support. Windows users who plan to use the already built/frozen/compiled binaries must make sure that they have the latest Windows Updates installed which include all required "Universal C Runtime (CRT)" libraries.
 
 #### **C2. Code Prerequisites**
 
