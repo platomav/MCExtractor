@@ -6,10 +6,11 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2019 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.35.0'
+title = 'MC Extractor v1.36.0'
 
 import os
 import re
+import io
 import sys
 import zlib
 import time
@@ -57,6 +58,14 @@ except :
 	colorama.deinit()
 	sys.exit(-1)
 
+# Fix Windows UTF-8 redirection
+if mce_os == 'win32' :
+	if mce_py >= (3,7) :
+		sys.stdout.reconfigure(encoding='utf-8')
+	else :
+		sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors=sys.stdout.errors,
+		newline=sys.stdout.newlines, line_buffering=sys.stdout.line_buffering, write_through=sys.stdout.write_through)
+
 # Set ctypes Structure types
 char = ctypes.c_char
 uint8_t = ctypes.c_ubyte
@@ -69,7 +78,6 @@ def mce_help() :
 -?      : Displays help & usage screen\n\
 -skip   : Skips welcome & options screen\n\
 -exit   : Skips Press enter to exit prompt\n\
--redir  : Enables console redirection support\n\
 -mass   : Scans all files of a given directory\n\
 -info   : Displays microcode header(s)\n\
 -add    : Adds new input microcode to DB\n\
@@ -86,7 +94,7 @@ class MCE_Param :
 
 	def __init__(self, mce_os, source) :
 	
-		self.all = ['-?','-skip','-info','-add','-extr','-ubu','-mass','-search','-dbname','-repo','-exit','-redir','-blob','-last','-updchk']
+		self.all = ['-?','-skip','-info','-add','-extr','-ubu','-mass','-search','-dbname','-repo','-exit','-blob','-last','-updchk']
 		self.win = ['-extr','-ubu'] # Windows only
 		
 		if mce_os == 'win32' : self.val = self.all
@@ -103,7 +111,6 @@ class MCE_Param :
 		self.build_repo = False
 		self.mce_ubu = False
 		self.skip_pause = False
-		self.cli_redirect = False
 		self.build_blob = False
 		self.get_last = False
 		self.upd_check = False
@@ -118,7 +125,6 @@ class MCE_Param :
 			if i == '-dbname' : self.give_db_name = True
 			if i == '-repo' : self.build_repo = True
 			if i == '-exit' : self.skip_pause = True
-			if i == '-redir' : self.cli_redirect = True
 			if i == '-blob' : self.build_blob = True
 			if i == '-last' : self.get_last = True
 			if i == '-updchk' : self.upd_check = True
@@ -130,8 +136,6 @@ class MCE_Param :
 			
 		if self.mce_extr or self.mass_scan or self.search or self.build_repo or self.build_blob \
 		or self.get_last or self.upd_check : self.skip_intro = True
-		
-		if self.mce_extr : self.cli_redirect = True
 
 # noinspection PyTypeChecker
 class Intel_MC_Header(ctypes.LittleEndianStructure) :
@@ -722,9 +726,9 @@ def intel_plat(cpuflags) :
 			
 	return platforms
 
-def mc_db_name(work_file, in_file, mc_name) :
+def mc_db_name(in_file, mc_name) :
 	new_dir_name = os.path.join(os.path.dirname(in_file), mc_name + '.bin')
-	work_file.close()
+	
 	if not os.path.exists(new_dir_name) : os.rename(in_file, new_dir_name)
 	elif os.path.basename(in_file) == mc_name + '.bin' : pass
 	else : print(col_r + 'Error: A file with the same name already exists!' + col_e)
@@ -789,16 +793,19 @@ def db_new_MCE() :
 		cursor.execute('UPDATE MCE SET revision=?', (db_rev_now + 1,))
 		cursor.execute('UPDATE MCE SET developer=1')
 	
-def copy_file_with_warn(work_file) :
-	work_file.close()
-		
+def copy_file_with_warn() :
 	file_name = os.path.basename(in_file)
 	warn_dir = os.path.join(mce_dir, 'Warnings', '')
 	warn_name = os.path.join(warn_dir, file_name)
 		
 	if not os.path.isdir(warn_dir) : os.mkdir(warn_dir)
 	
-	if os.path.isfile(warn_name) : warn_name += '_%d' % cur_count
+	# Check if same file already exists
+	if os.path.isfile(warn_name) :
+		with open(warn_name, 'br') as file :
+			if adler32(file.read()) == adler32(reading) : return
+		
+		warn_name += '_%d' % cur_count
 		
 	shutil.copyfile(in_file, warn_name)
 	
@@ -860,7 +867,7 @@ def build_mc_repo(vendor, is_latest, rel_file, cpu_id) :
 
 def mc_table(row_col_names,header,padd) :
 	pt = prettytable.PrettyTable(row_col_names)
-	if not param.cli_redirect : pt.set_style(prettytable.UNICODE_LINES)
+	pt.set_style(prettytable.UNICODE_LINES)
 	pt.xhtml = True
 	pt.header = header # Boolean
 	pt.left_padding_width = padd if not param.mce_ubu else 0
@@ -878,7 +885,7 @@ def display_sql(cursor,title,header,padd):
 	if param.mce_ubu : padd = 0
 	
 	sqlr = prettytable.PrettyTable()
-	if not param.cli_redirect : sqlr.set_style(prettytable.UNICODE_LINES)
+	sqlr.set_style(prettytable.UNICODE_LINES)
 	sqlr.xhtml = True
 	sqlr.header = header # Boolean
 	sqlr.left_padding_width = padd
@@ -1293,7 +1300,7 @@ for in_file in source :
 			date_chk = datetime.datetime.strptime(full_date, '%Y-%m-%d')
 		except :
 			msg_i.append(col_m + '\nWarning: Skipped Intel microcode at 0x%X, invalid Date of %s!' % (mc_bgn, full_date) + col_e)
-			if not param.mce_extr : copy_file_with_warn(work_file)
+			if not param.mce_extr : copy_file_with_warn()
 			continue
 		
 		# Analyze Extra Header
@@ -1353,7 +1360,7 @@ for in_file in source :
 		# Check if any Reserved fields are not empty/0
 		if mc_reserved_all != 0 :
 			msg_i.append(col_m + '\nWarning: Microcode #%d has non-empty Reserved fields, please report it!' % mc_nr + col_e)
-			if not param.mce_extr : copy_file_with_warn(work_file)
+			if not param.mce_extr : copy_file_with_warn()
 		
 		mc_at_db = (cursor.execute('SELECT * FROM Intel WHERE cpuid=? AND platform=? AND version=? AND yyyymmdd=? AND size=? \
 					AND checksum=?', ('%0.8X' % cpu_id, '%0.8X' % plat, '%0.8X' % patch_u, year + month + day, '%0.8X' % mc_len, '%0.8X' % mc_chk,))).fetchone()
@@ -1373,7 +1380,7 @@ for in_file in source :
 			
 		# Rename input file based on the DB structured name
 		if param.give_db_name :
-			if in_file not in temp_mc_paths : mc_db_name(work_file, in_file, mc_name)
+			if in_file not in temp_mc_paths : mc_db_name(in_file, mc_name)
 			continue
 		
 		mc_upd_chk_rsl = (cursor.execute('SELECT yyyymmdd,platform,version FROM Intel WHERE cpuid=?', ('%0.8X' % cpu_id,))).fetchall()
@@ -1483,13 +1490,13 @@ for in_file in source :
 			if (full_date,patch) == ('2011-13-09',0x3000027) : pass # Drunk AMD employee 1, Happy 13th month from AMD!
 			else :
 				msg_a.append(col_m + "\nWarning: Skipped AMD microcode at 0x%X, invalid Date of %s!" % (mc_bgn, full_date) + col_e)
-				if not param.mce_extr : copy_file_with_warn(work_file)
+				if not param.mce_extr : copy_file_with_warn()
 				continue
 		
 		# Remove false results, based on data
 		if reading[mc_bgn + 0x40:mc_bgn + 0x44] == b'\x00' * 4 : # 0x40 has non-null data
 			msg_a.append(col_m + "\nWarning: Skipped AMD microcode at 0x%X, null data at 0x40!" % mc_bgn + col_e)
-			if not param.mce_extr : copy_file_with_warn(work_file)
+			if not param.mce_extr : copy_file_with_warn()
 			continue
 		
 		# Print the Header
@@ -1517,7 +1524,7 @@ for in_file in source :
 		
 		if mc_len == 0 :
 			msg_a.append(col_r + '\nError: Microcode #%d %s not extracted at 0x%X, unknown Size!' % (mc_nr, mc_name, mc_bgn) + col_e)
-			if not param.mce_extr : copy_file_with_warn(work_file)
+			if not param.mce_extr : copy_file_with_warn()
 			continue
 		else :
 			mc_len_db = '%0.8X' % mc_len
@@ -1542,7 +1549,7 @@ for in_file in source :
 			
 		# Rename input file based on the DB structured name
 		if param.give_db_name :
-			mc_db_name(work_file, in_file, mc_name)
+			mc_db_name(in_file, mc_name)
 			continue
 		
 		mc_upd_chk_rsl = (cursor.execute('SELECT yyyymmdd,version FROM AMD WHERE cpuid=? AND nbdevid=? AND sbdevid=? AND nbsbrev=?',
@@ -1636,7 +1643,7 @@ for in_file in source :
 			date_chk = datetime.datetime.strptime(full_date, '%Y-%m-%d')
 		except :
 			msg_v.append(col_m + "\nWarning: Skipped VIA microcode at 0x%X, invalid Date of %s!\n" % (mc_bgn, full_date) + col_e)
-			if not param.mce_extr : copy_file_with_warn(work_file)
+			if not param.mce_extr : copy_file_with_warn()
 			continue
 		
 		# Print the Header(s)
@@ -1665,7 +1672,7 @@ for in_file in source :
 			
 		# Rename input file based on the DB structured name
 		if param.give_db_name :
-			mc_db_name(work_file, in_file, mc_name)
+			mc_db_name(in_file, mc_name)
 			continue
 		
 		mc_upd_chk_rsl = (cursor.execute('SELECT yyyymmdd,version FROM VIA WHERE cpuid=?', ('%0.8X' % cpu_id,))).fetchall()
@@ -1768,7 +1775,7 @@ for in_file in source :
 		# Check if any Reserved fields are not empty/0
 		if mc_reserved_all != 0 :
 			msg_i.append(col_m + '\nWarning: Microcode #%d has non-empty Reserved fields, please report it!' % mc_nr + col_e)
-			if not param.mce_extr : copy_file_with_warn(work_file)
+			if not param.mce_extr : copy_file_with_warn()
 		
 		mc_at_db = (cursor.execute('SELECT * FROM FSL WHERE name=? AND model=? AND major=? AND minor=? AND size=? AND checksum=?',
 				  (name, model, major, minor, '%0.8X' % mc_len, '%0.8X' % mc_chk,))).fetchone()
@@ -1788,7 +1795,7 @@ for in_file in source :
 			
 		# Rename input file based on the DB structured name
 		if param.give_db_name :
-			mc_db_name(work_file, in_file, mc_name)
+			mc_db_name(in_file, mc_name)
 			
 			continue
 		

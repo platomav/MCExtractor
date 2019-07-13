@@ -1,3 +1,8 @@
+v1.36.0
+
+Added proper Windows redirection (removed -redir parameter)
+Added duplicate check when copying files with warnings
+
 v1.35.0
 
 Changed PTable dependency to PLTable, get from pip
