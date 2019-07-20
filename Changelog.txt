@@ -1,3 +1,8 @@
+r117
+
+Intel cpuA0660_plat80_ver000000AE_2019-04-10_PRD_CBFC19AA
+Intel cpu706A0_plat01_ver00000018_2017-03-23_PRD_5990B79E
+
 v1.36.0
 
 Added proper Windows redirection (removed -redir parameter)
