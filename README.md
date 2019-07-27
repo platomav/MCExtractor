@@ -36,7 +36,7 @@ MC Extractor is a tool which parses Intel, AMD, VIA and Freescale processor micr
 - Features command line parameters to enhance functionality & assist research
 - Features user friendly messages & proper handling of unexpected code errors
 - Shows results in nice tables with colored text to signify emphasis
-- Open Source project licensed under GNU GPL v3, comment assisted code
+- Open Source project under permissive license, comment assisted code
 
 #### **A2. Microcode Repository Database**
 
@@ -89,7 +89,7 @@ MC Extractor consists of two files, the executable (MCE.exe or MCE) and the data
 
 #### **C1. Compatibility**
 
-MC Extractor should work at all Windows, Linux, macOS or BSD operating systems which have Python >= 3.6 support. Windows users who plan to use the already built/frozen/compiled binaries must make sure that they have the latest Windows Updates installed which include all required "Universal C Runtime (CRT)" libraries.
+MC Extractor should work at all Windows, Linux, macOS or BSD operating systems which have Python >= 3.7 support. Windows users who plan to use the already built/frozen/compiled binaries must make sure that they have the latest Windows Updates installed which include all required "Universal C Runtime (CRT)" libraries.
 
 #### **C2. Code Prerequisites**
 
@@ -107,7 +107,7 @@ To run MC Extractor's python script, you need to have the following 3rd party Py
 
 PyInstaller can build/freeze/compile MC Extractor at all three supported platforms, it is simple to run and gets updated often.
 
-1. Make sure Python 3.6.0 or newer is installed:
+1. Make sure Python 3.7.0 or newer is installed:
 
 > python --version
 

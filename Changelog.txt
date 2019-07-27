@@ -1,3 +1,20 @@
+v1.37.0
+
+MC Extractor is now licensed under BSD+Patent
+MC Extractor now requires Python 3.7 or newer
+Added AMD microcode CPUID 00830F detection
+Improved AMD Last Yes/No status detection
+Improved microcode repositories building
+Removed VIA Last Yes/No status detection
+
+r118
+
+Intel cpu606E1_plat01_ver00000108_2019-04-23_PRD_66444E22
+Intel cpu806EA_platC0_ver00000062_2017-04-27_PRD_F0FB43DD
+Intel cpu406E8_plat80_ver00000026_2016-04-14_PRD_36CA522E
+AMD cpu00830F10_ver0830101C_2019-05-08_8DC96EF2
+AMD cpu00830F00_ver08300027_2019-04-01_C9356B2E
+
 r117
 
 Intel cpuA0660_plat80_ver000000AE_2019-04-10_PRD_CBFC19AA
@@ -219,7 +236,7 @@ AMD cpu00870F00_ver08700003_2018-10-15_3EFCD601
 
 v1.24.6
 
-Added AMD microcode CPUID 00870F00 detection
+Added AMD microcode CPUID 00870F detection
 
 r101
 

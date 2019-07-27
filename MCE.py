@@ -6,11 +6,10 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2019 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.36.0'
+title = 'MC Extractor v1.37.0'
 
 import os
 import re
-import io
 import sys
 import zlib
 import time
@@ -44,27 +43,22 @@ elif mce_os.startswith('linux') or mce_os == 'darwin' or mce_os.find('bsd') != -
 	cl_wipe = 'clear'
 else :
 	print(col_r + '\nError: Unsupported platform "%s"!\n' % mce_os + col_e)
-	if ' -exit' not in sys.argv : input('Press enter to exit')
+	if '-exit' not in sys.argv : input('Press enter to exit')
 	colorama.deinit()
 	sys.exit(-1)
 
 # Detect Python version
 mce_py = sys.version_info
 try :
-	assert mce_py >= (3,6)
+	assert mce_py >= (3,7)
 except :
-	print(col_r + '\nError: Python >= 3.6 required, not %d.%d!\n' % (mce_py[0],mce_py[1]) + col_e)
-	if ' -exit' not in sys.argv : input('Press enter to exit')
+	print(col_r + '\nError: Python >= 3.7 required, not %d.%d!\n' % (mce_py[0],mce_py[1]) + col_e)
+	if '-exit' not in sys.argv : input('Press enter to exit')
 	colorama.deinit()
 	sys.exit(-1)
 
-# Fix Windows UTF-8 redirection
-if mce_os == 'win32' :
-	if mce_py >= (3,7) :
-		sys.stdout.reconfigure(encoding='utf-8')
-	else :
-		sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors=sys.stdout.errors,
-		newline=sys.stdout.newlines, line_buffering=sys.stdout.line_buffering, write_through=sys.stdout.write_through)
+# Fix Windows Unicode console redirection
+if mce_os == 'win32' : sys.stdout.reconfigure(encoding='utf-8')
 
 # Set ctypes Structure types
 char = ctypes.c_char
@@ -819,7 +813,7 @@ def save_mc_file(mc_path, mc_data, mc_hash) :
 			
 		with open(mc_path, 'wb') as mc_file : mc_file.write(mc_data)
 
-def mc_upd_chk_intel(mc_upd_chk_rsl, in_pl_bit, in_rel) :
+def mc_upd_chk_intel(mc_upd_chk_rsl, in_pl_bit, in_rel, in_ver) :
 	is_latest = True
 	mc_latest = None
 	
@@ -832,16 +826,16 @@ def mc_upd_chk_intel(mc_upd_chk_rsl, in_pl_bit, in_rel) :
 		db_ver = int(entry[2], 16)
 		db_rel = 'PRE' if ctypes.c_int(db_ver).value < 0 else 'PRD'
 		
-		# Same Release, Same or more Platform IDs, Newer Date, Same Date but more Platform IDs (not for -last)
+		# Same Release, Same or more Platform IDs, Newer Date, Same Date but more Platform IDs or Newer Version (not for -last)
 		if in_rel == db_rel and set(in_pl_bit).issubset(db_pl_bit) and \
 		((year < db_year or (year == db_year and (month < db_month or (month == db_month and day < db_day)))) or
-		((year,month,day) == (db_year,db_month,db_day) and len(in_pl_bit) < len(db_pl_bit)) and not param.get_last) :
+		((year,month,day) == (db_year,db_month,db_day) and (len(in_pl_bit) < len(db_pl_bit) or in_ver < db_ver) and not param.get_last)) :
 			is_latest = False
 			mc_latest = [cpu_id, db_pl_val, db_ver, db_year, db_month, db_day, db_rel]
 	
 	return is_latest, mc_latest
 	
-def mc_upd_chk(mc_upd_chk_rsl) :
+def mc_upd_chk_amd(mc_upd_chk_rsl, in_ver) :
 	is_latest = True
 	mc_latest = None
 	
@@ -851,19 +845,18 @@ def mc_upd_chk(mc_upd_chk_rsl) :
 		db_year = entry[0][:4]
 		db_ver = int(entry[1], 16)
 		
-		# Newer Date
-		if year < db_year or (year == db_year and (month < db_month or (month == db_month and day < db_day))) :
+		# Newer Date, Same Date but Newer Version (not for -last)
+		if (year < db_year or (year == db_year and (month < db_month or (month == db_month and day < db_day)))) \
+		or ((year,month,day) == (db_year,db_month,db_day) and in_ver < db_ver and not param.get_last) :
 			is_latest = False
 			mc_latest = [cpu_id, db_ver, db_year, db_month, db_day]
 	
 	return is_latest, mc_latest
 	
-def build_mc_repo(vendor, is_latest, rel_file, cpu_id) :
-	if is_latest and ((vendor == 'INTEL' and rel_file == 'PRD' and cpu_id != 0) or (vendor in ['AMD','VIA'])) :
-		repo_name = os.path.basename(in_file)
-		repo_dir = os.path.join(mce_dir, 'Repo_%s' % vendor, '')
-		if not os.path.isdir(repo_dir) : os.mkdir(repo_dir)
-		shutil.copyfile(in_file, repo_dir + repo_name)
+def build_mc_repo(vendor, mc_name) :
+	repo_dir = os.path.join(mce_dir, 'Repo_%s' % vendor, '')
+	if not os.path.isdir(repo_dir) : os.mkdir(repo_dir)
+	shutil.copyfile(in_file, repo_dir + mc_name + '.bin')
 
 def mc_table(row_col_names,header,padd) :
 	pt = prettytable.PrettyTable(row_col_names)
@@ -1125,10 +1118,10 @@ if param.get_last :
 	
 	if vendor == 'Intel' :
 		mc_upd_chk_rsl = (cursor.execute('SELECT yyyymmdd,platform,version FROM Intel WHERE cpuid=?', ('%0.8X' % cpu_id,))).fetchall()
-		is_latest, mc_latest = mc_upd_chk_intel(mc_upd_chk_rsl, intel_plat(platform), 'PRE' if ctypes.c_int(version).value < 0 else 'PRD')
+		is_latest, mc_latest = mc_upd_chk_intel(mc_upd_chk_rsl, intel_plat(platform), 'PRE' if ctypes.c_int(version).value < 0 else 'PRD', version)
 	else :
 		mc_upd_chk_rsl = (cursor.execute('SELECT yyyymmdd,version FROM AMD WHERE cpuid=?', ('%0.8X' % cpu_id,))).fetchall()
-		is_latest, mc_latest = mc_upd_chk(mc_upd_chk_rsl)
+		is_latest, mc_latest = mc_upd_chk_amd(mc_upd_chk_rsl, version)
 	
 	print('\n%s' % is_latest)
 	if vendor == 'Intel' and mc_latest :
@@ -1153,6 +1146,7 @@ pat_fcpu = re.compile(br'\x51\x45\x46\x01.{62}[\x00\x01].{5}\x00{4}.{40}\x00{4}'
 # Global Variable Initialization
 mc_latest = None
 match_list_i = None
+repo_included = []
 temp_mc_paths = []
 blob_lut_init = []
 blob_lut_done = b''
@@ -1311,11 +1305,13 @@ for in_file in source :
 		if mc_hdr_extra :
 			mc_reserved_all += (int.from_bytes(mc_hdr_extra.Reserved, 'little') + mc_hdr_extra.get_flags()[1])
 			
-			# RSA Signature cannot be validated because Hash is probably derived from Header + Decrypted Patch
+			# RSA Signature cannot be validated, Hash is probably derived from Header + Decrypted Patch (Commented out for performance)
+			"""
 			rsa_pexp = mc_hdr_extra.RSAExponent if ctypes.sizeof(mc_hdr_extra) == 0x284 else 65537 # 17 for RSA 2048-bit or 65537 for RSA 3072-bit
 			rsa_pkey = int.from_bytes(mc_hdr_extra.RSAPublicKey, 'little')
 			rsa_sign = int.from_bytes(mc_hdr_extra.RSASignature, 'little')
 			if rsa_pexp and rsa_pkey and rsa_sign : mc_sign = '%X' % pow(rsa_sign, rsa_pexp, rsa_pkey) # SHA-1 or SHA-256 or Unknown + SHA-256
+			"""
 			
 			if param.print_hdr : mc_hdr_extra.mc_print()
 		
@@ -1374,7 +1370,7 @@ for in_file in source :
 				
 				connection.commit()
 			
-				print(col_g + "\nAdded Intel: %s\n" % mc_name + col_e)
+				print(col_g + '\nAdded Intel: %s\n' % mc_name + col_e)
 			
 			continue
 			
@@ -1386,11 +1382,14 @@ for in_file in source :
 		mc_upd_chk_rsl = (cursor.execute('SELECT yyyymmdd,platform,version FROM Intel WHERE cpuid=?', ('%0.8X' % cpu_id,))).fetchall()
 		
 		# Determine if MC is Last or Outdated
-		is_latest, mc_latest = mc_upd_chk_intel(mc_upd_chk_rsl, plat_bit, rel_file)
+		is_latest, mc_latest = mc_upd_chk_intel(mc_upd_chk_rsl, plat_bit, rel_file, patch_u)
 		
 		# Build Microcode Repository (PRD & Last)
 		if param.build_repo :
-			if in_file not in temp_mc_paths : build_mc_repo('INTEL', is_latest, rel_file, cpu_id)
+			mc_repo_id = 'Intel_%0.5X_%0.2X' % (cpu_id, plat) # Unique Intel Repo Entry: CPUID + Platform
+			if in_file not in temp_mc_paths and rel_file == 'PRD' and cpu_id != 0 and is_latest and mc_repo_id not in repo_included  :
+				build_mc_repo('INTEL', mc_name)
+				repo_included.append(mc_repo_id)
 			continue
 		
 		# Prepare Microcode Blob
@@ -1402,7 +1401,6 @@ for in_file in source :
 				blob_lut_init.append([cpu_id, plat, patch_u, mc_hdr.Year, mc_hdr.Month, mc_hdr.Day, 0, mc_len, mc_chk, 0])
 				
 				blob_data += mc_data
-					
 			continue
 			
 		row = [mc_nr, '%X' % cpu_id, '%0.2X (%s)' % (plat, ','.join(map(str, plat_bit))), '%X' % patch_u, full_date, rel_file, '0x%X' % mc_len, '0x%X' % mc_bgn, no_yes[is_latest]]
@@ -1489,13 +1487,13 @@ for in_file in source :
 		except :
 			if (full_date,patch) == ('2011-13-09',0x3000027) : pass # Drunk AMD employee 1, Happy 13th month from AMD!
 			else :
-				msg_a.append(col_m + "\nWarning: Skipped AMD microcode at 0x%X, invalid Date of %s!" % (mc_bgn, full_date) + col_e)
+				msg_a.append(col_m + '\nWarning: Skipped AMD microcode at 0x%X, invalid Date of %s!' % (mc_bgn, full_date) + col_e)
 				if not param.mce_extr : copy_file_with_warn()
 				continue
 		
 		# Remove false results, based on data
 		if reading[mc_bgn + 0x40:mc_bgn + 0x44] == b'\x00' * 4 : # 0x40 has non-null data
-			msg_a.append(col_m + "\nWarning: Skipped AMD microcode at 0x%X, null data at 0x40!" % mc_bgn + col_e)
+			msg_a.append(col_m + '\nWarning: Skipped AMD microcode at 0x%X, null data at 0x40!' % mc_bgn + col_e)
 			if not param.mce_extr : copy_file_with_warn()
 			continue
 		
@@ -1512,7 +1510,7 @@ for in_file in source :
 		elif cpu_id[2:4] in ['60','61','63','66','67'] : mc_len = 0xA20
 		elif cpu_id[2:4] in ['68'] : mc_len = 0x980
 		elif cpu_id[2:4] in ['70','73'] : mc_len = 0xD60
-		elif cpu_id[2:4] in ['80','81','82','87'] : mc_len = 0xC80
+		elif cpu_id[2:4] in ['80','81','82','83','87'] : mc_len = 0xC80
 		else : mc_len = 0
 		
 		mc_data = reading[mc_bgn:mc_bgn + mc_len]
@@ -1543,7 +1541,7 @@ for in_file in source :
 				
 				connection.commit()
 				
-				print(col_g + "\nAdded AMD: %s\n" % mc_name + col_e)
+				print(col_g + '\nAdded AMD: %s\n' % mc_name + col_e)
 			
 			continue
 			
@@ -1552,15 +1550,17 @@ for in_file in source :
 			mc_db_name(in_file, mc_name)
 			continue
 		
-		mc_upd_chk_rsl = (cursor.execute('SELECT yyyymmdd,version FROM AMD WHERE cpuid=? AND nbdevid=? AND sbdevid=? AND nbsbrev=?',
-						(cpu_id, nb_id, sb_id, nbsb_rev_id,))).fetchall()
+		mc_upd_chk_rsl = (cursor.execute('SELECT yyyymmdd,version FROM AMD WHERE cpuid=?', (cpu_id,))).fetchall()
 		
 		# Determine if MC is Last or Outdated
-		is_latest, mc_latest = mc_upd_chk(mc_upd_chk_rsl)
+		is_latest, mc_latest = mc_upd_chk_amd(mc_upd_chk_rsl, patch)
 		
 		# Build Microcode Repository (Last)
 		if param.build_repo :
-			if in_file not in temp_mc_paths : build_mc_repo('AMD', is_latest, '', 0)
+			mc_repo_id = 'AMD_%s' % cpu_id # Unique AMD Repo Entry: CPUID
+			if in_file not in temp_mc_paths and is_latest and mc_repo_id not in repo_included :
+				build_mc_repo('AMD', mc_name)
+				repo_included.append(mc_repo_id)
 			continue
 		
 		# Prepare Microcode Blob
@@ -1572,7 +1572,6 @@ for in_file in source :
 				blob_lut_init.append([int(cpu_id, 16), 0, patch, int(year, 16), int(month, 16), int(day, 16), 0, mc_len, mc_file_chk, 0])
 				
 				blob_data += mc_data
-					
 			continue
 		
 		row = [mc_nr, cpu_id, '%0.8X' % patch, full_date, '0x%X' % mc_len, '0x%X' % mc_bgn, no_yes[is_latest]]
@@ -1587,7 +1586,7 @@ for in_file in source :
 			msg_a.append(col_m + '\nWarning: Microcode #%d is corrupted, please report it!' % mc_nr + col_e)
 			mc_path = '%s!Bad_%s.bin' % (mc_extract, mc_name)
 		elif mc_at_db is None :
-			msg_a.append(col_g + "\nNote: Microcode #%d was not found at the database, please report it!" % mc_nr + col_e)
+			msg_a.append(col_g + '\nNote: Microcode #%d was not found at the database, please report it!' % mc_nr + col_e)
 			mc_path = '%s!New_%s.bin' % (mc_extract, mc_name)
 		else :
 			mc_path = '%s%s.bin' % (mc_extract, mc_name)
@@ -1606,7 +1605,7 @@ for in_file in source :
 	
 	total += len(match_list_v)
 	
-	col_names = ['#', 'CPUID', 'Name', 'Revision', 'Date', 'Size', 'Offset', 'Last']
+	col_names = ['#', 'CPUID', 'Name', 'Revision', 'Date', 'Size', 'Offset']
 	
 	pt, pt_empty = mc_table(col_names, True, 1)
 	
@@ -1636,13 +1635,13 @@ for in_file in source :
 		
 		name = '%s' % mc_hdr.Name.replace(b'\x7f', b'\x2e').decode('utf-8') # Replace 0x7f "control" character with 0x2e "fullstop" instead
 		
-		full_date = "%s-%s-%s" % (year, month, day)
+		full_date = '%s-%s-%s' % (year, month, day)
 		
 		# Remove false results, based on date
 		try :
 			date_chk = datetime.datetime.strptime(full_date, '%Y-%m-%d')
 		except :
-			msg_v.append(col_m + "\nWarning: Skipped VIA microcode at 0x%X, invalid Date of %s!\n" % (mc_bgn, full_date) + col_e)
+			msg_v.append(col_m + '\nWarning: Skipped VIA microcode at 0x%X, invalid Date of %s!\n' % (mc_bgn, full_date) + col_e)
 			if not param.mce_extr : copy_file_with_warn()
 			continue
 		
@@ -1666,7 +1665,7 @@ for in_file in source :
 				
 				connection.commit()
 			
-				print(col_g + "\nAdded VIA: %s\n" % mc_name + col_e)
+				print(col_g + '\nAdded VIA: %s\n' % mc_name + col_e)
 			
 			continue
 			
@@ -1674,19 +1673,13 @@ for in_file in source :
 		if param.give_db_name :
 			mc_db_name(in_file, mc_name)
 			continue
-		
-		mc_upd_chk_rsl = (cursor.execute('SELECT yyyymmdd,version FROM VIA WHERE cpuid=?', ('%0.8X' % cpu_id,))).fetchall()
-		
-		# Determine if MC is Last or Outdated
-		is_latest, mc_latest = mc_upd_chk(mc_upd_chk_rsl)
-		
-		# Build Microcode Repository (Last)
-		if param.build_repo :
-			if in_file not in temp_mc_paths : build_mc_repo('VIA', is_latest, '', 0)
 			
+		# Build Microcode Repository (All)
+		if param.build_repo :
+			build_mc_repo('VIA', mc_name)
 			continue
 		
-		row = [mc_nr, '%X' % cpu_id, name, '%X' % patch, full_date, '0x%X' % mc_len, '0x%X' % mc_bgn, no_yes[is_latest]]
+		row = [mc_nr, '%X' % cpu_id, name, '%X' % patch, full_date, '0x%X' % mc_len, '0x%X' % mc_bgn]
 		pt.add_row(row)
 		
 		mc_data = reading[mc_bgn:mc_bgn + mc_len]
@@ -1734,8 +1727,6 @@ for in_file in source :
 		# Microcode Variable Initialization
 		mc_reserved_all = 0
 		mc_latest = None
-		
-		if param.build_repo : continue
 		
 		# noinspection PyRedeclaration
 		(mc_bgn, end_mc_match) = match_ucode.span()
@@ -1789,14 +1780,18 @@ for in_file in source :
 				
 				connection.commit()
 			
-				print(col_g + "\nAdded Freescale: %s\n" % mc_name + col_e)
+				print(col_g + '\nAdded Freescale: %s\n' % mc_name + col_e)
 			
 			continue
 			
 		# Rename input file based on the DB structured name
 		if param.give_db_name :
 			mc_db_name(in_file, mc_name)
-			
+			continue
+		
+		# Build Microcode Repository (All)
+		if param.build_repo :
+			build_mc_repo('FSL', mc_name)
 			continue
 		
 		row = [mc_nr, name, model, major, minor, '0x%X' % mc_len, '0x%X' % mc_bgn]
