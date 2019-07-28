@@ -5,7 +5,7 @@ Intel, AMD, VIA &amp; Freescale Microcode Extraction Tool
 
 [MC Extractor Discussion Topic](https://www.win-raid.com/t2199f47-MC-Extractor-Intel-AMD-VIA-amp-Freescale-Microcode-Extraction-Tool-Discussion.html)
 
-[Intel, AMD &amp; VIA CPU Microcode Repositories](https://github.com/platomav/CPUMicrocodes)
+[Intel, AMD, VIA &amp; Freescale CPU Microcode Repositories](https://github.com/platomav/CPUMicrocodes)
 
 [![MC Extractor Donation](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=DJDZD3PRGCSCL)
 
@@ -40,7 +40,7 @@ MC Extractor is a tool which parses Intel, AMD, VIA and Freescale processor micr
 
 #### **A2. Microcode Repository Database**
 
-MC Extractor allows end-users and/or researchers to quickly extract, view, convert & report new microcode versions without the use of special tools or Hex Editors. To do that effectively, a database had to be built. The [Intel, AMD &amp; VIA CPU Microcode Repositories](https://github.com/platomav/CPUMicrocodes) is a collection of every Latest Production Intel, AMD &amp; VIA CPU Microcodes we have found. Its existence is very important for MC Extractor as it allows us to continue doing research, find new types of microcode, compare releases for similarities, check for updated binaries etc. Bundled with MC Extractor is a file called MCE.db which is required for the program to run. It includes entries for all Microcode binaries that are available to us. This accommodates primarily two actions: a) Check whether the imported microcode is up to date and b) Help find new Microcode releases sooner by reporting them at the [Intel, AMD & VIA CPU Microcode Repositories Discussion](https://www.win-raid.com/t3355f47-Intel-AMD-amp-VIA-CPU-Microcode-Repositories-Discussion.html) thread.
+MC Extractor allows end-users and/or researchers to quickly extract, view, convert & report new microcode versions without the use of special tools or Hex Editors. To do that effectively, a database had to be built. The [Intel, AMD, VIA &amp; Freescale CPU Microcode Repositories](https://github.com/platomav/CPUMicrocodes) is a collection of every Latest Production Intel, AMD &amp; VIA CPU Microcodes we have found. Its existence is very important for MC Extractor as it allows us to continue doing research, find new types of microcode, compare releases for similarities, check for updated binaries etc. Bundled with MC Extractor is a file called MCE.db which is required for the program to run. It includes entries for all Microcode binaries that are available to us. This accommodates primarily two actions: a) Check whether the imported microcode is up to date and b) Help find new Microcode releases sooner by reporting them at the [Intel, AMD, VIA &amp; Freescale CPU Microcode Repositories Discussion](https://www.win-raid.com/t3355f47-Intel-AMD-VIA-amp-Freescale-CPU-Microcode-Repositories-Discussion.html) thread.
 
 #### **A3. Sources and Inspiration**
 
@@ -77,7 +77,7 @@ MC Extractor can build its own Microcode Blob (MCB) format, which combines multi
 
 ![](https://i.imgur.com/B0YOrpw.png)
 
-To build a MCE Microcode Blob (MCB.bin), input the desired Intel or AMD microcode binaries and use -blob parameter. You can use your own microcodes or find the Latest Production Intel and AMD ones at the [Intel, AMD & VIA CPU Microcodes](https://github.com/platomav/CPUMicrocodes/) repository. To extract the latest microcode from a MCB, input a single microcode binary and use -blob -search parameters. MC Extractor will validate the detected MCB, check if the microcode is already up-to-date before extracting the latest and notify accordingly.
+To build a MCE Microcode Blob (MCB.bin), input the desired Intel or AMD microcode binaries and use -blob parameter. You can use your own microcodes or find the Latest Production Intel and AMD ones at the [Intel, AMD, VIA &amp; Freescale CPU Microcodes](https://github.com/platomav/CPUMicrocodes/) repository. To extract the latest microcode from a MCB, input a single microcode binary and use -blob -search parameters. MC Extractor will validate the detected MCB, check if the microcode is already up-to-date before extracting the latest and notify accordingly.
 
 #### **B4. MC Extractor Error Control**
 

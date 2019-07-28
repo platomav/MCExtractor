@@ -1,3 +1,7 @@
+r119
+
+Added Freescale QorIQ Frame Manager microcodes
+
 v1.37.0
 
 MC Extractor is now licensed under BSD+Patent
