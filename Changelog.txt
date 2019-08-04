@@ -1,3 +1,10 @@
+r120
+
+Intel cpu706E5_plat80_ver0000002E_2019-06-20_PRD_F18AEFA1
+Intel cpu50657_platBF_ver05000029_2019-06-14_PRD_5EA7E441
+Intel cpu50654_platB7_ver02000060_2019-06-03_PRD_CFAE8439
+Intel cpu706E0_platC0_ver0000002C_2018-06-14_PRD_1470F9AE
+
 r119
 
 Added Freescale QorIQ Frame Manager microcodes
