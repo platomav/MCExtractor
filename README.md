@@ -129,6 +129,10 @@ PyInstaller can build/freeze/compile MC Extractor at all three supported platfor
 
 At dist folder you should find the final MCE executable
 
+#### **C4. Anti-Virus False Positives**
+
+Some Anti-Virus software may claim that the built/frozen/compiled MCE executable contains viruses. Any such detections are false positives, usually of PyInstaller. You can switch to a better Anti-Virus software, report the false positive to their support, add the MCE executable to the exclusions, build/freeze/compile MCE yourself or use the Python script directly.
+
 ## **D. Pictures**
 
 **Note:** Some pictures are outdated and depict older MC Extractor versions.
