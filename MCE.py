@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2019 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.37.0'
+title = 'MC Extractor v1.38.0'
 
 import os
 import re
@@ -1510,7 +1510,7 @@ for in_file in source :
 		elif cpu_id[2:4] in ['60','61','63','66','67'] : mc_len = 0xA20
 		elif cpu_id[2:4] in ['68'] : mc_len = 0x980
 		elif cpu_id[2:4] in ['70','73'] : mc_len = 0xD60
-		elif cpu_id[2:4] in ['80','81','82','83','87'] : mc_len = 0xC80
+		elif cpu_id[2:4] in ['80','81','82','83','86','87'] : mc_len = 0xC80
 		else : mc_len = 0
 		
 		mc_data = reading[mc_bgn:mc_bgn + mc_len]

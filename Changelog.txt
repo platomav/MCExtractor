@@ -1,3 +1,11 @@
+v1.38.0
+
+Added AMD microcode CPUID 00860F detection
+
+r127
+
+AMD cpu00860F00_ver08600004_2019-06-20_F17D158D
+
 r126
 
 Intel cpu50656_platBF_ver0400002B_2019-08-19_PRD_76FFC0B3
