@@ -3,10 +3,10 @@
 """
 MC Extractor
 Intel, AMD, VIA & Freescale Microcode Extractor
-Copyright (C) 2016-2019 Plato Mavropoulos
+Copyright (C) 2016-2020 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.38.0'
+title = 'MC Extractor v1.38.1'
 
 import os
 import re
@@ -1131,14 +1131,14 @@ if param.get_last :
 	
 	mce_exit(0)
 	
-# Intel - HeaderRev 01, Year 1993-2021, Day 01-31, Month 01-12, CPUID xxxxxx00, LoaderRev 00-01, PlatformIDs 000000xx, DataSize xxxxxx00, TotalSize xxxxxx00, Reserved1
-pat_icpu = re.compile(br'\x01\x00{3}.{4}(([\x00-\x21]\x20)|([\x93-\x99]\x19))[\x01-\x31][\x01-\x12].{3}\x00.{4}[\x01\x00]\x00{3}.\x00{3}.{3}\x00.{3}\x00{13}', re.DOTALL)
+# Intel - HeaderRev 01, Year 1993-2022, Day 01-31, Month 01-12, CPUID xxxxxx00, LoaderRev 00-01, PlatformIDs 000000xx, DataSize xxxxxx00, TotalSize xxxxxx00, Reserved1
+pat_icpu = re.compile(br'\x01\x00{3}.{4}(([\x00-\x22]\x20)|([\x93-\x99]\x19))[\x01-\x31][\x01-\x12].{3}\x00.{4}[\x01\x00]\x00{3}.\x00{3}.{3}\x00.{3}\x00{13}', re.DOTALL)
 
 # AMD - Year 20xx, Month 01-13, LoaderID 00-04, DataSize 00|10|20, InitFlag 00-01, NorthBridgeVEN_ID 0000|1022, SouthBridgeVEN_ID 0000|1022, BiosApiREV_ID 00-01, Reserved 00|AA
 pat_acpu = re.compile(br'\x20[\x01-\x31][\x01-\x13].{4}[\x00-\x04]\x80[\x00\x20\x10][\x00\x01].{4}((\x00{2})|(\x22\x10)).{2}((\x00{2})|(\x22\x10)).{6}[\x00\x01](\x00{3}|\xAA{3})', re.DOTALL)
 
-# VIA - Signature RRAS, Year 2006-2021 (0x07D6-0x07E5), Day 01-31, Month 01-12, LoaderRev 01, Reserved, DataSize xxxxxx00, TotalSize xxxxxx00
-pat_vcpu = re.compile(br'\x52\x52\x41\x53.{4}[\xD6-\xE5]\x07[\x01-\x1F][\x01-\x0C].{3}\x00.{4}\x01\x00{3}.\xFF{3}.{3}\x00.{3}\x00', re.DOTALL)
+# VIA - Signature RRAS, Year 2006-2022 (0x07D6-0x07E5), Day 01-31, Month 01-12, LoaderRev 01, Reserved, DataSize xxxxxx00, TotalSize xxxxxx00
+pat_vcpu = re.compile(br'\x52\x52\x41\x53.{4}[\xD6-\xE6]\x07[\x01-\x1F][\x01-\x0C].{3}\x00.{4}\x01\x00{3}.\xFF{3}.{3}\x00.{3}\x00', re.DOTALL)
 
 # Freescale - Signature QEF, HeaderRev 01, IRAM 00-01, Reserved0, Reserved1
 pat_fcpu = re.compile(br'\x51\x45\x46\x01.{62}[\x00\x01].{5}\x00{4}.{40}\x00{4}', re.DOTALL)
@@ -1483,7 +1483,7 @@ for in_file in source :
 		try :
 			date_chk = datetime.datetime.strptime(full_date, '%Y-%m-%d')
 			
-			if date_chk.year > 2021 : raise Exception('WrongDate') # 1st MC from 1999 (K7), 2000 for K7 Erratum and performance
+			if date_chk.year > 2022 : raise Exception('WrongDate') # 1st MC from 1999 (K7), 2000 for K7 Erratum and performance
 		except :
 			if (full_date,patch) == ('2011-13-09',0x3000027) : pass # Drunk AMD employee 1, Happy 13th month from AMD!
 			else :
