@@ -1,3 +1,9 @@
+r132
+
+Intel cpuA0654_plat22_ver000000C2_2019-11-13_PRD_2D6E88E1
+Intel cpuA0651_plat22_ver000000C2_2019-11-13_PRD_F3861F27
+Intel cpuA0650_plat22_ver000000BE_2019-10-10_PRD_B5D77A0C
+
 v1.38.1
 
 Increased year ranges for better future proofing
