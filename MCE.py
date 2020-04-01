@@ -131,7 +131,6 @@ class MCE_Param :
 		if self.mce_extr or self.mass_scan or self.search or self.build_repo or self.build_blob \
 		or self.get_last or self.upd_check : self.skip_intro = True
 
-# noinspection PyTypeChecker
 class Intel_MC_Header(ctypes.LittleEndianStructure) :
 	_pack_ = 1
 	_fields_ = [
@@ -174,7 +173,6 @@ class Intel_MC_Header(ctypes.LittleEndianStructure) :
 		
 		print(pt)
 
-# noinspection PyTypeChecker
 class Intel_MC_Header_Extra_R1(ctypes.LittleEndianStructure) :
 	_pack_ = 1
 	_fields_ = [
@@ -264,7 +262,6 @@ class Intel_MC_Header_Extra_R1(ctypes.LittleEndianStructure) :
 		
 		return flags.b.RSASigned, flags.b.Reserved
 		
-# noinspection PyTypeChecker
 class Intel_MC_Header_Extra_R2(ctypes.LittleEndianStructure) :
 	_pack_ = 1
 	_fields_ = [
@@ -352,21 +349,18 @@ class Intel_MC_Header_Extra_R2(ctypes.LittleEndianStructure) :
 		
 		return flags.b.RSASigned, flags.b.Reserved
 		
-# noinspection PyTypeChecker
 class Intel_MC_Header_Extra_Flags(ctypes.LittleEndianStructure):
 	_fields_ = [
 		('RSASigned', uint16_t, 1), # RSA Signature usage
 		('Reserved', uint16_t, 7)
 	]
 	
-# noinspection PyTypeChecker
 class Intel_MC_Header_Extra_GetFlags(ctypes.Union):
 	_fields_ = [
 		('b', Intel_MC_Header_Extra_Flags),
 		('asbytes', uint16_t)
 	]
 
-# noinspection PyTypeChecker
 class Intel_MC_Header_Extended(ctypes.LittleEndianStructure) :
 	_pack_ = 1
 	_fields_ = [
@@ -390,7 +384,6 @@ class Intel_MC_Header_Extended(ctypes.LittleEndianStructure) :
 		
 		print(pt)
 
-# noinspection PyTypeChecker
 class Intel_MC_Header_Extended_Field(ctypes.LittleEndianStructure) :
 	_pack_ = 1
 	_fields_ = [
@@ -412,7 +405,6 @@ class Intel_MC_Header_Extended_Field(ctypes.LittleEndianStructure) :
 		
 		print(pt)
 
-# noinspection PyTypeChecker
 class AMD_MC_Header(ctypes.LittleEndianStructure) :
 	_pack_ = 1
 	_fields_ = [
@@ -458,7 +450,6 @@ class AMD_MC_Header(ctypes.LittleEndianStructure) :
 		
 		print(pt)
 
-# noinspection PyTypeChecker
 class VIA_MC_Header(ctypes.LittleEndianStructure) :
 	_pack_ = 1
 	_fields_ = [
@@ -500,8 +491,7 @@ class VIA_MC_Header(ctypes.LittleEndianStructure) :
 		pt.add_row(['Name', self.Name.replace(b'\x7f', b'\x2e').decode('utf-8')])
 		
 		print(pt)
-
-# noinspection PyTypeChecker		
+		
 class FSL_MC_Header(ctypes.BigEndianStructure) :
 	_pack_ = 1
 	_fields_ = [
@@ -543,8 +533,7 @@ class FSL_MC_Header(ctypes.BigEndianStructure) :
 		pt.add_row(['Reserved 1', '0x%X' % self.Reserved1])
 		
 		print(pt)
-		
-# noinspection PyTypeChecker		
+				
 class FSL_MC_Entry(ctypes.BigEndianStructure) :
 	_pack_ = 1
 	_fields_ = [
@@ -582,8 +571,7 @@ class FSL_MC_Entry(ctypes.BigEndianStructure) :
 		pt.add_row(['Reserved 1', '0x%X' % self.Reserved1])
 		
 		print(pt)
-		
-# noinspection PyTypeChecker		
+				
 class MCB_Header(ctypes.LittleEndianStructure) :
 	_pack_ = 1
 	_fields_ = [
@@ -610,8 +598,7 @@ class MCB_Header(ctypes.LittleEndianStructure) :
 		pt.add_row(['Checksum', '%0.8X' % self.Checksum])
 		
 		print(pt)
-
-# noinspection PyTypeChecker		
+		
 class MCB_Entry(ctypes.LittleEndianStructure) :
 	_pack_ = 1
 	_fields_ = [
