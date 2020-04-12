@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2020 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.40.0'
+title = 'MC Extractor v1.42.0'
 
 import os
 import re
@@ -211,6 +211,7 @@ class Intel_MC_Header_Extra_R1(ctypes.LittleEndianStructure) :
 		print()
 		
 		f1,f2 = self.get_flags()
+		cpuids = self.get_cpuids()
 		
 		Reserved = int.from_bytes(self.Reserved, 'little')
 		Unknown = ''.join('%0.8X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.Unknown))
@@ -235,14 +236,7 @@ class Intel_MC_Header_Extra_R1(ctypes.LittleEndianStructure) :
 		pt.add_row(['Date', '%0.4X-%0.2X-%0.2X' % (self.Year, self.Month, self.Day)])
 		pt.add_row(['Update Size', '0x%X' % (self.UpdateSize * 4)])
 		pt.add_row(['CPU Signatures', '%d' % self.ProcessorSignatureCount])
-		if self.ProcessorSignature0 != 0 : pt.add_row(['CPUID 0', '%0.5X' % self.ProcessorSignature0])
-		if self.ProcessorSignature1 != 0 : pt.add_row(['CPUID 1', '%0.5X' % self.ProcessorSignature1])
-		if self.ProcessorSignature2 != 0 : pt.add_row(['CPUID 2', '%0.5X' % self.ProcessorSignature2])
-		if self.ProcessorSignature3 != 0 : pt.add_row(['CPUID 3', '%0.5X' % self.ProcessorSignature3])
-		if self.ProcessorSignature4 != 0 : pt.add_row(['CPUID 4', '%0.5X' % self.ProcessorSignature4])
-		if self.ProcessorSignature5 != 0 : pt.add_row(['CPUID 5', '%0.5X' % self.ProcessorSignature5])
-		if self.ProcessorSignature6 != 0 : pt.add_row(['CPUID 6', '%0.5X' % self.ProcessorSignature6])
-		if self.ProcessorSignature7 != 0 : pt.add_row(['CPUID 7', '%0.5X' % self.ProcessorSignature7])
+		[pt.add_row(['CPUID %d' % i, '%0.5X' % cpuids[i]]) for i in range(len(cpuids)) if cpuids[i] != 0]
 		if self.MultiPurpose2 == mc_hdr.PlatformIDs : pt.add_row(['Platform (MP2)', '%0.2X (%s)' % (self.MultiPurpose2, ','.join(map(str, intel_plat(mc_hdr.PlatformIDs))))])
 		elif self.MultiPurpose2 * 4 == self.UpdateSize * 4 : pt.add_row(['Update Size (MP2)', '0x%X' % (self.MultiPurpose2 * 4)])
 		elif self.MultiPurpose2 * 4 == mc_len - 0x30 : pt.add_row(['Padded Size (MP2)', '0x%X' % (self.MultiPurpose2 * 4)])
@@ -261,6 +255,10 @@ class Intel_MC_Header_Extra_R1(ctypes.LittleEndianStructure) :
 		flags.asbytes = self.Flags
 		
 		return flags.b.RSASigned, flags.b.Reserved
+		
+	def get_cpuids(self) :
+		return (self.ProcessorSignature0,self.ProcessorSignature1,self.ProcessorSignature2,self.ProcessorSignature3,
+				self.ProcessorSignature4,self.ProcessorSignature5,self.ProcessorSignature6,self.ProcessorSignature7)
 		
 class Intel_MC_Header_Extra_R2(ctypes.LittleEndianStructure) :
 	_pack_ = 1
@@ -299,6 +297,7 @@ class Intel_MC_Header_Extra_R2(ctypes.LittleEndianStructure) :
 		print()
 		
 		f1,f2 = self.get_flags()
+		cpuids = self.get_cpuids()
 		
 		Reserved = int.from_bytes(self.Reserved, 'little')
 		Unknown = ''.join('%0.8X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.Unknown))
@@ -323,14 +322,7 @@ class Intel_MC_Header_Extra_R2(ctypes.LittleEndianStructure) :
 		pt.add_row(['Date', '%0.4X-%0.2X-%0.2X' % (self.Year, self.Month, self.Day)])
 		pt.add_row(['Update Size', '0x%X' % (self.UpdateSize * 4)])
 		pt.add_row(['CPU Signatures', '%d' % self.ProcessorSignatureCount])
-		if self.ProcessorSignature0 != 0 : pt.add_row(['CPUID 0', '%0.5X' % self.ProcessorSignature0])
-		if self.ProcessorSignature1 != 0 : pt.add_row(['CPUID 1', '%0.5X' % self.ProcessorSignature1])
-		if self.ProcessorSignature2 != 0 : pt.add_row(['CPUID 2', '%0.5X' % self.ProcessorSignature2])
-		if self.ProcessorSignature3 != 0 : pt.add_row(['CPUID 3', '%0.5X' % self.ProcessorSignature3])
-		if self.ProcessorSignature4 != 0 : pt.add_row(['CPUID 4', '%0.5X' % self.ProcessorSignature4])
-		if self.ProcessorSignature5 != 0 : pt.add_row(['CPUID 5', '%0.5X' % self.ProcessorSignature5])
-		if self.ProcessorSignature6 != 0 : pt.add_row(['CPUID 6', '%0.5X' % self.ProcessorSignature6])
-		if self.ProcessorSignature7 != 0 : pt.add_row(['CPUID 7', '%0.5X' % self.ProcessorSignature7])
+		[pt.add_row(['CPUID %d' % i, '%0.5X' % cpuids[i]]) for i in range(len(cpuids)) if cpuids[i] != 0]
 		if self.MultiPurpose2 == mc_hdr.PlatformIDs : pt.add_row(['Platform (MP2)', '%0.2X (%s)' % (self.MultiPurpose2, ','.join(map(str, intel_plat(mc_hdr.PlatformIDs))))])
 		elif self.MultiPurpose2 * 4 == self.UpdateSize * 4 : pt.add_row(['Update Size (MP2)', '0x%X' % (self.MultiPurpose2 * 4)])
 		elif self.MultiPurpose2 * 4 == mc_len - 0x30 : pt.add_row(['Padded Size (MP2)', '0x%X' % (self.MultiPurpose2 * 4)])
@@ -348,6 +340,10 @@ class Intel_MC_Header_Extra_R2(ctypes.LittleEndianStructure) :
 		flags.asbytes = self.Flags
 		
 		return flags.b.RSASigned, flags.b.Reserved
+		
+	def get_cpuids(self) :
+		return (self.ProcessorSignature0,self.ProcessorSignature1,self.ProcessorSignature2,self.ProcessorSignature3,
+				self.ProcessorSignature4,self.ProcessorSignature5,self.ProcessorSignature6,self.ProcessorSignature7)
 		
 class Intel_MC_Header_Extra_Flags(ctypes.LittleEndianStructure):
 	_fields_ = [
@@ -1241,6 +1237,8 @@ for in_file in source :
 		# Microcode Variable Initialization
 		valid_ext_chk = 0
 		mc_reserved_all = 0
+		mc_cpuid_chk = True
+		mc_patch_chk = True
 		mc_latest = None
 		
 		# noinspection PyRedeclaration
@@ -1292,6 +1290,9 @@ for in_file in source :
 		if mc_hdr_extra :
 			mc_reserved_all += (int.from_bytes(mc_hdr_extra.Reserved, 'little') + mc_hdr_extra.get_flags()[1])
 			
+			if cpu_id != 0 and cpu_id not in mc_hdr_extra.get_cpuids() : mc_cpuid_chk = False
+			if patch_u != mc_hdr_extra.UpdateRevision and (cpu_id,patch_u,full_date) not in [(0x306C3,0x99,'2013-01-21'),(0x506E3,0xFF,'2016-01-05')] : mc_patch_chk = False
+			
 			# RSA Signature cannot be validated, Hash is probably derived from Header + Decrypted Patch (Commented out for performance)
 			"""
 			rsa_pexp = mc_hdr_extra.RSAExponent if ctypes.sizeof(mc_hdr_extra) == 0x284 else 65537 # 17 for RSA 2048-bit or 65537 for RSA 3072-bit
@@ -1323,6 +1324,8 @@ for in_file in source :
 				mc_hdr_ext_field = get_struct(reading, mc_ext_field_off, Intel_MC_Header_Extended_Field)
 				if param.print_hdr : mc_hdr_ext_field.mc_print()
 				
+				if mc_hdr_extra and mc_hdr_ext_field.ProcessorSignature not in mc_hdr_extra.get_cpuids() : mc_cpuid_chk = False
+				
 				ext_mc_data = bytearray(mc_data) # Duplicate main Microcode container data for Extended replacements
 				ext_mc_data[0xC:0x10] = struct.pack('<I', mc_hdr_ext_field.ProcessorSignature) # Extended CPUID
 				ext_mc_data[0x10:0x14] = struct.pack('<I', mc_hdr_ext_field.Checksum) # Extended Checksum
@@ -1343,6 +1346,16 @@ for in_file in source :
 		# Check if any Reserved fields are not empty/0
 		if mc_reserved_all != 0 :
 			msg_i.append(col_m + '\nWarning: Microcode #%d has non-empty Reserved fields, please report it!' % mc_nr + col_e)
+			if not param.mce_extr : copy_file_with_warn()
+			
+		# Check if Main and/or Extended Header CPUID is contained in the Extra Header CPUIDs 0-7 (ignore microcode containers with CPUID 0)
+		if not mc_cpuid_chk :
+			msg_i.append(col_m + '\nWarning: Microcode #%d has Header CPUID discrepancy, please report it!' % mc_nr + col_e)
+			if not param.mce_extr : copy_file_with_warn()
+		
+		# Check if Main and Extra Header UpdateRevision values are the same (ignore certain special OEM modified Main Headers)
+		if not mc_patch_chk :
+			msg_i.append(col_m + '\nWarning: Microcode #%d has Header Update Revision discrepancy, please report it!' % mc_nr + col_e)
 			if not param.mce_extr : copy_file_with_warn()
 		
 		mc_at_db = (cursor.execute('SELECT * FROM Intel WHERE cpuid=? AND platform=? AND version=? AND yyyymmdd=? AND size=? \
