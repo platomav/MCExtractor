@@ -1,3 +1,7 @@
+r141
+
+AMD cpu00870F10_ver08701021_2020-01-25_E0F8186D
+
 v1.42.0
 
 Added Intel CPUID & Update Revision Header sanity checks
