@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2020 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.42.0'
+title = 'MC Extractor v1.42.1'
 
 import os
 import re
@@ -159,12 +159,12 @@ class Intel_MC_Header(ctypes.LittleEndianStructure) :
 		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
 		
 		pt.title = col_b + 'Intel Header Main' + col_e
-		pt.add_row(['Header Version', '%d' % self.HeaderVersion])
+		pt.add_row(['Header Version', self.HeaderVersion])
 		pt.add_row(['Update Version', '%X' % self.UpdateRevision])
 		pt.add_row(['Date', '%0.4X-%0.2X-%0.2X' % (self.Year, self.Month, self.Day)])
 		pt.add_row(['CPUID', '%0.5X' % self.ProcessorSignature])
 		pt.add_row(['Checksum', '%0.8X' % self.Checksum])
-		pt.add_row(['Loader Version', '%d' % self.LoaderRevision])
+		pt.add_row(['Loader Version', self.LoaderRevision])
 		pt.add_row(['Platform', '%0.2X (%s)' % (self.PlatformIDs, ','.join(map(str, intel_plat(mc_hdr.PlatformIDs))))])
 		pt.add_row(['Reserved 0', '0x0' if Reserved0 == '00' * 3 else Reserved0])
 		pt.add_row(['Data Size', '0x%X' % self.DataSize])
@@ -221,27 +221,27 @@ class Intel_MC_Header_Extra_R1(ctypes.LittleEndianStructure) :
 		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
 		
 		pt.title = col_b + 'Intel Header Extra' + col_e
-		pt.add_row(['Module Type', '%d' % self.ModuleType])
-		pt.add_row(['Module Sub Type', '%d' % self.ModuleSubType])
+		pt.add_row(['Module Type', self.ModuleType])
+		pt.add_row(['Module Sub Type', self.ModuleSubType])
 		pt.add_row(['Module Size', '0x%X' % (self.ModuleSize * 4)])
 		pt.add_row(['RSA Signed', ['No','Yes'][f1]])
 		pt.add_row(['Flags Reserved', '{0:07b}b'.format(f2)])
 		pt.add_row(['RSA Key Size', self.RSAKeySize * 1024])
 		pt.add_row(['Update Version', '%X' % self.UpdateRevision])
-		pt.add_row(['Version Control Number', '%d' % self.VCN])
+		pt.add_row(['Version Control Number', self.VCN])
 		if self.MultiPurpose1 == mc_hdr.PlatformIDs : pt.add_row(['Platform (MP1)', '%0.2X (%s)' % (self.MultiPurpose1, ','.join(map(str, intel_plat(mc_hdr.PlatformIDs))))])
 		elif self.MultiPurpose1 * 4 == self.UpdateSize * 4 : pt.add_row(['Update Size (MP1)', '0x%X' % (self.MultiPurpose1 * 4)])
 		elif self.MultiPurpose1 * 4 == mc_len - 0x30 : pt.add_row(['Padded Size (MP1)', '0x%X' % (self.MultiPurpose1 * 4)])
 		else : pt.add_row(['Multi Purpose 1', '0x%X' % self.MultiPurpose1])
 		pt.add_row(['Date', '%0.4X-%0.2X-%0.2X' % (self.Year, self.Month, self.Day)])
 		pt.add_row(['Update Size', '0x%X' % (self.UpdateSize * 4)])
-		pt.add_row(['CPU Signatures', '%d' % self.ProcessorSignatureCount])
+		pt.add_row(['CPU Signatures', self.ProcessorSignatureCount])
 		[pt.add_row(['CPUID %d' % i, '%0.5X' % cpuids[i]]) for i in range(len(cpuids)) if cpuids[i] != 0]
 		if self.MultiPurpose2 == mc_hdr.PlatformIDs : pt.add_row(['Platform (MP2)', '%0.2X (%s)' % (self.MultiPurpose2, ','.join(map(str, intel_plat(mc_hdr.PlatformIDs))))])
 		elif self.MultiPurpose2 * 4 == self.UpdateSize * 4 : pt.add_row(['Update Size (MP2)', '0x%X' % (self.MultiPurpose2 * 4)])
 		elif self.MultiPurpose2 * 4 == mc_len - 0x30 : pt.add_row(['Padded Size (MP2)', '0x%X' % (self.MultiPurpose2 * 4)])
 		else : pt.add_row(['Multi Purpose 2', '0x%X' % self.MultiPurpose2])
-		pt.add_row(['Security Version Number', '%d' % self.SVN])
+		pt.add_row(['Security Version Number', self.SVN])
 		pt.add_row(['Reserved', '0x%X' % Reserved])
 		pt.add_row(['Unknown', '%s [...]' % Unknown[:8]])
 		pt.add_row(['RSA Public Key', '%s [...]' % RSAPublicKey[:8]])
@@ -307,27 +307,27 @@ class Intel_MC_Header_Extra_R2(ctypes.LittleEndianStructure) :
 		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
 		
 		pt.title = col_b + 'Intel Header Extra' + col_e
-		pt.add_row(['Module Type', '%d' % self.ModuleType])
-		pt.add_row(['Module Sub Type', '%d' % self.ModuleSubType])
+		pt.add_row(['Module Type', self.ModuleType])
+		pt.add_row(['Module Sub Type', self.ModuleSubType])
 		pt.add_row(['Module Size', '0x%X' % (self.ModuleSize * 4)])
 		pt.add_row(['RSA Signed', ['No','Yes'][f1]])
 		pt.add_row(['Flags Reserved', '{0:07b}b'.format(f2)])
 		pt.add_row(['RSA Key Size', self.RSAKeySize * 1024])
 		pt.add_row(['Update Version', '%X' % self.UpdateRevision])
-		pt.add_row(['Version Control Number', '%d' % self.VCN])
+		pt.add_row(['Version Control Number', self.VCN])
 		if self.MultiPurpose1 == mc_hdr.PlatformIDs : pt.add_row(['Platform (MP1)', '%0.2X (%s)' % (self.MultiPurpose1, ','.join(map(str, intel_plat(mc_hdr.PlatformIDs))))])
 		elif self.MultiPurpose1 * 4 == self.UpdateSize * 4 : pt.add_row(['Update Size (MP1)', '0x%X' % (self.MultiPurpose1 * 4)])
 		elif self.MultiPurpose1 * 4 == mc_len - 0x30 : pt.add_row(['Padded Size (MP1)', '0x%X' % (self.MultiPurpose1 * 4)])
 		else : pt.add_row(['Multi Purpose 1', '0x%X' % self.MultiPurpose1])
 		pt.add_row(['Date', '%0.4X-%0.2X-%0.2X' % (self.Year, self.Month, self.Day)])
 		pt.add_row(['Update Size', '0x%X' % (self.UpdateSize * 4)])
-		pt.add_row(['CPU Signatures', '%d' % self.ProcessorSignatureCount])
+		pt.add_row(['CPU Signatures', self.ProcessorSignatureCount])
 		[pt.add_row(['CPUID %d' % i, '%0.5X' % cpuids[i]]) for i in range(len(cpuids)) if cpuids[i] != 0]
 		if self.MultiPurpose2 == mc_hdr.PlatformIDs : pt.add_row(['Platform (MP2)', '%0.2X (%s)' % (self.MultiPurpose2, ','.join(map(str, intel_plat(mc_hdr.PlatformIDs))))])
 		elif self.MultiPurpose2 * 4 == self.UpdateSize * 4 : pt.add_row(['Update Size (MP2)', '0x%X' % (self.MultiPurpose2 * 4)])
 		elif self.MultiPurpose2 * 4 == mc_len - 0x30 : pt.add_row(['Padded Size (MP2)', '0x%X' % (self.MultiPurpose2 * 4)])
 		else : pt.add_row(['Multi Purpose 2', '0x%X' % self.MultiPurpose2])
-		pt.add_row(['Security Version Number', '%d' % self.SVN])
+		pt.add_row(['Security Version Number', self.SVN])
 		pt.add_row(['Reserved', '0x%X' % Reserved])
 		pt.add_row(['Unknown', '%s [...]' % Unknown[:8]])
 		pt.add_row(['RSA Public Key', '%s [...]' % RSAPublicKey[:8]])
@@ -374,7 +374,7 @@ class Intel_MC_Header_Extended(ctypes.LittleEndianStructure) :
 		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
 		
 		pt.title = col_b + 'Intel Header Extended' + col_e
-		pt.add_row(['Extended Signatures', '%d' % self.ExtendedSignatureCount])
+		pt.add_row(['Extended Signatures', self.ExtendedSignatureCount])
 		pt.add_row(['Extended Checksum', '%0.8X' % self.ExtendedChecksum])
 		pt.add_row(['Reserved', '0x%X' % Reserved])
 		
@@ -476,7 +476,7 @@ class VIA_MC_Header(ctypes.LittleEndianStructure) :
 		pt.add_row(['Date', '%0.4d-%0.2d-%0.2d' % (self.Year, self.Month, self.Day)])
 		pt.add_row(['CPUID', '%0.5X' % self.ProcessorSignature])
 		pt.add_row(['Checksum', '%0.8X' % self.Checksum])
-		pt.add_row(['Loader Version', '%d' % self.LoaderRevision])
+		pt.add_row(['Loader Version', self.LoaderRevision])
 		if self.CNRRevision != 0xFF :
 			pt.add_row(['CNR Revision', '001 A%d' % self.CNRRevision])
 			pt.add_row(['Reserved', reserv_str])
@@ -484,7 +484,7 @@ class VIA_MC_Header(ctypes.LittleEndianStructure) :
 			pt.add_row(['Reserved', '0xFFFFFFFF'])
 		pt.add_row(['Data Size', '0x%X' % self.DataSize])
 		pt.add_row(['Total Size', '0x%X' % self.TotalSize])
-		pt.add_row(['Name', self.Name.replace(b'\x7f', b'\x2e').decode('utf-8')])
+		pt.add_row(['Name', self.Name.replace(b'\x7F',b'\x2E').decode('utf-8').strip()])
 		
 		print(pt)
 		
@@ -516,13 +516,13 @@ class FSL_MC_Header(ctypes.BigEndianStructure) :
 		pt.title = col_y + 'Freescale Header Main' + col_e
 		pt.add_row(['Signature', self.Signature.decode('utf-8')])
 		pt.add_row(['Name', self.Name.decode('utf-8')])
-		pt.add_row(['Header Version', '%d' % self.HeaderVersion])
+		pt.add_row(['Header Version', self.HeaderVersion])
 		pt.add_row(['I-RAM', ['Shared','Split'][self.IRAM]])
-		pt.add_row(['Microcode Count', '%d' % self.CountMC])
+		pt.add_row(['Microcode Count', self.CountMC])
 		pt.add_row(['Total Size', '0x%X' % self.TotalSize])
 		pt.add_row(['SoC Model', '%0.4d' % self.Model])
-		pt.add_row(['SoC Major', '%d' % self.Major])
-		pt.add_row(['SoC Minor', '%d' % self.Minor])
+		pt.add_row(['SoC Major', self.Major])
+		pt.add_row(['SoC Minor', self.Minor])
 		pt.add_row(['Reserved 0', '0x%X' % self.Reserved0])
 		pt.add_row(['Extended Modes', '0x%X' % self.ExtendedModes])
 		pt.add_row(['Virtual Traps', vtraps_str])
@@ -560,8 +560,8 @@ class FSL_MC_Entry(ctypes.BigEndianStructure) :
 		pt.add_row(['I-RAM Offset', '0x%X' % self.IRAMOffset])
 		pt.add_row(['Code Length', '0x%X' % self.CodeLength])
 		pt.add_row(['Code Offset', '0x%X' % self.CodeOffset])
-		pt.add_row(['Major', '%d' % self.Major])
-		pt.add_row(['Minor', '%d' % self.Minor])
+		pt.add_row(['Major', self.Major])
+		pt.add_row(['Minor', self.Minor])
 		pt.add_row(['Revision', '0x%X' % self.Revision])
 		pt.add_row(['Reserved 0', '0x%X' % self.Reserved0])
 		pt.add_row(['Reserved 1', '0x%X' % self.Reserved1])
@@ -1633,7 +1633,7 @@ for in_file in source :
 		
 		mc_chk = mc_hdr.Checksum
 		
-		name = '%s' % mc_hdr.Name.replace(b'\x7f', b'\x2e').decode('utf-8') # Replace 0x7f "control" character with 0x2e "fullstop" instead
+		name = mc_hdr.Name.replace(b'\x7F',b'\x2E').decode('utf-8').strip() # Replace 0x7F "control" character with 0x2E "fullstop" instead
 		
 		full_date = '%s-%s-%s' % (year, month, day)
 		
@@ -1739,9 +1739,9 @@ for in_file in source :
 		
 		model = '%0.4d' % mc_hdr.Model
 		
-		major = '%d' % mc_hdr.Major
+		major = mc_hdr.Major
 		
-		minor = '%d' % mc_hdr.Minor
+		minor = mc_hdr.Minor
 		
 		mc_len = mc_hdr.TotalSize
 		
