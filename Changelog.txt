@@ -1,3 +1,10 @@
+r143
+
+Intel cpu706E5_plat80_ver00000080_2020-04-21_PRD_5E879DD5
+Intel cpu206D7_plat6D_ver0000071A_2020-03-24_PRD_AC8779F8
+Intel cpuA0655_plat22_ver000000CA_2020-03-12_PRD_969A3828
+Intel cpu206D6_plat6D_ver00000621_2020-03-04_PRD_7ED51E79
+
 v1.42.1
 
 Improved VIA microcode Name parsing & display
