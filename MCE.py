@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2020 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.42.1'
+title = 'MC Extractor v1.43.0'
 
 import os
 import re
@@ -68,19 +68,21 @@ uint32_t = ctypes.c_uint
 uint64_t = ctypes.c_uint64
 
 def mce_help() :
-	print('\nUsage: MCE [FilePath] {Options}\n\n{Options}\n\n\
--?      : Displays help & usage screen\n\
--skip   : Skips welcome & options screen\n\
--exit   : Skips Press enter to exit prompt\n\
--mass   : Scans all files of a given directory\n\
--info   : Displays microcode header(s)\n\
--add    : Adds new input microcode to DB\n\
--dbname : Renames input file based on DB name\n\
--search : Searches for microcodes based on CPUID\n\
--updchk : Checks for MC Extractor & DB updates\n\
--last   : Shows \"Last\" status based on user input\n\
--repo   : Builds microcode repositories from input\n\
--blob   : Builds a Microcode Blob (MCB) from input')
+	print(
+		  '\nUsage: MCE [FilePath] {Options}\n\n{Options}\n\n'
+		  '-?      : Displays help & usage screen\n'
+		  '-skip   : Skips welcome & options screen\n'
+		  '-exit   : Skips Press enter to exit prompt\n'
+		  '-mass   : Scans all files of a given directory\n'
+		  '-info   : Displays microcode header(s)\n'
+		  '-add    : Adds new input microcode to DB\n'
+		  '-dbname : Renames input file based on DB name\n'
+		  '-search : Searches for microcodes based on CPUID\n'
+		  '-updchk : Checks for MC Extractor & DB updates\n'
+		  '-last   : Shows \"Last\" status based on user input\n'
+		  '-repo   : Builds microcode repositories from input\n'
+		  '-blob   : Builds a Microcode Blob (MCB) from input'
+		  )
 	
 	mce_exit(0)
 
@@ -626,7 +628,7 @@ class MCB_Entry(ctypes.LittleEndianStructure) :
 		print(pt)
 		
 def mce_exit(code=0) :
-	if not param.mce_extr and not param.skip_pause : input("\nPress enter to exit")
+	if not param.mce_extr and not param.skip_pause : input('\nPress enter to exit')
 	
 	try :
 		cursor.close() # Close DB Cursor
@@ -672,7 +674,7 @@ def checksum32(data) :
 		chk32 += chkbt
 	
 	return -chk32 & 0xFFFFFFFF # Return 0
-
+	
 # Process ctypes Structure Classes
 def get_struct(input_stream, start_offset, class_name, param_list = None) :
 	if param_list is None : param_list = []
@@ -682,8 +684,8 @@ def get_struct(input_stream, start_offset, class_name, param_list = None) :
 	struct_data = input_stream[start_offset:start_offset + struct_len]
 	fit_len = min(len(struct_data), struct_len)
 	
-	if (start_offset > file_end) or (fit_len < struct_len) :
-		print(col_r + 'Error: Offset 0x%X out of bounds, possibly incomplete image!' % start_offset + col_e)
+	if (start_offset >= file_end) or (fit_len < struct_len) :
+		print(col_r + 'Error: Offset 0x%X out of bounds at %s, possibly incomplete image!' % (start_offset, class_name.__name__) + col_e)
 		
 		mce_exit(1)
 	
@@ -1193,23 +1195,24 @@ for in_file in source :
 			with open(in_file, 'r', encoding = 'utf-8') as in_cont :
 				
 				for line in in_cont :
+					line = line.strip('\n ')
+					
 					if type_conv == '.dat' :
-						if line[0] == '/' : continue
-						elif line[0] == ' ' : line = line[1:]
-						
-						if len(line) == 48 : # "0xjjjjjjjj,	0xjjjjjjjj,	0xjjjjjjjj,	0xjjjjjjjj,"
-							wlp = line.strip().split(',')
+						if line[0] == '/' : # Comment
+							continue
+						elif len(line) >= 47 and (line[:2],line[10:11]) == ('0x',',') : # "0xjjjjjjjj, 0xjjjjjjjj, 0xjjjjjjjj, 0xjjjjjjjj,"
+							wlp = line.split(',')
 							for i in range(0,4) :
 								wlp[i] = wlp[i].replace('\t','').replace('0x','').replace(' ','')
 								code = int.from_bytes(binascii.unhexlify(wlp[i]), 'little') # Int from BE bytes
 								mc_conv_data += bytes.fromhex('%0.8X' % code)
-						elif len(line) == 12 : # "0xjjjjjjjj,"
+						elif len(line) >= 11 and (line[:2],line[10:11]) == ('0x',',') : # "0xjjjjjjjj,"
 							wlp = str.encode(line[2:10]) # Hex string to bytes
 							wlp = int.from_bytes(binascii.unhexlify(wlp), 'little')
 							mc_conv_data += bytes.fromhex('%0.8X' % wlp)
 							
 					elif type_conv == '.inc' :
-						if len(line) >= 14 : # "bb 0jjjjjjjjh"
+						if len(line) >= 13 and (line[:4],line[12:13]) == ('dd 0','h') : # "dd 0jjjjjjjjh"
 							wlp = str.encode(line[4:12])
 							wlp = int.from_bytes(binascii.unhexlify(wlp), 'little')
 							mc_conv_data += bytes.fromhex('%0.8X' % wlp)
@@ -1823,8 +1826,13 @@ for in_file in source :
 		print(pt)
 	for msg in msg_f: print(msg)
 		
-	if mc_conv_data : print(col_y + 'Note: Detected Intel Microcode Container...' + col_e)
-	elif total == 0 : print('File does not contain CPU microcodes')
+	if mc_conv_data :
+		print(col_y + 'Note: Detected Intel Microcode Container...' + col_e)
+	elif total == 0 and in_file in temp_mc_paths :
+		print(col_r + 'Error: File should contain CPU microcodes, please report it!' + col_e)
+		if not param.mce_extr : copy_file_with_warn()
+	elif total == 0 :
+		print('File does not contain CPU microcodes')
 	
 # Remove any temporary Intel Container or Extended files
 for temp_mc in temp_mc_paths :
