@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2020 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.43.0'
+title = 'MC Extractor v1.43.1'
 
 import os
 import re
@@ -23,7 +23,7 @@ import binascii
 import datetime
 import traceback
 import prettytable
-from urllib import request
+import urllib.request
 
 # Initialize and setup Colorama
 colorama.init()
@@ -638,6 +638,7 @@ def mce_exit(code=0) :
 	colorama.deinit() # Stop Colorama
 	sys.exit(code)
 	
+# https://stackoverflow.com/a/22881871 by jfs
 def get_script_dir(follow_symlinks=True) :
 	if getattr(sys, 'frozen', False) :
 		path = os.path.abspath(sys.executable)
@@ -648,7 +649,7 @@ def get_script_dir(follow_symlinks=True) :
 
 	return os.path.dirname(path)
 
-# https://stackoverflow.com/a/781074
+# https://stackoverflow.com/a/781074 by Torsten Marek
 def show_exception_and_exit(exc_type, exc_value, tb) :
 	if exc_type is KeyboardInterrupt :
 		print('\n')
@@ -675,7 +676,7 @@ def checksum32(data) :
 	
 	return -chk32 & 0xFFFFFFFF # Return 0
 	
-# Process ctypes Structure Classes
+# https://github.com/skochinsky/me-tools/blob/master/me_unpack.py by Igor Skochinsky
 def get_struct(input_stream, start_offset, class_name, param_list = None) :
 	if param_list is None : param_list = []
 	
@@ -714,7 +715,7 @@ def mc_db_name(in_file, mc_name) :
 
 def update_check() :
 	try :
-		latest_mce = request.urlopen('https://raw.githubusercontent.com/platomav/MCExtractor/master/MCE.py').read().decode('utf-8')
+		latest_mce = urllib.request.urlopen('https://raw.githubusercontent.com/platomav/MCExtractor/master/MCE.py').read().decode('utf-8')
 		latest_mce_idx = latest_mce.find('title = \'MC Extractor v')
 		if latest_mce_idx != -1 :
 			latest_mce_ver = latest_mce[latest_mce_idx:][23:].split('\'')[0].split('_')[0]
@@ -723,7 +724,7 @@ def update_check() :
 		else :
 			raise()
 		
-		latest_db = request.urlopen('https://raw.githubusercontent.com/platomav/MCExtractor/master/MCE.db').read()
+		latest_db = urllib.request.urlopen('https://raw.githubusercontent.com/platomav/MCExtractor/master/MCE.db').read()
 		with open('__MCE_DB__.temp', 'wb') as temp_db : temp_db.write(latest_db)
 		connection_temp = sqlite3.connect('__MCE_DB__.temp')
 		cursor_temp = connection_temp.cursor()
@@ -879,32 +880,10 @@ def display_sql(cursor,title,header,padd):
 	
 	print('\n%s' % sqlr)
 	
-# MCE Version Header
-def mce_hdr() :
-	db_rev = col_r + 'Unknown' + col_e
-	db_dev = col_r + ' Unknown' + col_e
-	
-	if os.path.isfile(db_path) :
-		try :
-			connection_header = sqlite3.connect(db_path)
-			cursor_header = connection_header.cursor()
-			
-			cursor_header.execute('PRAGMA quick_check')
-			
-			hdr_res = (cursor_header.execute('SELECT revision, developer FROM MCE')).fetchone()
-			db_rev = col_y + 'r' + str(hdr_res[0]) + col_e
-			db_dev = hdr_res[1]
-		
-			if db_dev == 1 : db_dev = col_y + ' Dev' + col_e
-			else : db_dev = ''
-		
-			cursor_header.close()
-			connection_header.close()
-		except :
-			pass
-	
+def mce_hdr(hdr_title) :
 	hdr_pt,hdr_pt_empty = mc_table([], False, 1)
-	hdr_pt.add_row([col_y + '        %s' % title + col_e + ' %s%s        ' % (db_rev, db_dev)])
+	hdr_pt.add_row([col_y + '        %s        ' % hdr_title + col_e])
+	
 	print(hdr_pt)
 	
 def mass_scan(f_path) :
@@ -916,18 +895,13 @@ def mass_scan(f_path) :
 	input('\nFound %s file(s)\n\nPress enter to start' % len(mass_files))
 	
 	return mass_files
-	
+
 # Get MCE Parameters from input
 param = MCE_Param(mce_os, sys.argv)
-	
-# Actions for MCE but not UBU or UEFIStrip
+
+# Pause after any unexpected python exception
 if not param.mce_extr and not param.mce_ubu :
-	# Pause after any unexpected python exception
 	sys.excepthook = show_exception_and_exit
-	
-	# Set console/shell window title
-	if mce_os == 'win32' : ctypes.windll.kernel32.SetConsoleTitleW(title)
-	elif mce_os.startswith('linux') or mce_os == 'darwin' or mce_os.find('bsd') != -1 : sys.stdout.write('\x1b]2;' + title + '\x07')
 	
 # Get script location
 mce_dir = get_script_dir()
@@ -941,8 +915,55 @@ mcb_path = os.path.join(mce_dir, 'MCB.bin')
 # Enumerate parameter input
 arg_num = len(sys.argv)
 
+# Connect to MCE Database
+if os.path.isfile(db_path) :
+	connection = sqlite3.connect(db_path)
+	cursor = connection.cursor()
+	
+	# Validate DB health
+	try :
+		cursor.execute('PRAGMA quick_check')
+	except :
+		mce_hdr(title)
+		print(col_r + '\nError: MCE.db file is corrupted!' + col_e)
+		mce_exit(1)
+	
+	# Initialize DB, if found empty
+	cursor.execute('CREATE TABLE IF NOT EXISTS MCE(revision INTEGER DEFAULT 0, developer INTEGER DEFAULT 1, date INTEGER DEFAULT 0,\
+					minimum BLOB DEFAULT "0.0.0")')
+	cursor.execute('CREATE TABLE IF NOT EXISTS Intel(cpuid BLOB, platform BLOB, version BLOB, yyyymmdd TEXT, size BLOB, checksum BLOB)')
+	cursor.execute('CREATE TABLE IF NOT EXISTS VIA(cpuid BLOB, signature TEXT, version BLOB, yyyymmdd TEXT, size BLOB, checksum BLOB)')
+	cursor.execute('CREATE TABLE IF NOT EXISTS FSL(name TEXT, model BLOB, major BLOB, minor BLOB, size BLOB, checksum BLOB, note TEXT)')
+	cursor.execute('CREATE TABLE IF NOT EXISTS AMD(cpuid BLOB, nbdevid BLOB, sbdevid BLOB, nbsbrev BLOB, version BLOB,\
+					yyyymmdd TEXT, size BLOB, chkbody BLOB, chkmc BLOB)')
+	if not cursor.execute('SELECT EXISTS(SELECT 1 FROM MCE)').fetchone()[0] : cursor.execute('INSERT INTO MCE DEFAULT VALUES')
+	connection.commit()
+	
+	# Check for MCE & DB incompatibility
+	db_rev = (cursor.execute('SELECT revision FROM MCE')).fetchone()[0]
+	db_min = (cursor.execute('SELECT minimum FROM MCE')).fetchone()[0]
+	if not mce_is_latest(title[14:].split('_')[0].split('.')[:3], db_min.split('_')[0].split('.')[:3]) :
+		mce_hdr(title)
+		print(col_r + '\nError: DB r%d requires MCE >= v%s!' % (db_rev,db_min) + col_e)
+		mce_exit(1)
+	
+else :
+	cursor = None
+	connection = None
+	mce_hdr(title)
+	print(col_r + '\nError: MCE.db file is missing!' + col_e)
+	mce_exit(1)
+
+rev_dev = (cursor.execute('SELECT revision, developer FROM MCE')).fetchone()
+mce_title = '%s r%d%s' % (title, rev_dev[0], ' Dev' if rev_dev[1] else '')
+
+# Set console/shell window title
+if not param.mce_extr and not param.mce_ubu :
+	if mce_os == 'win32' : ctypes.windll.kernel32.SetConsoleTitleW(mce_title)
+	elif mce_os.startswith('linux') or mce_os == 'darwin' or mce_os.find('bsd') != -1 : sys.stdout.write('\x1b]2;' + mce_title + '\x07')
+
 if not param.skip_intro :
-	mce_hdr()
+	mce_hdr(mce_title)
 
 	print("\nWelcome to Intel, AMD, VIA & Freescale Microcode Extractor\n")
 
@@ -976,11 +997,11 @@ if not param.skip_intro :
 	arg_num = len(sys.argv)
 	
 	os.system(cl_wipe)
-
-	mce_hdr()
+	
+	mce_hdr(mce_title)
 
 elif not param.mce_extr and not param.get_last :
-	mce_hdr()
+	mce_hdr(mce_title)
 
 if (arg_num < 2 and not param.upd_check and not param.help_scr and not param.mass_scan
 and not param.search and not param.get_last) or param.help_scr :
@@ -991,42 +1012,6 @@ if param.mass_scan :
 	source = mass_scan(in_path)
 else :
 	source = sys.argv[1:] # Skip script/executable
-	
-# Connect to DB, if valid
-if os.path.isfile(db_path) :
-	connection = sqlite3.connect(db_path)
-	cursor = connection.cursor()
-	
-	# Validate DB health
-	try :
-		cursor.execute('PRAGMA quick_check')
-	except :
-		print(col_r + '\nError: MCE.db file is corrupted!' + col_e)
-		mce_exit(1)
-	
-	# Initialize DB, if found empty
-	cursor.execute('CREATE TABLE IF NOT EXISTS MCE(revision INTEGER DEFAULT 0, developer INTEGER DEFAULT 1, date INTEGER DEFAULT 0,\
-					minimum BLOB DEFAULT "0.0.0")')
-	cursor.execute('CREATE TABLE IF NOT EXISTS Intel(cpuid BLOB, platform BLOB, version BLOB, yyyymmdd TEXT, size BLOB, checksum BLOB)')
-	cursor.execute('CREATE TABLE IF NOT EXISTS VIA(cpuid BLOB, signature TEXT, version BLOB, yyyymmdd TEXT, size BLOB, checksum BLOB)')
-	cursor.execute('CREATE TABLE IF NOT EXISTS FSL(name TEXT, model BLOB, major BLOB, minor BLOB, size BLOB, checksum BLOB, note TEXT)')
-	cursor.execute('CREATE TABLE IF NOT EXISTS AMD(cpuid BLOB, nbdevid BLOB, sbdevid BLOB, nbsbrev BLOB, version BLOB,\
-					yyyymmdd TEXT, size BLOB, chkbody BLOB, chkmc BLOB)')
-	if not cursor.execute('SELECT EXISTS(SELECT 1 FROM MCE)').fetchone()[0] : cursor.execute('INSERT INTO MCE DEFAULT VALUES')
-	connection.commit()
-	
-	# Check for MCE & DB incompatibility
-	db_rev = (cursor.execute('SELECT revision FROM MCE')).fetchone()[0]
-	db_min = (cursor.execute('SELECT minimum FROM MCE')).fetchone()[0]
-	if not mce_is_latest(title[14:].split('_')[0].split('.')[:3], db_min.split('_')[0].split('.')[:3]) :
-		print(col_r + '\nError: DB r%d requires MCE >= v%s!' % (db_rev,db_min) + col_e)
-		mce_exit(1)
-	
-else :
-	cursor = None
-	connection = None
-	print(col_r + '\nError: MCE.db file is missing!' + col_e)
-	mce_exit(1)
 	
 if param.upd_check : update_check()
 
