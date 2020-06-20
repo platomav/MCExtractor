@@ -1,3 +1,8 @@
+r150
+
+Intel cpu706E5_plat80_ver00000086_2020-05-05_PRD_781DD3AD
+AMD cpu00860F01_ver08600104_2020-05-26_6D414322
+
 v1.43.1
 
 Applied various code fixes & improvements
