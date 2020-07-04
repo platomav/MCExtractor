@@ -1,3 +1,13 @@
+v1.44.0
+
+Improved UEFI BIOS Updater (UBU) integration
+
+r153
+
+Intel cpu706E5_plat80_ver00000096_2020-06-16_PRD_4A457385
+Intel cpu906EA_plat22_ver00000068_2017-06-01_PRD_C64052A0
+Intel cpu50665_plat10_ver0E000003_2017-03-10_PRD_3DC0B4E7
+
 r152
 
 Improvements

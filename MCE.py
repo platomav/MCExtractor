@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2020 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.43.1'
+title = 'MC Extractor v1.44.0'
 
 import os
 import re
@@ -635,7 +635,9 @@ def mce_exit(code=0) :
 		connection.close() # Close DB Connection
 	except :
 		pass
+	
 	colorama.deinit() # Stop Colorama
+	
 	sys.exit(code)
 	
 # https://stackoverflow.com/a/22881871 by jfs
@@ -688,7 +690,7 @@ def get_struct(input_stream, start_offset, class_name, param_list = None) :
 	if (start_offset >= file_end) or (fit_len < struct_len) :
 		print(col_r + 'Error: Offset 0x%X out of bounds at %s, possibly incomplete image!' % (start_offset, class_name.__name__) + col_e)
 		
-		mce_exit(1)
+		mce_exit(-1)
 	
 	ctypes.memmove(ctypes.addressof(structure), struct_data, fit_len)
 	
@@ -715,44 +717,55 @@ def mc_db_name(in_file, mc_name) :
 
 def update_check() :
 	try :
-		latest_mce = urllib.request.urlopen('https://raw.githubusercontent.com/platomav/MCExtractor/master/MCE.py').read().decode('utf-8')
-		latest_mce_idx = latest_mce.find('title = \'MC Extractor v')
-		if latest_mce_idx != -1 :
-			latest_mce_ver = latest_mce[latest_mce_idx:][23:].split('\'')[0].split('_')[0]
-			script_mce_ver = title[14:].split('_')[0]
-			mce_is_upd = mce_is_latest(script_mce_ver.split('.')[:3], latest_mce_ver.split('.')[:3])
+		latest_py = urllib.request.urlopen('https://raw.githubusercontent.com/platomav/MCExtractor/master/MCE.py').read()
+		latest_py_utf = latest_py.decode('utf-8')
+		latest_py_idx = latest_py_utf.find('title = \'MC Extractor v')
+		if latest_py_idx != -1 :
+			latest_py_ver = latest_py_utf[latest_py_idx:][23:].split('\'')[0].split('_')[0]
+			script_py_ver = title[14:].split('_')[0]
+			py_is_upd = mce_is_latest(script_py_ver.split('.')[:3], latest_py_ver.split('.')[:3])
 		else :
 			raise()
 		
 		latest_db = urllib.request.urlopen('https://raw.githubusercontent.com/platomav/MCExtractor/master/MCE.db').read()
-		with open('__MCE_DB__.temp', 'wb') as temp_db : temp_db.write(latest_db)
-		connection_temp = sqlite3.connect('__MCE_DB__.temp')
+		with open('MCE.db.temp', 'wb') as temp_db : temp_db.write(latest_db)
+		connection_temp = sqlite3.connect('MCE.db.temp')
 		cursor_temp = connection_temp.cursor()
 		cursor_temp.execute('PRAGMA quick_check')
 		latest_db_rev = (cursor_temp.execute('SELECT revision FROM MCE')).fetchone()[0]
 		cursor_temp.close()
 		connection_temp.close()
-		if os.path.isfile('__MCE_DB__.temp') : os.remove('__MCE_DB__.temp')
+		if os.path.isfile('MCE.db.temp') : os.remove('MCE.db.temp')
 		
 		script_db_rev = (cursor.execute('SELECT revision FROM MCE')).fetchone()[0]
 		db_is_upd = True if script_db_rev >= latest_db_rev else False
 		
 		pt, pt_empty = mc_table(['#','Current','Latest','Updated'], True, 1)
 		pt.title = col_y + 'MC Extractor & DB Update Check' + col_e
-		pt.add_row(['MCE', script_mce_ver, latest_mce_ver, col_g + 'Yes' + col_e if mce_is_upd else col_r + 'No' + col_e])
+		pt.add_row(['MCE', script_py_ver, latest_py_ver, col_g + 'Yes' + col_e if py_is_upd else col_r + 'No' + col_e])
 		pt.add_row(['DB', script_db_rev, latest_db_rev, col_g + 'Yes' + col_e if db_is_upd else col_r + 'No' + col_e])
 		print('\n%s' % pt)
 		
 		mce_github = 'Download the latest from https://github.com/platomav/MCExtractor/'
-		if mce_is_upd and db_is_upd : print(col_g + '\nMC Extractor & Database are up to date!' + col_e)
-		elif not mce_is_upd and not db_is_upd : print(col_m + '\nMC Extractor & Database are outdated!\n\n%s' % mce_github + col_e)
-		elif not mce_is_upd : print(col_m + '\nMC Extractor is outdated!\n\n%s' % mce_github + col_e)
-		elif not db_is_upd : print(col_m + '\nMC Extractor Database is outdated!\n\n%s' % mce_github + col_e)
+		if py_is_upd and db_is_upd :
+			print(col_g + '\nMC Extractor & Database are up to date!' + col_e)
+			
+			mce_exit(0)
+		else :
+			if not py_is_upd and not db_is_upd : print(col_m + '\nMC Extractor & Database are outdated!\n\n%s' % mce_github + col_e)
+			elif not py_is_upd : print(col_m + '\nMC Extractor is outdated!\n\n%s' % mce_github + col_e)
+			elif not db_is_upd : print(col_m + '\nMC Extractor Database is outdated!\n\n%s' % mce_github + col_e)
+			
+			if param.mce_ubu :
+				with open('MCE.py.temp', 'wb') as temp_py : temp_py.write(latest_py)
+				with open('MCE.db.temp', 'wb') as temp_db : temp_db.write(latest_db)
+			
+			mce_exit(1)
 	
-	except :
+	except Exception :
 		print(col_r + '\nError: Failed to check for MC Extractor & Database updates!' + col_e)
-	
-	mce_exit(0)
+		
+		mce_exit(-1)
 	
 def mce_is_latest(ver_before, ver_after) :
 	# ver_before/ver_after = [X.X.X]
@@ -926,7 +939,7 @@ if os.path.isfile(db_path) :
 	except :
 		mce_hdr(title)
 		print(col_r + '\nError: MCE.db file is corrupted!' + col_e)
-		mce_exit(1)
+		mce_exit(-1)
 	
 	# Initialize DB, if found empty
 	cursor.execute('CREATE TABLE IF NOT EXISTS MCE(revision INTEGER DEFAULT 0, developer INTEGER DEFAULT 1, date INTEGER DEFAULT 0,\
@@ -945,14 +958,14 @@ if os.path.isfile(db_path) :
 	if not mce_is_latest(title[14:].split('_')[0].split('.')[:3], db_min.split('_')[0].split('.')[:3]) :
 		mce_hdr(title)
 		print(col_r + '\nError: DB r%d requires MCE >= v%s!' % (db_rev,db_min) + col_e)
-		mce_exit(1)
+		mce_exit(-1)
 	
 else :
 	cursor = None
 	connection = None
 	mce_hdr(title)
 	print(col_r + '\nError: MCE.db file is missing!' + col_e)
-	mce_exit(1)
+	mce_exit(-1)
 
 rev_dev = (cursor.execute('SELECT revision, developer FROM MCE')).fetchone()
 mce_title = '%s r%d%s' % (title, rev_dev[0], ' Dev' if rev_dev[1] else '')
@@ -1026,7 +1039,7 @@ if param.search and not param.build_blob :
 		cpu_id = '%0.8X' % int(cpu_id, 16)
 	except :
 		print(col_r + '\nError: Invalid CPUID (Intel, AMD, VIA) or Model (FSL)!' + col_e)
-		mce_exit(1)
+		mce_exit(-1)
 	
 	res_i = cursor.execute('SELECT cpuid,platform,version,yyyymmdd,size FROM Intel WHERE cpuid=? ORDER BY yyyymmdd DESC', (cpu_id,))
 	display_sql(res_i, col_b + 'Intel' + col_e, True, 1)
@@ -1040,7 +1053,7 @@ if param.search and not param.build_blob :
 	res_f = cursor.execute('SELECT name,model,major,minor,size,note FROM FSL WHERE model=? ORDER BY name DESC', (cpu_id,))
 	display_sql(res_f, col_y + 'Freescale' + col_e, True, 1)
 	
-	mce_exit()
+	mce_exit(0)
 	
 # Detect latest Intel or AMD microcode via user input
 # Can be used with currently loaded microcode info from OS
@@ -1069,7 +1082,7 @@ if param.get_last :
 		platform = int(platform, 16) # Microcode IDs or System ID (i.e. 0x12 = 1,4 or 0x02 = 1 or 0x10 = 4)
 	except :
 		print(col_r + '\nError: Invalid Vendor, CPUID, Version or Platform!' + col_e)
-		mce_exit(1)
+		mce_exit(-1)
 	
 	# The input microcode date is required for Latest check, get it from DB
 	# The Latest AMD check is inaccurate for 2002-2003 microcodes due to lack of NB ID & Rev
@@ -1080,7 +1093,7 @@ if param.get_last :
 	
 	if not date :
 		print(col_r + '\nError: %s CPUID %0.8X Version %0.8X not found in DB!' % (vendor, cpu_id, version) + col_e)
-		mce_exit(2)
+		mce_exit(-1)
 	
 	day = date[0][0][6:8]
 	month = date[0][0][4:6]
@@ -1123,11 +1136,20 @@ blob_lut_done = b''
 blob_data = b''
 blob_count = 0
 cur_count = 0
+mc_nr = 0
 in_count = len(source)
 for arg in source :
 	if arg in param.val : in_count -= 1
 	
 for in_file in source :
+	
+	if not os.path.isfile(in_file) :
+		if any(p in in_file for p in param.val) : continue
+		
+		print(col_r + '\nError: file %s was not found!' % in_file + col_e)
+		
+		if not param.mass_scan : mce_exit(-1)
+		else : continue
 	
 	# File Variable Initialization
 	mc_nr = 0
@@ -1144,14 +1166,6 @@ for in_file in source :
 	mc_conv_data = b''
 	no_yes = [col_r + 'No' + col_e,col_g + 'Yes' + col_e]
 	cur_count += 1
-	
-	if not os.path.isfile(in_file) :
-		if any(p in in_file for p in param.val) : continue
-		
-		print(col_r + '\nError: file %s was not found!' % in_file + col_e)
-		
-		if not param.mass_scan : mce_exit(1)
-		else : continue
 	
 	if not param.mce_extr and not param.mce_ubu :
 		if in_file in temp_mc_paths : print(col_c + '\n%s\n' % os.path.basename(in_file) + col_e)
@@ -1911,5 +1925,5 @@ elif param.build_blob :
 		mc_blob.write(blob_data)
 		
 	print(col_g + 'Created MCE Microcode Blob (MCB)!' + col_e)
-		
-mce_exit(0)
+
+mce_exit(mc_nr if param.mce_ubu else 0)
