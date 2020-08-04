@@ -1,3 +1,11 @@
+v1.45.0
+
+Improved handling of known OEM/User modified microcodes
+
+r155
+
+AMD cpu00860F01_ver08600106_2020-06-19_ACE2511D
+
 r154
 
 VIA cpu10690_ver00000001_sig[BJ_10690_020]_2018-07-26_0C55F25D

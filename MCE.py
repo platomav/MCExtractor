@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2020 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.44.0'
+title = 'MC Extractor v1.45.0'
 
 import os
 import re
@@ -776,6 +776,13 @@ def mce_is_latest(ver_before, ver_after) :
 	else :
 		return False
 	
+def chk_mc_mod(mc_nr, msg_vendor, mc_is_mod, mc_db_note) :
+	if mc_is_mod == 1 :
+		mod_info = ' (%s)' % mc_db_note if mc_db_note != '' else ''
+		msg_vendor.append(col_y + "\nNote: Microcode #%d has an OEM/User modified header%s!" % (mc_nr, mod_info) + col_e)
+	
+	return msg_vendor
+	
 def db_new_MCE() :
 	db_is_dev = (cursor.execute('SELECT developer FROM MCE')).fetchone()[0]
 	db_rev_now = (cursor.execute('SELECT revision FROM MCE')).fetchone()[0]
@@ -812,7 +819,7 @@ def save_mc_file(mc_path, mc_data, mc_hash) :
 			
 		with open(mc_path, 'wb') as mc_file : mc_file.write(mc_data)
 
-def mc_upd_chk_intel(mc_upd_chk_rsl, in_pl_bit, in_rel, in_ver) :
+def mc_upd_chk_intel(mc_upd_chk_rsl, in_pl_bit, in_rel, in_ver, in_mod) :
 	is_latest = True
 	mc_latest = None
 	
@@ -832,9 +839,11 @@ def mc_upd_chk_intel(mc_upd_chk_rsl, in_pl_bit, in_rel, in_ver) :
 			is_latest = False
 			mc_latest = [cpu_id, db_pl_val, db_ver, db_year, db_month, db_day, db_rel]
 	
+	if in_mod == 1 : is_latest = False # Modded input microcodes should not be shown as Latest
+	
 	return is_latest, mc_latest
 	
-def mc_upd_chk_amd(mc_upd_chk_rsl, in_ver) :
+def mc_upd_chk_amd(mc_upd_chk_rsl, in_ver, in_mod) :
 	is_latest = True
 	mc_latest = None
 	
@@ -849,6 +858,8 @@ def mc_upd_chk_amd(mc_upd_chk_rsl, in_ver) :
 		or ((year,month,day) == (db_year,db_month,db_day) and in_ver < db_ver and not param.get_last) :
 			is_latest = False
 			mc_latest = [cpu_id, db_ver, db_year, db_month, db_day]
+			
+	if in_mod == 1 : is_latest = False # Modded input microcodes should not be shown as Latest
 	
 	return is_latest, mc_latest
 	
@@ -942,22 +953,26 @@ if os.path.isfile(db_path) :
 		mce_exit(-1)
 	
 	# Initialize DB, if found empty
-	cursor.execute('CREATE TABLE IF NOT EXISTS MCE(revision INTEGER DEFAULT 0, developer INTEGER DEFAULT 1, date INTEGER DEFAULT 0,\
+	cursor.execute('CREATE TABLE IF NOT EXISTS MCE(revision INTEGER DEFAULT 0, developer INTEGER DEFAULT 1, date INTEGER DEFAULT 0, \
 					minimum BLOB DEFAULT "0.0.0")')
-	cursor.execute('CREATE TABLE IF NOT EXISTS Intel(cpuid BLOB, platform BLOB, version BLOB, yyyymmdd TEXT, size BLOB, checksum BLOB)')
-	cursor.execute('CREATE TABLE IF NOT EXISTS VIA(cpuid BLOB, signature TEXT, version BLOB, yyyymmdd TEXT, size BLOB, checksum BLOB)')
-	cursor.execute('CREATE TABLE IF NOT EXISTS FSL(name TEXT, model BLOB, major BLOB, minor BLOB, size BLOB, checksum BLOB, note TEXT)')
-	cursor.execute('CREATE TABLE IF NOT EXISTS AMD(cpuid BLOB, nbdevid BLOB, sbdevid BLOB, nbsbrev BLOB, version BLOB,\
-					yyyymmdd TEXT, size BLOB, chkbody BLOB, chkmc BLOB)')
+	cursor.execute('CREATE TABLE IF NOT EXISTS Intel(cpuid BLOB, platform BLOB, version BLOB, yyyymmdd TEXT, size BLOB, checksum BLOB, \
+					modded INTEGER DEFAULT 0, notes TEXT DEFAULT "")')
+	cursor.execute('CREATE TABLE IF NOT EXISTS VIA(cpuid BLOB, signature TEXT, version BLOB, yyyymmdd TEXT, size BLOB, checksum BLOB, \
+					modded INTEGER DEFAULT 0, notes TEXT DEFAULT "")')
+	cursor.execute('CREATE TABLE IF NOT EXISTS FSL(name TEXT, model BLOB, major BLOB, minor BLOB, size BLOB, checksum BLOB, \
+					modded INTEGER DEFAULT 0, notes TEXT DEFAULT "")')
+	cursor.execute('CREATE TABLE IF NOT EXISTS AMD(cpuid BLOB, nbdevid BLOB, sbdevid BLOB, nbsbrev BLOB, version BLOB, \
+					yyyymmdd TEXT, size BLOB, chkbody BLOB, chkmc BLOB, modded INTEGER DEFAULT 0, notes TEXT DEFAULT "")')
 	if not cursor.execute('SELECT EXISTS(SELECT 1 FROM MCE)').fetchone()[0] : cursor.execute('INSERT INTO MCE DEFAULT VALUES')
 	connection.commit()
 	
 	# Check for MCE & DB incompatibility
 	db_rev = (cursor.execute('SELECT revision FROM MCE')).fetchone()[0]
+	db_dev = ['','Dev'][(cursor.execute('SELECT developer FROM MCE')).fetchone()[0]]
 	db_min = (cursor.execute('SELECT minimum FROM MCE')).fetchone()[0]
 	if not mce_is_latest(title[14:].split('_')[0].split('.')[:3], db_min.split('_')[0].split('.')[:3]) :
 		mce_hdr(title)
-		print(col_r + '\nError: DB r%d requires MCE >= v%s!' % (db_rev,db_min) + col_e)
+		print(col_r + '\nError: DB r%d %s requires MCE >= v%s!' % (db_rev, db_dev, db_min) + col_e)
 		mce_exit(-1)
 	
 else :
@@ -1041,16 +1056,16 @@ if param.search and not param.build_blob :
 		print(col_r + '\nError: Invalid CPUID (Intel, AMD, VIA) or Model (FSL)!' + col_e)
 		mce_exit(-1)
 	
-	res_i = cursor.execute('SELECT cpuid,platform,version,yyyymmdd,size FROM Intel WHERE cpuid=? ORDER BY yyyymmdd DESC', (cpu_id,))
+	res_i = cursor.execute('SELECT cpuid,platform,version,yyyymmdd,size,modded,notes FROM Intel WHERE cpuid=? ORDER BY yyyymmdd DESC', (cpu_id,))
 	display_sql(res_i, col_b + 'Intel' + col_e, True, 1)
 	
-	res_a = cursor.execute('SELECT cpuid,version,yyyymmdd,size FROM AMD WHERE cpuid=? ORDER BY yyyymmdd DESC', (cpu_id,))
+	res_a = cursor.execute('SELECT cpuid,version,yyyymmdd,size,modded,notes FROM AMD WHERE cpuid=? ORDER BY yyyymmdd DESC', (cpu_id,))
 	display_sql(res_a, col_r + 'AMD' + col_e, True, 1)
 	
-	res_v = cursor.execute('SELECT cpuid,signature,version,yyyymmdd,size FROM VIA WHERE cpuid=? ORDER BY yyyymmdd DESC', (cpu_id,))
+	res_v = cursor.execute('SELECT cpuid,signature,version,yyyymmdd,size,modded,notes FROM VIA WHERE cpuid=? ORDER BY yyyymmdd DESC', (cpu_id,))
 	display_sql(res_v, col_c + 'VIA' + col_e, True, 1)
 	
-	res_f = cursor.execute('SELECT name,model,major,minor,size,note FROM FSL WHERE model=? ORDER BY name DESC', (cpu_id,))
+	res_f = cursor.execute('SELECT name,model,major,minor,size,modded,notes FROM FSL WHERE model=? ORDER BY name DESC', (cpu_id,))
 	display_sql(res_f, col_y + 'Freescale' + col_e, True, 1)
 	
 	mce_exit(0)
@@ -1100,11 +1115,11 @@ if param.get_last :
 	year = date[0][0][:4]
 	
 	if vendor == 'Intel' :
-		mc_upd_chk_rsl = (cursor.execute('SELECT yyyymmdd,platform,version FROM Intel WHERE cpuid=?', ('%0.8X' % cpu_id,))).fetchall()
-		is_latest, mc_latest = mc_upd_chk_intel(mc_upd_chk_rsl, intel_plat(platform), 'PRE' if ctypes.c_int(version).value < 0 else 'PRD', version)
+		mc_upd_chk_rsl = (cursor.execute('SELECT yyyymmdd,platform,version FROM Intel WHERE cpuid=? AND modded=?', ('%0.8X' % cpu_id,0,))).fetchall()
+		is_latest, mc_latest = mc_upd_chk_intel(mc_upd_chk_rsl, intel_plat(platform), 'PRE' if ctypes.c_int(version).value < 0 else 'PRD', version, 0)
 	else :
-		mc_upd_chk_rsl = (cursor.execute('SELECT yyyymmdd,version FROM AMD WHERE cpuid=?', ('%0.8X' % cpu_id,))).fetchall()
-		is_latest, mc_latest = mc_upd_chk_amd(mc_upd_chk_rsl, version)
+		mc_upd_chk_rsl = (cursor.execute('SELECT yyyymmdd,version FROM AMD WHERE cpuid=? AND modded=?', ('%0.8X' % cpu_id,0,))).fetchall()
+		is_latest, mc_latest = mc_upd_chk_amd(mc_upd_chk_rsl, version, 0)
 	
 	print('\n%s' % is_latest)
 	if vendor == 'Intel' and mc_latest :
@@ -1363,6 +1378,9 @@ for in_file in source :
 		mc_at_db = (cursor.execute('SELECT * FROM Intel WHERE cpuid=? AND platform=? AND version=? AND yyyymmdd=? AND size=? \
 					AND checksum=?', ('%0.8X' % cpu_id, '%0.8X' % plat, '%0.8X' % patch_u, year + month + day, '%0.8X' % mc_len, '%0.8X' % mc_chk,))).fetchone()
 		
+		# Check if Microcode is marked as OEM/User modified in DB
+		msg_i = chk_mc_mod(mc_nr, msg_i, mc_at_db[6], mc_at_db[7])
+		
 		if param.build_db :
 			if mc_at_db is None and in_file not in temp_mc_paths :
 				db_new_MCE()
@@ -1381,10 +1399,10 @@ for in_file in source :
 			if in_file not in temp_mc_paths : mc_db_name(in_file, mc_name)
 			continue
 		
-		mc_upd_chk_rsl = (cursor.execute('SELECT yyyymmdd,platform,version FROM Intel WHERE cpuid=?', ('%0.8X' % cpu_id,))).fetchall()
+		mc_upd_chk_rsl = (cursor.execute('SELECT yyyymmdd,platform,version FROM Intel WHERE cpuid=? AND modded=?', ('%0.8X' % cpu_id,0,))).fetchall()
 		
 		# Determine if MC is Last or Outdated
-		is_latest, mc_latest = mc_upd_chk_intel(mc_upd_chk_rsl, plat_bit, rel_file, patch_u)
+		is_latest, mc_latest = mc_upd_chk_intel(mc_upd_chk_rsl, plat_bit, rel_file, patch_u, mc_at_db[6])
 		
 		# Build Microcode Repository (PRD & Last)
 		if param.build_repo :
@@ -1530,16 +1548,19 @@ for in_file in source :
 			mc_len_db = '%0.8X' % mc_len
 		
 		mc_at_db = (cursor.execute('SELECT * FROM AMD WHERE cpuid=? AND nbdevid=? AND sbdevid=? AND nbsbrev=? AND version=? \
-								AND yyyymmdd=? AND size=? AND chkbody=? AND chkmc=?', (cpu_id, nb_id, sb_id, nbsb_rev_id,
-								'%0.8X' % patch, year + month + day, mc_len_db, '%0.8X' % mc_chk, '%0.8X' % mc_file_chk, ))).fetchone()
+									AND yyyymmdd=? AND size=? AND chkbody=? AND chkmc=?', (cpu_id, nb_id, sb_id, nbsb_rev_id,
+									'%0.8X' % patch, year + month + day, mc_len_db, '%0.8X' % mc_chk, '%0.8X' % mc_file_chk, ))).fetchone()
+		
+		# Check if Microcode is marked as OEM/User modified in DB
+		msg_a = chk_mc_mod(mc_nr, msg_a, mc_at_db[9], mc_at_db[10])
 		
 		if param.build_db :
 			if mc_at_db is None :
 				db_new_MCE()
 				
 				cursor.execute('INSERT INTO AMD (cpuid, nbdevid, sbdevid, nbsbrev, version, yyyymmdd, size, chkbody, chkmc) \
-							VALUES (?,?,?,?,?,?,?,?,?)', (cpu_id, nb_id, sb_id, nbsb_rev_id, '%0.8X' % patch, year + month + day,
-							mc_len_db, '%0.8X' % mc_chk, '%0.8X' % mc_file_chk))
+								VALUES (?,?,?,?,?,?,?,?,?)', (cpu_id, nb_id, sb_id, nbsb_rev_id, '%0.8X' % patch, year + month + day,
+								mc_len_db, '%0.8X' % mc_chk, '%0.8X' % mc_file_chk))
 				
 				connection.commit()
 				
@@ -1555,7 +1576,7 @@ for in_file in source :
 		mc_upd_chk_rsl = (cursor.execute('SELECT yyyymmdd,version FROM AMD WHERE cpuid=?', (cpu_id,))).fetchall()
 		
 		# Determine if MC is Last or Outdated
-		is_latest, mc_latest = mc_upd_chk_amd(mc_upd_chk_rsl, patch)
+		is_latest, mc_latest = mc_upd_chk_amd(mc_upd_chk_rsl, patch, mc_at_db[9])
 		
 		# Build Microcode Repository (Last)
 		if param.build_repo :
@@ -1657,6 +1678,9 @@ for in_file in source :
 		
 		mc_at_db = (cursor.execute('SELECT * FROM VIA WHERE cpuid=? AND signature=? AND version=? AND yyyymmdd=? AND size=? AND checksum=?',
 				  ('%0.8X' % cpu_id, name, '%0.8X' % patch, year + month + day, '%0.8X' % mc_len, '%0.8X' % mc_chk,))).fetchone()
+		
+		# Check if Microcode is marked as OEM/User modified in DB
+		msg_v = chk_mc_mod(mc_nr, msg_v, mc_at_db[6], mc_at_db[7])
 		
 		if param.build_db :
 			if mc_at_db is None :
@@ -1772,6 +1796,9 @@ for in_file in source :
 		
 		mc_at_db = (cursor.execute('SELECT * FROM FSL WHERE name=? AND model=? AND major=? AND minor=? AND size=? AND checksum=?',
 				  (name, model, major, minor, '%0.8X' % mc_len, '%0.8X' % mc_chk,))).fetchone()
+		
+		# Check if Microcode is marked as OEM/User modified in DB
+		msg_f = chk_mc_mod(mc_nr, msg_f, mc_at_db[6], mc_at_db[7])
 		
 		if param.build_db :
 			if mc_at_db is None :
