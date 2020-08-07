@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2020 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.45.0'
+title = 'MC Extractor v1.45.1'
 
 import os
 import re
@@ -776,10 +776,9 @@ def mce_is_latest(ver_before, ver_after) :
 	else :
 		return False
 	
-def chk_mc_mod(mc_nr, msg_vendor, mc_is_mod, mc_db_note) :
-	if mc_is_mod == 1 :
-		mod_info = ' (%s)' % mc_db_note if mc_db_note != '' else ''
-		msg_vendor.append(col_y + "\nNote: Microcode #%d has an OEM/User modified header%s!" % (mc_nr, mod_info) + col_e)
+def chk_mc_mod(mc_nr, msg_vendor, mc_db_note) :
+	mod_info = ' (%s)' % mc_db_note if mc_db_note != '' else ''
+	msg_vendor.append(col_y + "\nNote: Microcode #%d has an OEM/User modified header%s!" % (mc_nr, mod_info) + col_e)
 	
 	return msg_vendor
 	
@@ -1379,7 +1378,8 @@ for in_file in source :
 					AND checksum=?', ('%0.8X' % cpu_id, '%0.8X' % plat, '%0.8X' % patch_u, year + month + day, '%0.8X' % mc_len, '%0.8X' % mc_chk,))).fetchone()
 		
 		# Check if Microcode is marked as OEM/User modified in DB
-		msg_i = chk_mc_mod(mc_nr, msg_i, mc_at_db[6], mc_at_db[7])
+		mc_is_mod = mc_at_db[6] if mc_at_db else 0
+		if mc_at_db and mc_is_mod : msg_i = chk_mc_mod(mc_nr, msg_i, mc_at_db[7])
 		
 		if param.build_db :
 			if mc_at_db is None and in_file not in temp_mc_paths :
@@ -1402,7 +1402,7 @@ for in_file in source :
 		mc_upd_chk_rsl = (cursor.execute('SELECT yyyymmdd,platform,version FROM Intel WHERE cpuid=? AND modded=?', ('%0.8X' % cpu_id,0,))).fetchall()
 		
 		# Determine if MC is Last or Outdated
-		is_latest, mc_latest = mc_upd_chk_intel(mc_upd_chk_rsl, plat_bit, rel_file, patch_u, mc_at_db[6])
+		is_latest, mc_latest = mc_upd_chk_intel(mc_upd_chk_rsl, plat_bit, rel_file, patch_u, mc_is_mod)
 		
 		# Build Microcode Repository (PRD & Last)
 		if param.build_repo :
@@ -1552,7 +1552,8 @@ for in_file in source :
 									'%0.8X' % patch, year + month + day, mc_len_db, '%0.8X' % mc_chk, '%0.8X' % mc_file_chk, ))).fetchone()
 		
 		# Check if Microcode is marked as OEM/User modified in DB
-		msg_a = chk_mc_mod(mc_nr, msg_a, mc_at_db[9], mc_at_db[10])
+		mc_is_mod = mc_at_db[9] if mc_at_db else 0
+		if mc_at_db and mc_is_mod : msg_a = chk_mc_mod(mc_nr, msg_a, mc_at_db[10])
 		
 		if param.build_db :
 			if mc_at_db is None :
@@ -1576,7 +1577,7 @@ for in_file in source :
 		mc_upd_chk_rsl = (cursor.execute('SELECT yyyymmdd,version FROM AMD WHERE cpuid=?', (cpu_id,))).fetchall()
 		
 		# Determine if MC is Last or Outdated
-		is_latest, mc_latest = mc_upd_chk_amd(mc_upd_chk_rsl, patch, mc_at_db[9])
+		is_latest, mc_latest = mc_upd_chk_amd(mc_upd_chk_rsl, patch, mc_is_mod)
 		
 		# Build Microcode Repository (Last)
 		if param.build_repo :
@@ -1680,7 +1681,8 @@ for in_file in source :
 				  ('%0.8X' % cpu_id, name, '%0.8X' % patch, year + month + day, '%0.8X' % mc_len, '%0.8X' % mc_chk,))).fetchone()
 		
 		# Check if Microcode is marked as OEM/User modified in DB
-		msg_v = chk_mc_mod(mc_nr, msg_v, mc_at_db[6], mc_at_db[7])
+		mc_is_mod = mc_at_db[6] if mc_at_db else 0
+		if mc_at_db and mc_is_mod : msg_v = chk_mc_mod(mc_nr, msg_v, mc_at_db[7])
 		
 		if param.build_db :
 			if mc_at_db is None :
@@ -1798,7 +1800,8 @@ for in_file in source :
 				  (name, model, major, minor, '%0.8X' % mc_len, '%0.8X' % mc_chk,))).fetchone()
 		
 		# Check if Microcode is marked as OEM/User modified in DB
-		msg_f = chk_mc_mod(mc_nr, msg_f, mc_at_db[6], mc_at_db[7])
+		mc_is_mod = mc_at_db[6] if mc_at_db else 0
+		if mc_at_db and mc_is_mod : msg_f = chk_mc_mod(mc_nr, msg_f, mc_at_db[7])
 		
 		if param.build_db :
 			if mc_at_db is None :

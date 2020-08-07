@@ -1,3 +1,7 @@
+v1.45.1
+
+Fixed crash when handling microcodes missing from the DB
+
 v1.45.0
 
 Improved handling of known OEM/User modified microcodes
