@@ -1131,7 +1131,7 @@ if param.get_last :
 # Intel - HeaderRev 01, Year 1993-2022, Day 01-31, Month 01-12, CPUID xxxxxx00, LoaderRev 00-01, PlatformIDs 000000xx, DataSize xxxxxx00, TotalSize xxxxxx00, Reserved1
 pat_icpu = re.compile(br'\x01\x00{3}.{4}(([\x00-\x22]\x20)|([\x93-\x99]\x19))[\x01-\x31][\x01-\x12].{3}\x00.{4}[\x01\x00]\x00{3}.\x00{3}.{3}\x00.{3}\x00{13}', re.DOTALL)
 
-# AMD - Year 20xx, Month 01-13, LoaderID 00-04, DataSize 00|10|20, InitFlag 00-01, NorthBridgeVEN_ID 0000|1022, SouthBridgeVEN_ID 0000|1022, BiosApiREV_ID 00-01, Reserved 00|AA
+# AMD - Year 20xx, Month 01-13, LoaderID 00-05, DataSize 00|10|20, InitFlag 00-01, NorthBridgeVEN_ID 0000|1022, SouthBridgeVEN_ID 0000|1022, BiosApiREV_ID 00-01, Reserved 00|AA
 pat_acpu = re.compile(br'\x20[\x01-\x31][\x01-\x13].{4}[\x00-\x05]\x80[\x00\x20\x10][\x00\x01].{4}((\x00{2})|(\x22\x10)).{2}((\x00{2})|(\x22\x10)).{6}[\x00\x01](\x00{3}|\xAA{3})', re.DOTALL)
 
 # VIA - Signature RRAS, Year 2006-2022 (0x07D6-0x07E5), Day 01-31, Month 01-12, LoaderRev 01, Reserved, DataSize xxxxxx00, TotalSize xxxxxx00
