@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2020 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.46.0'
+title = 'MC Extractor v1.46.1'
 
 import os
 import re

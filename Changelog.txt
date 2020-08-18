@@ -1,6 +1,10 @@
+v1.46.1
+
+Added AMD microcode CPUID 00850Fxx detection (#37)
+
 v1.46.0
 
-Added AMD Family 19h (Zen 3) microcode detection
+Added AMD Family 19h (Zen 3) microcode detection (#36)
 Fixed known OEM/User modified microcodes display
 
 r156
