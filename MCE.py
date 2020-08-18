@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2020 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.45.1'
+title = 'MC Extractor v1.46.0'
 
 import os
 import re
@@ -1377,9 +1377,7 @@ for in_file in source :
 		mc_at_db = (cursor.execute('SELECT * FROM Intel WHERE cpuid=? AND platform=? AND version=? AND yyyymmdd=? AND size=? \
 					AND checksum=?', ('%0.8X' % cpu_id, '%0.8X' % plat, '%0.8X' % patch_u, year + month + day, '%0.8X' % mc_len, '%0.8X' % mc_chk,))).fetchone()
 		
-		# Check if Microcode is marked as OEM/User modified in DB
-		mc_is_mod = mc_at_db[6] if mc_at_db else 0
-		if mc_at_db and mc_is_mod : msg_i = chk_mc_mod(mc_nr, msg_i, mc_at_db[7])
+		mc_is_mod = mc_at_db[6] if mc_at_db else 0 # Get microcode modded state
 		
 		if param.build_db :
 			if mc_at_db is None and in_file not in temp_mc_paths :
@@ -1422,7 +1420,10 @@ for in_file in source :
 				
 				blob_data += mc_data
 			continue
-			
+
+		# Check if Microcode is marked as OEM/User modified in DB
+		if mc_at_db and mc_is_mod : msg_i = chk_mc_mod(mc_nr, msg_i, mc_at_db[7])
+		
 		row = [mc_nr, '%X' % cpu_id, '%0.2X (%s)' % (plat, ','.join(map(str, plat_bit))), '%X' % patch_u, full_date, rel_file, '0x%X' % mc_len, '0x%X' % mc_bgn, no_yes[is_latest]]
 		pt.add_row(row)
 		
@@ -1531,7 +1532,7 @@ for in_file in source :
 		elif cpu_id[2:4] in ['68'] : mc_len = 0x980
 		elif cpu_id[2:4] in ['70','73'] : mc_len = 0xD60
 		elif cpu_id[2:4] in ['80','81','82','83','86','87'] : mc_len = 0xC80
-		elif cpu_id[2:4] in ['A0', 'A2', 'A5'] : mc_len = 0x15C0
+		elif cpu_id[2:4] in ['A0','A2','A5'] : mc_len = 0x15C0
 		else : mc_len = 0
 
 		mc_data = reading[mc_bgn:mc_bgn + mc_len]
@@ -1552,9 +1553,7 @@ for in_file in source :
 									AND yyyymmdd=? AND size=? AND chkbody=? AND chkmc=?', (cpu_id, nb_id, sb_id, nbsb_rev_id,
 									'%0.8X' % patch, year + month + day, mc_len_db, '%0.8X' % mc_chk, '%0.8X' % mc_file_chk, ))).fetchone()
 		
-		# Check if Microcode is marked as OEM/User modified in DB
-		mc_is_mod = mc_at_db[9] if mc_at_db else 0
-		if mc_at_db and mc_is_mod : msg_a = chk_mc_mod(mc_nr, msg_a, mc_at_db[10])
+		mc_is_mod = mc_at_db[9] if mc_at_db else 0 # Get microcode modded state
 		
 		if param.build_db :
 			if mc_at_db is None :
@@ -1598,6 +1597,9 @@ for in_file in source :
 				
 				blob_data += mc_data
 			continue
+		
+		# Check if Microcode is marked as OEM/User modified in DB
+		if mc_at_db and mc_is_mod : msg_a = chk_mc_mod(mc_nr, msg_a, mc_at_db[10])
 		
 		row = [mc_nr, cpu_id, '%0.8X' % patch, full_date, '0x%X' % mc_len, '0x%X' % mc_bgn, no_yes[is_latest]]
 		pt.add_row(row)
@@ -1681,9 +1683,7 @@ for in_file in source :
 		mc_at_db = (cursor.execute('SELECT * FROM VIA WHERE cpuid=? AND signature=? AND version=? AND yyyymmdd=? AND size=? AND checksum=?',
 				  ('%0.8X' % cpu_id, name, '%0.8X' % patch, year + month + day, '%0.8X' % mc_len, '%0.8X' % mc_chk,))).fetchone()
 		
-		# Check if Microcode is marked as OEM/User modified in DB
-		mc_is_mod = mc_at_db[6] if mc_at_db else 0
-		if mc_at_db and mc_is_mod : msg_v = chk_mc_mod(mc_nr, msg_v, mc_at_db[7])
+		mc_is_mod = mc_at_db[6] if mc_at_db else 0 # Get microcode modded state
 		
 		if param.build_db :
 			if mc_at_db is None :
@@ -1707,6 +1707,9 @@ for in_file in source :
 		if param.build_repo :
 			build_mc_repo('VIA', mc_name)
 			continue
+		
+		# Check if Microcode is marked as OEM/User modified in DB
+		if mc_at_db and mc_is_mod : msg_v = chk_mc_mod(mc_nr, msg_v, mc_at_db[7])
 		
 		row = [mc_nr, '%X' % cpu_id, name, '%X' % patch, full_date, '0x%X' % mc_len, '0x%X' % mc_bgn]
 		pt.add_row(row)
@@ -1800,9 +1803,7 @@ for in_file in source :
 		mc_at_db = (cursor.execute('SELECT * FROM FSL WHERE name=? AND model=? AND major=? AND minor=? AND size=? AND checksum=?',
 				  (name, model, major, minor, '%0.8X' % mc_len, '%0.8X' % mc_chk,))).fetchone()
 		
-		# Check if Microcode is marked as OEM/User modified in DB
-		mc_is_mod = mc_at_db[6] if mc_at_db else 0
-		if mc_at_db and mc_is_mod : msg_f = chk_mc_mod(mc_nr, msg_f, mc_at_db[7])
+		mc_is_mod = mc_at_db[6] if mc_at_db else 0 # Get microcode modded state
 		
 		if param.build_db :
 			if mc_at_db is None :
@@ -1826,6 +1827,9 @@ for in_file in source :
 		if param.build_repo :
 			build_mc_repo('FSL', mc_name)
 			continue
+		
+		# Check if Microcode is marked as OEM/User modified in DB
+		if mc_at_db and mc_is_mod : msg_f = chk_mc_mod(mc_nr, msg_f, mc_at_db[7])
 		
 		row = [mc_nr, name, model, major, minor, '0x%X' % mc_len, '0x%X' % mc_bgn]
 		pt.add_row(row)

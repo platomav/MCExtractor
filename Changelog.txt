@@ -1,3 +1,13 @@
+v1.46.0
+
+Added AMD Family 19h (Zen 3) microcode detection
+Fixed known OEM/User modified microcodes display
+
+r156
+
+Intel cpuA0661_plat80_ver000000C8_2020-01-29_PRD_5455215F
+AMD cpu00800F12_ver0800126C_2020-06-19_62745CFB
+
 v1.45.1
 
 Fixed crash when handling microcodes missing from the DB
