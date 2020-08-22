@@ -6,7 +6,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2020 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.46.1'
+title = 'MC Extractor v1.48.0'
 
 import os
 import re
@@ -288,8 +288,10 @@ class Intel_MC_Header_Extra_R2(ctypes.LittleEndianStructure) :
 		('ProcessorSignature7',		  uint32_t),    # 0x40
 		('MultiPurpose2',      	      uint32_t),    # 0x44 dwords from Extra + encrypted padding, UpdateSize, Platform, Empty
 		('SVN',     				  uint32_t),    # 0x48 Security Version Number
-		('Reserved',                  uint32_t*5),  # 0x4C Reserved (00000000)
-		('Unknown',                   uint32_t*8),  # 0x60
+		('Unknown0',     			  uint32_t),    # 0x4C
+		('Unknown1',     			  uint32_t),    # 0x50
+		('Reserved',                  uint32_t*3),  # 0x5 Reserved (00000000)
+		('Unknown2',                  uint32_t*8),  # 0x60
 		('RSAPublicKey',              uint32_t*96), # 0x80 Exponent is 0x10001 (65537)
 		('RSASignature',              uint32_t*96), # 0x200 0x33 --> 0x13 = Unknown + 0x20 = SHA-256
 		# 0x380
@@ -302,7 +304,7 @@ class Intel_MC_Header_Extra_R2(ctypes.LittleEndianStructure) :
 		cpuids = self.get_cpuids()
 		
 		Reserved = int.from_bytes(self.Reserved, 'little')
-		Unknown = ''.join('%0.8X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.Unknown))
+		Unknown2 = ''.join('%0.8X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.Unknown2))
 		RSAPublicKey = ''.join('%0.8X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.RSAPublicKey))
 		RSASignature = ''.join('%0.8X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.RSASignature))
 		
@@ -330,8 +332,10 @@ class Intel_MC_Header_Extra_R2(ctypes.LittleEndianStructure) :
 		elif self.MultiPurpose2 * 4 == mc_len - 0x30 : pt.add_row(['Padded Size (MP2)', '0x%X' % (self.MultiPurpose2 * 4)])
 		else : pt.add_row(['Multi Purpose 2', '0x%X' % self.MultiPurpose2])
 		pt.add_row(['Security Version Number', self.SVN])
+		pt.add_row(['Unknown 0', '0x%X' % self.Unknown0])
+		pt.add_row(['Unknown 1', '0x%X' % self.Unknown1])
 		pt.add_row(['Reserved', '0x%X' % Reserved])
-		pt.add_row(['Unknown', '%s [...]' % Unknown[:8]])
+		pt.add_row(['Unknown 2', '%s [...]' % Unknown2[:8]])
 		pt.add_row(['RSA Public Key', '%s [...]' % RSAPublicKey[:8]])
 		pt.add_row(['RSA Signature', '%s [...]' % RSASignature[:8]])
 		
@@ -708,10 +712,11 @@ def intel_plat(cpuflags) :
 			
 	return platforms
 
-def mc_db_name(in_file, mc_name) :
-	new_dir_name = os.path.join(os.path.dirname(in_file), mc_name + '.bin')
+def mc_db_name(in_file, mc_name, mc_nr) :
+	new_file_name = os.path.join(os.path.dirname(in_file), mc_name + '.bin')
 	
-	if not os.path.exists(new_dir_name) : os.rename(in_file, new_dir_name)
+	if mc_nr == 2 : print(col_m + 'Warning: This file includes multiple microcodes!' + col_e)
+	elif not os.path.isfile(new_file_name) : os.replace(in_file, new_file_name)
 	elif os.path.basename(in_file) == mc_name + '.bin' : pass
 	else : print(col_r + 'Error: A file with the same name already exists!' + col_e)
 
@@ -780,6 +785,13 @@ def chk_mc_mod(mc_nr, msg_vendor, mc_db_note) :
 	mod_info = ' (%s)' % mc_db_note if mc_db_note != '' else ''
 	msg_vendor.append(col_y + "\nNote: Microcode #%d has an OEM/User modified header%s!" % (mc_nr, mod_info) + col_e)
 	
+	return msg_vendor
+	
+def chk_mc_cross(match_ucode_idx, match_list_vendor, msg_vendor, mc_nr, mc_bgn, mc_len) :
+	if match_ucode_idx + 1 in range(len(match_list_vendor)) and match_list_vendor[match_ucode_idx + 1].start() < mc_bgn + mc_len :
+		msg_vendor.append(col_m + '\nWarning: Microcode #%d is crossing over to the next microcode(s), please report it!' % mc_nr + col_e)
+		if not param.mce_extr : copy_file_with_warn()
+		
 	return msg_vendor
 	
 def db_new_MCE() :
@@ -1131,8 +1143,8 @@ if param.get_last :
 # Intel - HeaderRev 01, Year 1993-2022, Day 01-31, Month 01-12, CPUID xxxxxx00, LoaderRev 00-01, PlatformIDs 000000xx, DataSize xxxxxx00, TotalSize xxxxxx00, Reserved1
 pat_icpu = re.compile(br'\x01\x00{3}.{4}(([\x00-\x22]\x20)|([\x93-\x99]\x19))[\x01-\x31][\x01-\x12].{3}\x00.{4}[\x01\x00]\x00{3}.\x00{3}.{3}\x00.{3}\x00{13}', re.DOTALL)
 
-# AMD - Year 20xx, Month 01-13, LoaderID 00-05, DataSize 00|10|20, InitFlag 00-01, NorthBridgeVEN_ID 0000|1022, SouthBridgeVEN_ID 0000|1022, BiosApiREV_ID 00-01, Reserved 00|AA
-pat_acpu = re.compile(br'\x20[\x01-\x31][\x01-\x13].{4}[\x00-\x05]\x80[\x00\x20\x10][\x00\x01].{4}((\x00{2})|(\x22\x10)).{2}((\x00{2})|(\x22\x10)).{6}[\x00\x01](\x00{3}|\xAA{3})', re.DOTALL)
+# AMD - Year 20xx, Month 01-13, LoaderID 00-06, DataSize 00|10|20, InitFlag 00-01, NorthBridgeVEN_ID 0000|1022, SouthBridgeVEN_ID 0000|1022, BiosApiREV_ID 00-01, Reserved 00|AA
+pat_acpu = re.compile(br'\x20[\x01-\x31][\x01-\x13].{4}[\x00-\x06]\x80[\x00\x20\x10][\x00\x01].{4}((\x00{2})|(\x22\x10)).{2}((\x00{2})|(\x22\x10)).{6}[\x00\x01](\x00{3}|\xAA{3})', re.DOTALL)
 
 # VIA - Signature RRAS, Year 2006-2022 (0x07D6-0x07E5), Day 01-31, Month 01-12, LoaderRev 01, Reserved, DataSize xxxxxx00, TotalSize xxxxxx00
 pat_vcpu = re.compile(br'\x52\x52\x41\x53.{4}[\xD6-\xE6]\x07[\x01-\x1F][\x01-\x0C].{3}\x00.{4}\x01\x00{3}.{7}\x00.{3}\x00', re.DOTALL)
@@ -1248,7 +1260,7 @@ for in_file in source :
 	
 	pt, pt_empty = mc_table(col_names, True, 1)
 	
-	for match_ucode in match_list_i :
+	for match_ucode_idx in range(len(match_list_i)) :
 		
 		# Microcode Variable Initialization
 		valid_ext_chk = 0
@@ -1258,7 +1270,7 @@ for in_file in source :
 		mc_latest = None
 		
 		# noinspection PyRedeclaration
-		(mc_bgn, end_mc_match) = match_ucode.span()
+		(mc_bgn, end_mc_match) = match_list_i[match_ucode_idx].span()
 		
 		mc_hdr = get_struct(reading, mc_bgn, Intel_MC_Header)
 		
@@ -1374,6 +1386,9 @@ for in_file in source :
 			msg_i.append(col_m + '\nWarning: Microcode #%d has Header Update Revision discrepancy, please report it!' % mc_nr + col_e)
 			if not param.mce_extr : copy_file_with_warn()
 		
+		# Check if Microcode crosses over to the next one(s), when applicable
+		msg_i = chk_mc_cross(match_ucode_idx, match_list_i, msg_i, mc_nr, mc_bgn, mc_len)
+		
 		mc_at_db = (cursor.execute('SELECT * FROM Intel WHERE cpuid=? AND platform=? AND version=? AND yyyymmdd=? AND size=? \
 					AND checksum=?', ('%0.8X' % cpu_id, '%0.8X' % plat, '%0.8X' % patch_u, year + month + day, '%0.8X' % mc_len, '%0.8X' % mc_chk,))).fetchone()
 		
@@ -1394,7 +1409,7 @@ for in_file in source :
 			
 		# Rename input file based on the DB structured name
 		if param.give_db_name :
-			if in_file not in temp_mc_paths : mc_db_name(in_file, mc_name)
+			if in_file not in temp_mc_paths : mc_db_name(in_file, mc_name, mc_nr)
 			continue
 		
 		mc_upd_chk_rsl = (cursor.execute('SELECT yyyymmdd,platform,version FROM Intel WHERE cpuid=? AND modded=?', ('%0.8X' % cpu_id,0,))).fetchall()
@@ -1438,6 +1453,9 @@ for in_file in source :
 			else :
 				msg_i.append(col_m + '\nWarning: Microcode #%d is corrupted, please report it!' % mc_nr + col_e)
 				mc_path = '%s!Bad_%s.bin' % (mc_extract, mc_name)
+		elif len(mc_data) < mc_len :
+			msg_i.append(col_m + '\nWarning: Microcode #%d is truncated, please report it!' % mc_nr + col_e)
+			mc_path = '%s!Bad_%s.bin' % (mc_extract, mc_name)
 		elif mc_at_db is None :
 			msg_i.append(col_g + "\nNote: Microcode #%d was not found at the database, please report it!" % mc_nr + col_e)
 			mc_path = '%s!New_%s.bin' % (mc_extract, mc_name)
@@ -1462,13 +1480,13 @@ for in_file in source :
 	
 	pt, pt_empty = mc_table(col_names, True, 1)
 	
-	for match_ucode in match_list_a :
+	for match_ucode_idx in range(len(match_list_a)) :
 		
 		# Microcode Variable Initialization
 		mc_latest = None
 		
 		# noinspection PyRedeclaration
-		(mc_bgn, end_mc_match) = match_ucode.span()
+		(mc_bgn, end_mc_match) = match_list_a[match_ucode_idx].span()
 		
 		mc_bgn -= 1 # Pattern starts from 2nd byte for performance (Year 20xx in BE)
 		
@@ -1549,6 +1567,9 @@ for in_file in source :
 		else :
 			mc_len_db = '%0.8X' % mc_len
 		
+		# Check if Microcode crosses over to the next one(s), when applicable
+		msg_a = chk_mc_cross(match_ucode_idx, match_list_a, msg_a, mc_nr, mc_bgn, mc_len)
+		
 		mc_at_db = (cursor.execute('SELECT * FROM AMD WHERE cpuid=? AND nbdevid=? AND sbdevid=? AND nbsbrev=? AND version=? \
 									AND yyyymmdd=? AND size=? AND chkbody=? AND chkmc=?', (cpu_id, nb_id, sb_id, nbsb_rev_id,
 									'%0.8X' % patch, year + month + day, mc_len_db, '%0.8X' % mc_chk, '%0.8X' % mc_file_chk, ))).fetchone()
@@ -1571,7 +1592,7 @@ for in_file in source :
 			
 		# Rename input file based on the DB structured name
 		if param.give_db_name :
-			mc_db_name(in_file, mc_name)
+			if in_file not in temp_mc_paths : mc_db_name(in_file, mc_name, mc_nr)
 			continue
 		
 		mc_upd_chk_rsl = (cursor.execute('SELECT yyyymmdd,version FROM AMD WHERE cpuid=?', (cpu_id,))).fetchall()
@@ -1612,6 +1633,9 @@ for in_file in source :
 		if int(cpu_id[2:4], 16) < 0x50 and (valid_chk + mc_chk) & 0xFFFFFFFF != 0 :
 			msg_a.append(col_m + '\nWarning: Microcode #%d is corrupted, please report it!' % mc_nr + col_e)
 			mc_path = '%s!Bad_%s.bin' % (mc_extract, mc_name)
+		elif len(mc_data) < mc_len :
+			msg_a.append(col_m + '\nWarning: Microcode #%d is truncated, please report it!' % mc_nr + col_e)
+			mc_path = '%s!Bad_%s.bin' % (mc_extract, mc_name)
 		elif mc_at_db is None :
 			msg_a.append(col_g + '\nNote: Microcode #%d was not found at the database, please report it!' % mc_nr + col_e)
 			mc_path = '%s!New_%s.bin' % (mc_extract, mc_name)
@@ -1636,13 +1660,13 @@ for in_file in source :
 	
 	pt, pt_empty = mc_table(col_names, True, 1)
 	
-	for match_ucode in match_list_v :
+	for match_ucode_idx in range(len(match_list_v)) :
 		
 		# Microcode Variable Initialization
 		mc_latest = None
 		
 		# noinspection PyRedeclaration
-		(mc_bgn, end_mc_match) = match_ucode.span()
+		(mc_bgn, end_mc_match) = match_list_v[match_ucode_idx].span()
 		
 		mc_hdr = get_struct(reading, mc_bgn, VIA_MC_Header)
 		
@@ -1680,6 +1704,9 @@ for in_file in source :
 		mc_name = 'cpu%0.5X_ver%0.8X_sig[%s]_%s_%0.8X' % (cpu_id, patch, name, full_date, mc_chk)
 		mc_nr += 1
 		
+		# Check if Microcode crosses over to the next one(s), when applicable
+		msg_v = chk_mc_cross(match_ucode_idx, match_list_v, msg_v, mc_nr, mc_bgn, mc_len)
+		
 		mc_at_db = (cursor.execute('SELECT * FROM VIA WHERE cpuid=? AND signature=? AND version=? AND yyyymmdd=? AND size=? AND checksum=?',
 				  ('%0.8X' % cpu_id, name, '%0.8X' % patch, year + month + day, '%0.8X' % mc_len, '%0.8X' % mc_chk,))).fetchone()
 		
@@ -1700,7 +1727,7 @@ for in_file in source :
 			
 		# Rename input file based on the DB structured name
 		if param.give_db_name :
-			mc_db_name(in_file, mc_name)
+			if in_file not in temp_mc_paths : mc_db_name(in_file, mc_name, mc_nr)
 			continue
 			
 		# Build Microcode Repository (All)
@@ -1730,6 +1757,9 @@ for in_file in source :
 			else :
 				msg_v.append(col_m + '\nWarning: Microcode #%d is corrupted, please report it!\n' % mc_nr + col_e)
 				mc_path = '%s!Bad_%s.bin' % (mc_extract, mc_name)
+		elif len(mc_data) < mc_len :
+			msg_v.append(col_m + '\nWarning: Microcode #%d is truncated, please report it!\n' % mc_nr + col_e)
+			mc_path = '%s!Bad_%s.bin' % (mc_extract, mc_name)
 		elif mc_at_db is None :
 			msg_v.append(col_g + '\nNote: Microcode #%d was not found at the database, please report it!\n' % mc_nr + col_e)
 			mc_path = '%s!New_%s.bin' % (mc_extract, mc_name)
@@ -1754,14 +1784,14 @@ for in_file in source :
 	
 	pt, pt_empty = mc_table(col_names, True, 1)
 	
-	for match_ucode in match_list_f :
+	for match_ucode_idx in range(len(match_list_f)) :
 		
 		# Microcode Variable Initialization
 		mc_reserved_all = 0
 		mc_latest = None
 		
 		# noinspection PyRedeclaration
-		(mc_bgn, end_mc_match) = match_ucode.span()
+		(mc_bgn, end_mc_match) = match_list_f[match_ucode_idx].span()
 		
 		mc_bgn -= 4 # Pattern starts from 5th byte for performance (Signature QEF)
 		
@@ -1797,8 +1827,11 @@ for in_file in source :
 		
 		# Check if any Reserved fields are not empty/0
 		if mc_reserved_all != 0 :
-			msg_i.append(col_m + '\nWarning: Microcode #%d has non-empty Reserved fields, please report it!' % mc_nr + col_e)
+			msg_f.append(col_m + '\nWarning: Microcode #%d has non-empty Reserved fields, please report it!' % mc_nr + col_e)
 			if not param.mce_extr : copy_file_with_warn()
+		
+		# Check if Microcode crosses over to the next one(s), when applicable
+		msg_f = chk_mc_cross(match_ucode_idx, match_list_f, msg_f, mc_nr, mc_bgn, mc_len)
 		
 		mc_at_db = (cursor.execute('SELECT * FROM FSL WHERE name=? AND model=? AND major=? AND minor=? AND size=? AND checksum=?',
 				  (name, model, major, minor, '%0.8X' % mc_len, '%0.8X' % mc_chk,))).fetchone()
@@ -1820,7 +1853,7 @@ for in_file in source :
 			
 		# Rename input file based on the DB structured name
 		if param.give_db_name :
-			mc_db_name(in_file, mc_name)
+			if in_file not in temp_mc_paths : mc_db_name(in_file, mc_name, mc_nr)
 			continue
 		
 		# Build Microcode Repository (All)
@@ -1845,6 +1878,9 @@ for in_file in source :
 		
 		if calc_crc != mc_chk :
 			msg_f.append(col_m + '\nWarning: Microcode #%d is corrupted, please report it!\n' % mc_nr + col_e)
+			mc_path = '%s!Bad_%s.bin' % (mc_extract, mc_name)
+		elif len(mc_data) < mc_len :
+			msg_f.append(col_m + '\nWarning: Microcode #%d is truncated, please report it!\n' % mc_nr + col_e)
 			mc_path = '%s!Bad_%s.bin' % (mc_extract, mc_name)
 		elif mc_at_db is None :
 			msg_f.append(col_g + '\nNote: Microcode #%d was not found at the database, please report it!\n' % mc_nr + col_e)
