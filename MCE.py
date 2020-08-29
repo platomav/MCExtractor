@@ -412,7 +412,7 @@ class AMD_MC_Header(ctypes.LittleEndianStructure) :
 	_fields_ = [
 		("Date",                      uint32_t),      # 0x00
 		("UpdateRevision",            uint32_t),      # 0x04
-		("LoaderID",                  uint16_t),      # 0x08 00 - 04 80 (Pattern)
+		("LoaderID",                  uint16_t),      # 0x08 00 - 05 80 (Pattern)
 		("DataSize",                  uint8_t),       # 0x0A 00, 10 or 20 (Pattern)
 		("InitializationFlag",        uint8_t),       # 0x0B 00 or 01 (Pattern)
 		("DataChecksum",              uint32_t),      # 0x0C OEM validation only
