@@ -1,3 +1,9 @@
+r160
+
+Intel cpu506E3_plat36_ver000000E0_2020-06-24_PRD_344A82F7
+Intel cpu406E3_platC0_ver000000E0_2020-06-24_PRD_6C447853
+Intel cpu806C0_plat80_ver00000058_2020-01-14_PRD_69E747A2
+
 v1.48.1
 
 Adjusted AMD unknown size message to incentivize reporting
