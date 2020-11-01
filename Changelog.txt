@@ -1,3 +1,9 @@
+v1.50.0
+
+Added AMI BIOS Guard (PFAT) warning check
+Added 3rd-party dependency install checks
+MCE now requires PLTable v1.0.2 or newer
+
 r165
 
 Intel cpu806C1_plat80_ver00000066_2020-09-25_PRD_6132257E

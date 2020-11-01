@@ -6,11 +6,31 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2020 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.48.1'
+title = 'MC Extractor v1.50.0'
+
+import sys
+
+# Detect Python version
+mce_py = sys.version_info
+if mce_py < (3,7) :
+	sys.stdout.write('%s\n\nError: Python >= 3.7 required, not %d.%d!\n' % (title, mce_py[0], mce_py[1]))
+	if '-exit' not in sys.argv : (raw_input if mce_py[0] <= 2 else input)('\nPress enter to exit')
+	sys.exit(-1)
+
+# Detect OS platform
+mce_os = sys.platform
+if mce_os == 'win32' :
+	cl_wipe = 'cls'
+	sys.stdout.reconfigure(encoding='utf-8') # Fix Windows Unicode console redirection
+elif mce_os.startswith('linux') or mce_os == 'darwin' or mce_os.find('bsd') != -1 :
+	cl_wipe = 'clear'
+else :
+	print('%s\n\nError: Unsupported platform "%s"!\n' % (title, mce_os))
+	if '-exit' not in sys.argv : input('Press enter to exit')
+	sys.exit(-1)
 
 import os
 import re
-import sys
 import zlib
 import time
 import struct
@@ -18,47 +38,31 @@ import shutil
 import ctypes
 import inspect
 import sqlite3
-import colorama
 import binascii
 import datetime
 import traceback
-import prettytable
 import urllib.request
+import importlib.util
+
+# Check code dependency installation
+for depend in ['colorama','pltable'] :
+	if not importlib.util.find_spec(depend) :
+		print('%s\n\nError: Dependency "%s" is missing!\n       Install via "pip3 install %s"\n' % (title, depend, depend))
+		if '-exit' not in sys.argv : input('Press enter to exit')
+		sys.exit(1)
+		
+import pltable
+import colorama
 
 # Initialize and setup Colorama
 colorama.init()
 col_r = colorama.Fore.RED + colorama.Style.BRIGHT
-col_g = colorama.Fore.GREEN + colorama.Style.BRIGHT
+col_c = colorama.Fore.CYAN + colorama.Style.BRIGHT
 col_b = colorama.Fore.BLUE + colorama.Style.BRIGHT
+col_g = colorama.Fore.GREEN + colorama.Style.BRIGHT
 col_y = colorama.Fore.YELLOW + colorama.Style.BRIGHT
 col_m = colorama.Fore.MAGENTA + colorama.Style.BRIGHT
-col_c = colorama.Fore.CYAN + colorama.Style.BRIGHT
 col_e = colorama.Fore.RESET + colorama.Style.RESET_ALL
-
-# Detect OS platform
-mce_os = sys.platform
-if mce_os == 'win32' :
-	cl_wipe = 'cls'
-elif mce_os.startswith('linux') or mce_os == 'darwin' or mce_os.find('bsd') != -1 :
-	cl_wipe = 'clear'
-else :
-	print(col_r + '\nError: Unsupported platform "%s"!\n' % mce_os + col_e)
-	if '-exit' not in sys.argv : input('Press enter to exit')
-	colorama.deinit()
-	sys.exit(-1)
-
-# Detect Python version
-mce_py = sys.version_info
-try :
-	assert mce_py >= (3,7)
-except :
-	print(col_r + '\nError: Python >= 3.7 required, not %d.%d!\n' % (mce_py[0],mce_py[1]) + col_e)
-	if '-exit' not in sys.argv : input('Press enter to exit')
-	colorama.deinit()
-	sys.exit(-1)
-
-# Fix Windows Unicode console redirection
-if mce_os == 'win32' : sys.stdout.reconfigure(encoding='utf-8')
 
 # Set ctypes Structure types
 char = ctypes.c_char
@@ -667,11 +671,11 @@ def show_exception_and_exit(exc_type, exc_value, tb) :
 	colorama.deinit() # Stop Colorama
 	sys.exit(-1)
 	
-def adler32(data) :
-	return zlib.adler32(data) & 0xFFFFFFFF
+def adler32(data, iv=1) :
+	return zlib.adler32(data, iv) & 0xFFFFFFFF
 	
-def crc32(data) :
-	return zlib.crc32(data) & 0xFFFFFFFF
+def crc32(data, iv=0) :
+	return zlib.crc32(data, iv) & 0xFFFFFFFF
 	
 def checksum32(data) :	
 	chk32 = 0
@@ -880,14 +884,14 @@ def build_mc_repo(vendor, mc_name) :
 	shutil.copyfile(in_file, repo_dir + mc_name + '.bin')
 
 def mc_table(row_col_names,header,padd) :
-	pt = prettytable.PrettyTable(row_col_names)
-	pt.set_style(prettytable.UNICODE_LINES)
+	pt = pltable.PrettyTable(row_col_names)
+	pt.set_style(pltable.UNICODE_LINES)
 	pt.xhtml = True
 	pt.header = header # Boolean
 	pt.left_padding_width = padd if not param.mce_ubu else 0
 	pt.right_padding_width = padd if not param.mce_ubu else 0
-	pt.hrules = prettytable.ALL
-	pt.vrules = prettytable.ALL
+	pt.hrules = pltable.ALL
+	pt.vrules = pltable.ALL
 	pt_empty = str(pt)
 	
 	return pt,pt_empty
@@ -898,14 +902,14 @@ def display_sql(cursor,title,header,padd):
 	
 	if param.mce_ubu : padd = 0
 	
-	sqlr = prettytable.PrettyTable()
-	sqlr.set_style(prettytable.UNICODE_LINES)
+	sqlr = pltable.PrettyTable()
+	sqlr.set_style(pltable.UNICODE_LINES)
 	sqlr.xhtml = True
 	sqlr.header = header # Boolean
 	sqlr.left_padding_width = padd
 	sqlr.right_padding_width = padd
-	sqlr.hrules = prettytable.ALL
-	sqlr.vrules = prettytable.ALL
+	sqlr.hrules = pltable.ALL
+	sqlr.vrules = pltable.ALL
 	sqlr.title = title
 	
 	row_id = -1
@@ -1200,6 +1204,15 @@ for in_file in source :
 	with open(in_file, 'rb') as work_file :
 		reading = work_file.read()
 		file_end = len(reading)
+	
+	# Skip AMI BIOS Guard (PFAT) protected images
+	if reading[0x8:0x10] == b'_AMIPFAT' :
+		print('Detected' + col_y + ' AMI BIOS Guard (PFAT) ' + col_e + 'protected image, prior extraction required!' + \
+			  '\n\nUse "AMI BIOS Guard Extractor" from https://github.com/platomav/BIOSUtilities')
+		
+		if not param.mce_extr : copy_file_with_warn()
+		
+		continue
 	
 	# Detect & Convert Intel Containers (.dat|.inc|.h|.txt) to binary images
 	if in_file not in temp_mc_paths :
@@ -1869,7 +1882,7 @@ for in_file in source :
 		
 		mc_data = reading[mc_bgn:mc_bgn + mc_len]
 		
-		calc_crc = (binascii.crc32(mc_data[:-4], -1) ^ -1) & 0xFFFFFFFF
+		calc_crc = crc32(mc_data[:-4], 0xFFFFFFFF) ^ 0xFFFFFFFF
 		
 		# Create extraction folder
 		if '-extr' in source : mc_extract = os.path.join(mce_dir, '..', 'Z_Extract', 'CPU', '')
