@@ -1,3 +1,14 @@
+v1.51.0
+
+Added more AMD Family 19h (Zen 3) microcode CPUIDs (#39)
+
+r166
+
+Intel cpu806C1_plat80_ver00000068_2020-10-02_PRD_AF4FF3DA
+Intel cpu806D0_platC2_ver00000038_2020-08-25_PRD_933B2C9F
+Intel cpu5065B_platBF_ver0700001E_2020-08-20_PRD_28930367
+AMD cpu00830F10_ver0830104D_2020-07-28_22CD4D3D
+
 v1.50.0
 
 Added AMI BIOS Guard (PFAT) warning check

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+#coding=utf-8
 
 """
 MC Extractor
@@ -6,7 +7,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2020 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.50.0'
+title = 'MC Extractor v1.51.0'
 
 import sys
 
@@ -729,12 +730,10 @@ def update_check() :
 		latest_py = urllib.request.urlopen('https://raw.githubusercontent.com/platomav/MCExtractor/master/MCE.py').read()
 		latest_py_utf = latest_py.decode('utf-8')
 		latest_py_idx = latest_py_utf.find('title = \'MC Extractor v')
-		if latest_py_idx != -1 :
-			latest_py_ver = latest_py_utf[latest_py_idx:][23:].split('\'')[0].split('_')[0]
-			script_py_ver = title[14:].split('_')[0]
-			py_is_upd = mce_is_latest(script_py_ver.split('.')[:3], latest_py_ver.split('.')[:3])
-		else :
-			raise()
+		if latest_py_idx == -1 : raise()
+		latest_py_ver = latest_py_utf[latest_py_idx:][23:].split('\'')[0].split('_')[0]
+		script_py_ver = title[14:].split('_')[0]
+		py_is_upd = mce_is_latest(script_py_ver.split('.')[:3], latest_py_ver.split('.')[:3])
 		
 		latest_db = urllib.request.urlopen('https://raw.githubusercontent.com/platomav/MCExtractor/master/MCE.db').read()
 		with open('MCE.db.temp', 'wb') as temp_db : temp_db.write(latest_db)
@@ -1535,7 +1534,7 @@ for in_file in source :
 		try :
 			date_chk = datetime.datetime.strptime(full_date, '%Y-%m-%d')
 			
-			if date_chk.year > 2022 : raise Exception('WrongDate') # 1st MC from 1999 (K7), 2000 for K7 Erratum and performance
+			if date_chk.year > 2022 : raise() # 1st MC from 1999 (K7), 2000 for K7 Erratum and performance
 		except :
 			if (full_date,patch) == ('2011-13-09',0x3000027) : pass # Drunk AMD employee 1, Happy 13th month from AMD!
 			else :
