@@ -1563,7 +1563,7 @@ for in_file in source :
 		elif cpu_id[2:4] in ['68'] : mc_len = 0x980
 		elif cpu_id[2:4] in ['70','73'] : mc_len = 0xD60
 		elif cpu_id[2:4] in ['80','81','82','83','85','86','87'] : mc_len = 0xC80
-		elif cpu_id[2:4] in ['A0','A2','A5'] : mc_len = 0x15C0
+		elif cpu_id[2:4] in ['A0','A1','A2','A3','A4','A5'] : mc_len = 0x15C0
 		else : mc_len = 0
 
 		mc_data = reading[mc_bgn:mc_bgn + mc_len]
