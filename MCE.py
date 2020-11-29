@@ -7,7 +7,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2020 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.51.0'
+title = 'MC Extractor v1.52.0'
 
 import sys
 
@@ -160,7 +160,7 @@ class Intel_MC_Header(ctypes.LittleEndianStructure) :
 	# Intel 64 and IA-32 Architectures Software Developer's Manual Vol 3A, Ch 9.11.1
 	
 	def mc_print(self) :
-		Reserved0 = ''.join('%0.2X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.Reserved0))
+		Reserved0 = ''.join('%0.2X' % int.from_bytes(struct.pack('<B', val), 'little') for val in reversed(self.Reserved0))
 		Reserved1 = ''.join('%0.8X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.Reserved1))
 		
 		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
@@ -434,7 +434,7 @@ class AMD_MC_Header(ctypes.LittleEndianStructure) :
 	]
 
 	def mc_print(self) :	
-		reserv_str = ''.join('%0.2X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.Reserved))
+		reserv_str = ''.join('%0.2X' % int.from_bytes(struct.pack('<B', val), 'little') for val in reversed(self.Reserved))
 		
 		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
 		
@@ -477,7 +477,7 @@ class VIA_MC_Header(ctypes.LittleEndianStructure) :
 	]
 
 	def mc_print(self) :		
-		reserv_str = ''.join('%0.2X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.Reserved))
+		reserv_str = ''.join('%0.2X' % int.from_bytes(struct.pack('<B', val), 'little') for val in reversed(self.Reserved))
 		
 		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
 		
@@ -801,11 +801,11 @@ def db_new_MCE() :
 	db_is_dev = (cursor.execute('SELECT developer FROM MCE')).fetchone()[0]
 	db_rev_now = (cursor.execute('SELECT revision FROM MCE')).fetchone()[0]
 	
-	cursor.execute('UPDATE MCE SET date=?', (int(time.time()),))
+	cursor.execute('UPDATE MCE SET date=? WHERE ROWID=1', (int(time.time()),))
 	
 	if db_is_dev == 0 :
-		cursor.execute('UPDATE MCE SET revision=?', (db_rev_now + 1,))
-		cursor.execute('UPDATE MCE SET developer=1')
+		cursor.execute('UPDATE MCE SET revision=? WHERE ROWID=1', (db_rev_now + 1,))
+		cursor.execute('UPDATE MCE SET developer=1 WHERE ROWID=1')
 	
 def copy_file_with_warn() :
 	file_name = os.path.basename(in_file)
@@ -1559,7 +1559,7 @@ for in_file in source :
 		elif cpu_id[2:4] in ['50'] : mc_len = 0x620
 		elif cpu_id[2:4] in ['58'] : mc_len = 0x567
 		elif cpu_id[2:4] in ['60','61','63','66','67'] : mc_len = 0xA20
-		elif cpu_id[2:4] in ['68'] : mc_len = 0x980
+		elif cpu_id[2:4] in ['68','69'] : mc_len = 0x980
 		elif cpu_id[2:4] in ['70','73'] : mc_len = 0xD60
 		elif cpu_id[2:4] in ['80','81','82','83','85','86','87'] : mc_len = 0xC80
 		elif cpu_id[2:4] in ['A0','A1','A2','A3','A4','A5'] : mc_len = 0x15C0
