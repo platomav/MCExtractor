@@ -7,26 +7,26 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2020 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.52.0'
+title = 'MC Extractor v1.52.1'
 
 import sys
 
 # Detect Python version
-mce_py = sys.version_info
-if mce_py < (3,7) :
-	sys.stdout.write('%s\n\nError: Python >= 3.7 required, not %d.%d!\n' % (title, mce_py[0], mce_py[1]))
-	if '-exit' not in sys.argv : (raw_input if mce_py[0] <= 2 else input)('\nPress enter to exit')
+sys_py = sys.version_info
+if sys_py < (3,7) :
+	sys.stdout.write('%s\n\nError: Python >= 3.7 required, not %d.%d!\n' % (title, sys_py[0], sys_py[1]))
+	if '-exit' not in sys.argv : (raw_input if sys_py[0] <= 2 else input)('\nPress enter to exit')
 	sys.exit(-1)
 
 # Detect OS platform
-mce_os = sys.platform
-if mce_os == 'win32' :
+sys_os = sys.platform
+if sys_os == 'win32' :
 	cl_wipe = 'cls'
 	sys.stdout.reconfigure(encoding='utf-8') # Fix Windows Unicode console redirection
-elif mce_os.startswith('linux') or mce_os == 'darwin' or mce_os.find('bsd') != -1 :
+elif sys_os.startswith('linux') or sys_os == 'darwin' or sys_os.find('bsd') != -1 :
 	cl_wipe = 'clear'
 else :
-	print('%s\n\nError: Unsupported platform "%s"!\n' % (title, mce_os))
+	print('%s\n\nError: Unsupported platform "%s"!\n' % (title, sys_os))
 	if '-exit' not in sys.argv : input('Press enter to exit')
 	sys.exit(-1)
 
@@ -93,12 +93,12 @@ def mce_help() :
 
 class MCE_Param :
 
-	def __init__(self, mce_os, source) :
+	def __init__(self, sys_os, source) :
 	
 		self.all = ['-?','-skip','-info','-add','-extr','-ubu','-mass','-search','-dbname','-repo','-exit','-blob','-last','-updchk']
 		self.win = ['-extr','-ubu'] # Windows only
 		
-		if mce_os == 'win32' : self.val = self.all
+		if sys_os == 'win32' : self.val = self.all
 		else : self.val = [item for item in self.all if item not in self.win]
 		
 		self.help_scr = False
@@ -131,7 +131,7 @@ class MCE_Param :
 			if i == '-updchk' : self.upd_check = True
 			
 			# Windows only options
-			if mce_os == 'win32' :
+			if sys_os == 'win32' :
 				if i == '-ubu' : self.mce_ubu = True # Hidden
 				if i == '-extr': self.mce_extr = True # Hidden
 			
@@ -156,13 +156,8 @@ class Intel_MC_Header(ctypes.LittleEndianStructure) :
 		("Reserved1",                 uint32_t*3),# 0x24 00 * 12 (Pattern)
 		# 0x30
 	]
-
-	# Intel 64 and IA-32 Architectures Software Developer's Manual Vol 3A, Ch 9.11.1
 	
-	def mc_print(self) :
-		Reserved0 = ''.join('%0.2X' % int.from_bytes(struct.pack('<B', val), 'little') for val in reversed(self.Reserved0))
-		Reserved1 = ''.join('%0.8X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.Reserved1))
-		
+	def mc_print(self) :		
 		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
 		
 		pt.title = col_b + 'Intel Header Main' + col_e
@@ -173,10 +168,10 @@ class Intel_MC_Header(ctypes.LittleEndianStructure) :
 		pt.add_row(['Checksum', '%0.8X' % self.Checksum])
 		pt.add_row(['Loader Version', self.LoaderRevision])
 		pt.add_row(['Platform', '%0.2X (%s)' % (self.PlatformIDs, ','.join(map(str, intel_plat(mc_hdr.PlatformIDs))))])
-		pt.add_row(['Reserved 0', '0x0' if Reserved0 == '00' * 3 else Reserved0])
+		pt.add_row(['Reserved 0', '0x%X' % int.from_bytes(self.Reserved0, 'little')])
 		pt.add_row(['Data Size', '0x%X' % self.DataSize])
 		pt.add_row(['Total Size', '0x%X' % self.TotalSize])
-		pt.add_row(['Reserved 1', '0x0' if Reserved1 == '00' * 12 else Reserved1])
+		pt.add_row(['Reserved 1', '0x%X' % int.from_bytes(self.Reserved1, 'little')])
 		
 		print(pt)
 
@@ -220,10 +215,9 @@ class Intel_MC_Header_Extra_R1(ctypes.LittleEndianStructure) :
 		f1,f2 = self.get_flags()
 		cpuids = self.get_cpuids()
 		
-		Reserved = int.from_bytes(self.Reserved, 'little')
-		Unknown = ''.join('%0.8X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.Unknown))
-		RSAPublicKey = ''.join('%0.8X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.RSAPublicKey))
-		RSASignature = ''.join('%0.8X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.RSASignature))
+		Unknown = '%0.*X' % (0x20 * 2, int.from_bytes(self.Unknown, 'little'))
+		RSAPublicKey = '%0.*X' % (0x100 * 2, int.from_bytes(self.RSAPublicKey, 'little'))
+		RSASignature = '%0.*X' % (0x100 * 2, int.from_bytes(self.RSASignature, 'little'))
 		
 		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
 		
@@ -249,7 +243,7 @@ class Intel_MC_Header_Extra_R1(ctypes.LittleEndianStructure) :
 		elif self.MultiPurpose2 * 4 == mc_len - 0x30 : pt.add_row(['Padded Size (MP2)', '0x%X' % (self.MultiPurpose2 * 4)])
 		else : pt.add_row(['Multi Purpose 2', '0x%X' % self.MultiPurpose2])
 		pt.add_row(['Security Version Number', self.SVN])
-		pt.add_row(['Reserved', '0x%X' % Reserved])
+		pt.add_row(['Reserved', '0x%X' % int.from_bytes(self.Reserved, 'little')])
 		pt.add_row(['Unknown', '%s [...]' % Unknown[:8]])
 		pt.add_row(['RSA Public Key', '%s [...]' % RSAPublicKey[:8]])
 		pt.add_row(['RSA Exponent', '0x%X' % self.RSAExponent])
@@ -295,7 +289,7 @@ class Intel_MC_Header_Extra_R2(ctypes.LittleEndianStructure) :
 		('SVN',     				  uint32_t),    # 0x48 Security Version Number
 		('Unknown0',     			  uint32_t),    # 0x4C
 		('Unknown1',     			  uint32_t),    # 0x50
-		('Reserved',                  uint32_t*3),  # 0x5 Reserved (00000000)
+		('Reserved',                  uint32_t*3),  # 0x54 Reserved (00000000)
 		('Unknown2',                  uint32_t*8),  # 0x60
 		('RSAPublicKey',              uint32_t*96), # 0x80 Exponent is 0x10001 (65537)
 		('RSASignature',              uint32_t*96), # 0x200 0x33 --> 0x13 = Unknown + 0x20 = SHA-256
@@ -308,10 +302,9 @@ class Intel_MC_Header_Extra_R2(ctypes.LittleEndianStructure) :
 		f1,f2 = self.get_flags()
 		cpuids = self.get_cpuids()
 		
-		Reserved = int.from_bytes(self.Reserved, 'little')
-		Unknown2 = ''.join('%0.8X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.Unknown2))
-		RSAPublicKey = ''.join('%0.8X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.RSAPublicKey))
-		RSASignature = ''.join('%0.8X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.RSASignature))
+		Unknown2 = '%0.*X' % (0x20 * 2, int.from_bytes(self.Unknown2, 'little'))
+		RSAPublicKey = '%0.*X' % (0x180 * 2, int.from_bytes(self.RSAPublicKey, 'little'))
+		RSASignature = '%0.*X' % (0x180 * 2, int.from_bytes(self.RSASignature, 'little'))
 		
 		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
 		
@@ -339,7 +332,7 @@ class Intel_MC_Header_Extra_R2(ctypes.LittleEndianStructure) :
 		pt.add_row(['Security Version Number', self.SVN])
 		pt.add_row(['Unknown 0', '0x%X' % self.Unknown0])
 		pt.add_row(['Unknown 1', '0x%X' % self.Unknown1])
-		pt.add_row(['Reserved', '0x%X' % Reserved])
+		pt.add_row(['Reserved', '0x%X' % int.from_bytes(self.Reserved, 'little')])
 		pt.add_row(['Unknown 2', '%s [...]' % Unknown2[:8]])
 		pt.add_row(['RSA Public Key', '%s [...]' % RSAPublicKey[:8]])
 		pt.add_row(['RSA Signature', '%s [...]' % RSASignature[:8]])
@@ -379,15 +372,13 @@ class Intel_MC_Header_Extended(ctypes.LittleEndianStructure) :
 
 	def mc_print(self) :
 		print()
-		
-		Reserved = int.from_bytes(self.Reserved, 'little')
 
 		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
 		
 		pt.title = col_b + 'Intel Header Extended' + col_e
 		pt.add_row(['Extended Signatures', self.ExtendedSignatureCount])
 		pt.add_row(['Extended Checksum', '%0.8X' % self.ExtendedChecksum])
-		pt.add_row(['Reserved', '0x%X' % Reserved])
+		pt.add_row(['Reserved', '0x%X' % int.from_bytes(self.Reserved, 'little')])
 		
 		print(pt)
 
@@ -429,13 +420,11 @@ class AMD_MC_Header(ctypes.LittleEndianStructure) :
 		("NorthBridgeREV_ID",         uint8_t),       # 0x1A
 		("SouthBridgeREV_ID",         uint8_t),       # 0x1B
 		("BiosApiREV_ID",             uint8_t),       # 0x1C 00 or 01 (Pattern)
-		("Reserved",                  uint8_t * 3),   # 0x1D 000000 or AAAAAA (Pattern)
+		("Reserved",                  uint8_t*3),     # 0x1D 000000 or AAAAAA (Pattern)
 		# 0x20
 	]
 
-	def mc_print(self) :	
-		reserv_str = ''.join('%0.2X' % int.from_bytes(struct.pack('<B', val), 'little') for val in reversed(self.Reserved))
-		
+	def mc_print(self) :
 		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
 		
 		pt.title = col_r + 'AMD Header' + col_e
@@ -453,7 +442,7 @@ class AMD_MC_Header(ctypes.LittleEndianStructure) :
 		pt.add_row(['NorthBridge Revision', '0x%X' % self.NorthBridgeREV_ID])
 		pt.add_row(['SouthBridge Revision', '0x%X' % self.SouthBridgeREV_ID])
 		pt.add_row(['BIOS API Revision', '0x%X' % self.BiosApiREV_ID])
-		pt.add_row(['Reserved', reserv_str])
+		pt.add_row(['Reserved', '0x%X' % int.from_bytes(self.Reserved, 'little')])
 		
 		print(pt)
 
@@ -476,9 +465,7 @@ class VIA_MC_Header(ctypes.LittleEndianStructure) :
 		# 0x30
 	]
 
-	def mc_print(self) :		
-		reserv_str = ''.join('%0.2X' % int.from_bytes(struct.pack('<B', val), 'little') for val in reversed(self.Reserved))
-		
+	def mc_print(self) :
 		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
 		
 		pt.title = col_c + 'VIA Header' + col_e
@@ -490,7 +477,7 @@ class VIA_MC_Header(ctypes.LittleEndianStructure) :
 		pt.add_row(['Loader Version', self.LoaderRevision])
 		if self.CNRRevision != 0xFF :
 			pt.add_row(['CNR Revision', '001 A%d' % self.CNRRevision])
-			pt.add_row(['Reserved', reserv_str])
+			pt.add_row(['Reserved', '0x%X' % int.from_bytes(self.Reserved, 'little')])
 		else :
 			pt.add_row(['Reserved', '0xFFFFFFFF'])
 		pt.add_row(['Data Size', '0x%X' % self.DataSize])
@@ -521,9 +508,6 @@ class FSL_MC_Header(ctypes.BigEndianStructure) :
 	def mc_print(self) :
 		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
 		
-		vtraps_str = ''.join('%0.8X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.VTraps))
-		if vtraps_str == '00000000' * 8 : vtraps_str = '0x0'
-		
 		pt.title = col_y + 'Freescale Header Main' + col_e
 		pt.add_row(['Signature', self.Signature.decode('utf-8')])
 		pt.add_row(['Name', self.Name.decode('utf-8')])
@@ -536,7 +520,7 @@ class FSL_MC_Header(ctypes.BigEndianStructure) :
 		pt.add_row(['SoC Minor', self.Minor])
 		pt.add_row(['Reserved 0', '0x%X' % self.Reserved0])
 		pt.add_row(['Extended Modes', '0x%X' % self.ExtendedModes])
-		pt.add_row(['Virtual Traps', vtraps_str])
+		pt.add_row(['Virtual Traps', '0x%X' % int.from_bytes(self.VTraps, 'little')])
 		pt.add_row(['Reserved 1', '0x%X' % self.Reserved1])
 		
 		print(pt)
@@ -561,12 +545,9 @@ class FSL_MC_Entry(ctypes.BigEndianStructure) :
 	def mc_print(self) :
 		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
 		
-		traps_str = ''.join('%0.8X' % int.from_bytes(struct.pack('<I', val), 'little') for val in reversed(self.Traps))
-		if traps_str == '00000000' * 16 : traps_str = '0x0'
-		
 		pt.title = col_y + 'Freescale Header Entry' + col_e
 		pt.add_row(['Name', self.Name.decode('utf-8')])
-		pt.add_row(['Traps', traps_str])
+		pt.add_row(['Traps', '0x%X' % int.from_bytes(self.Traps, 'little')])
 		pt.add_row(['ECCR', '0x%X' % self.ECCR])
 		pt.add_row(['I-RAM Offset', '0x%X' % self.IRAMOffset])
 		pt.add_row(['Code Length', '0x%X' % self.CodeLength])
@@ -935,7 +916,7 @@ def mass_scan(f_path) :
 	return mass_files
 
 # Get MCE Parameters from input
-param = MCE_Param(mce_os, sys.argv)
+param = MCE_Param(sys_os, sys.argv)
 
 # Pause after any unexpected python exception
 if not param.mce_extr and not param.mce_ubu :
@@ -1001,8 +982,8 @@ mce_title = '%s r%d%s' % (title, rev_dev[0], ' Dev' if rev_dev[1] else '')
 
 # Set console/shell window title
 if not param.mce_extr and not param.mce_ubu :
-	if mce_os == 'win32' : ctypes.windll.kernel32.SetConsoleTitleW(mce_title)
-	elif mce_os.startswith('linux') or mce_os == 'darwin' or mce_os.find('bsd') != -1 : sys.stdout.write('\x1b]2;' + mce_title + '\x07')
+	if sys_os == 'win32' : ctypes.windll.kernel32.SetConsoleTitleW(mce_title)
+	elif sys_os.startswith('linux') or sys_os == 'darwin' or sys_os.find('bsd') != -1 : sys.stdout.write('\x1b]2;' + mce_title + '\x07')
 
 if not param.skip_intro :
 	mce_hdr(mce_title)
@@ -1027,7 +1008,7 @@ if not param.skip_intro :
 	input_var = re.split(''' (?=(?:[^'"]|'[^']*'|"[^"]*")*$)''', input_var.strip())
 	
 	# Get MCE Parameters based on given Options
-	param = MCE_Param(mce_os, input_var)
+	param = MCE_Param(sys_os, input_var)
 	
 	# Non valid parameters are treated as files
 	if input_var[0] != "" :

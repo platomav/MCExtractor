@@ -1,3 +1,12 @@
+v1.52.1
+
+Applied small code fixes & improvements
+
+r169
+
+Intel cpuA0671_plat02_ver0000000C_2020-10-13_PRD_767A7093
+Intel cpuA0670_plat02_ver0000002A_2020-09-23_PRD_71F8BD4D
+
 v1.52.0
 
 Added AMD microcode CPUID 00690Fxx detection
