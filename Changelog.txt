@@ -1,3 +1,10 @@
+r170
+
+Intel cpu806C1_plat80_ver00000072_2020-11-20_PRD_5A931779
+Intel cpuA0671_plat02_ver00000014_2020-11-02_PRD_9FF8B5F3
+Intel cpu806C1_plat80_ver0000006C_2020-10-28_PRD_D2D666E8
+Intel cpu806D0_platC2_ver00000040_2020-09-22_PRD_70852775
+
 v1.52.1
 
 Applied small code fixes & improvements
