@@ -7,7 +7,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2020 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.52.1'
+title = 'MC Extractor v1.52.2'
 
 import sys
 
@@ -88,6 +88,8 @@ def mce_help() :
 		  '-repo   : Builds microcode repositories from input\n'
 		  '-blob   : Builds a Microcode Blob (MCB) from input'
 		  )
+	
+	if getattr(sys, 'frozen', False) : print('\nIcon by Alfredo Hernandez (alfredocreates.com) under Flaticon License')
 	
 	mce_exit(0)
 
