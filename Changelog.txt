@@ -1,3 +1,12 @@
+v1.52.4
+
+Increased year ranges for better future proofing
+Applied various static analysis code fixes
+
+r172
+
+Intel cpu806C1_plat80_ver00000070_2020-11-10_PRD_C351DE76
+
 v1.52.2
 
 Applied small code fixes & improvements

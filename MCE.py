@@ -4,10 +4,10 @@
 """
 MC Extractor
 Intel, AMD, VIA & Freescale Microcode Extractor
-Copyright (C) 2016-2020 Plato Mavropoulos
+Copyright (C) 2016-2021 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.52.2'
+title = 'MC Extractor v1.52.4'
 
 import sys
 
@@ -89,7 +89,9 @@ def mce_help() :
 		  '-blob   : Builds a Microcode Blob (MCB) from input'
 		  )
 	
-	if getattr(sys, 'frozen', False) : print('\nIcon by Alfredo Hernandez (alfredocreates.com) under Flaticon License')
+	print(col_g + '\nCopyright (C) 2016-2021 Plato Mavropoulos' + col_e)
+	
+	if getattr(sys, 'frozen', False) : print(col_c + '\nIcon by Alfredo Hernandez (alfredocreates.com, Flaticon License)' + col_e)
 	
 	mce_exit(0)
 
@@ -97,11 +99,8 @@ class MCE_Param :
 
 	def __init__(self, sys_os, source) :
 	
-		self.all = ['-?','-skip','-info','-add','-extr','-ubu','-mass','-search','-dbname','-repo','-exit','-blob','-last','-updchk']
-		self.win = ['-extr','-ubu'] # Windows only
-		
-		if sys_os == 'win32' : self.val = self.all
-		else : self.val = [item for item in self.all if item not in self.win]
+		self.val = ['-?','-skip','-info','-add','-mass','-search','-dbname','-repo','-exit','-blob','-last','-updchk']
+		if sys_os == 'win32' : self.val.extend(['-extr','-ubu']) # Windows only
 		
 		self.help_scr = False
 		self.build_db = False
@@ -118,24 +117,20 @@ class MCE_Param :
 		self.get_last = False
 		self.upd_check = False
 		
-		for i in source :
-			if i == '-?' : self.help_scr = True
-			if i == '-skip' : self.skip_intro = True
-			if i == '-add' : self.build_db = True
-			if i == '-info' : self.print_hdr = True
-			if i == '-mass' : self.mass_scan = True
-			if i == '-search' : self.search = True
-			if i == '-dbname' : self.give_db_name = True
-			if i == '-repo' : self.build_repo = True
-			if i == '-exit' : self.skip_pause = True
-			if i == '-blob' : self.build_blob = True
-			if i == '-last' : self.get_last = True
-			if i == '-updchk' : self.upd_check = True
-			
-			# Windows only options
-			if sys_os == 'win32' :
-				if i == '-ubu' : self.mce_ubu = True # Hidden
-				if i == '-extr': self.mce_extr = True # Hidden
+		if '-?' in source : self.help_scr = True
+		if '-skip' in source : self.skip_intro = True
+		if '-add' in source : self.build_db = True
+		if '-info' in source : self.print_hdr = True
+		if '-mass' in source : self.mass_scan = True
+		if '-search' in source : self.search = True
+		if '-dbname' in source : self.give_db_name = True
+		if '-repo' in source : self.build_repo = True
+		if '-exit' in source : self.skip_pause = True
+		if '-blob' in source : self.build_blob = True
+		if '-last' in source : self.get_last = True
+		if '-updchk' in source : self.upd_check = True
+		if '-ubu' in source : self.mce_ubu = True # Hidden
+		if '-extr' in source : self.mce_extr = True # Hidden
 			
 		if self.mce_extr or self.mass_scan or self.search or self.build_repo or self.build_blob \
 		or self.get_last or self.upd_check : self.skip_intro = True
@@ -239,7 +234,7 @@ class Intel_MC_Header_Extra_R1(ctypes.LittleEndianStructure) :
 		pt.add_row(['Date', '%0.4X-%0.2X-%0.2X' % (self.Year, self.Month, self.Day)])
 		pt.add_row(['Update Size', '0x%X' % (self.UpdateSize * 4)])
 		pt.add_row(['CPU Signatures', self.ProcessorSignatureCount])
-		[pt.add_row(['CPUID %d' % i, '%0.5X' % cpuids[i]]) for i in range(len(cpuids)) if cpuids[i] != 0]
+		any(pt.add_row(['CPUID %d' % i, '%0.5X' % cpuids[i]]) for i in range(len(cpuids)) if cpuids[i] != 0)
 		if self.MultiPurpose2 == mc_hdr.PlatformIDs : pt.add_row(['Platform (MP2)', '%0.2X (%s)' % (self.MultiPurpose2, ','.join(map(str, intel_plat(mc_hdr.PlatformIDs))))])
 		elif self.MultiPurpose2 * 4 == self.UpdateSize * 4 : pt.add_row(['Update Size (MP2)', '0x%X' % (self.MultiPurpose2 * 4)])
 		elif self.MultiPurpose2 * 4 == mc_len - 0x30 : pt.add_row(['Padded Size (MP2)', '0x%X' % (self.MultiPurpose2 * 4)])
@@ -326,7 +321,7 @@ class Intel_MC_Header_Extra_R2(ctypes.LittleEndianStructure) :
 		pt.add_row(['Date', '%0.4X-%0.2X-%0.2X' % (self.Year, self.Month, self.Day)])
 		pt.add_row(['Update Size', '0x%X' % (self.UpdateSize * 4)])
 		pt.add_row(['CPU Signatures', self.ProcessorSignatureCount])
-		[pt.add_row(['CPUID %d' % i, '%0.5X' % cpuids[i]]) for i in range(len(cpuids)) if cpuids[i] != 0]
+		any(pt.add_row(['CPUID %d' % i, '%0.5X' % cpuids[i]]) for i in range(len(cpuids)) if cpuids[i] != 0)
 		if self.MultiPurpose2 == mc_hdr.PlatformIDs : pt.add_row(['Platform (MP2)', '%0.2X (%s)' % (self.MultiPurpose2, ','.join(map(str, intel_plat(mc_hdr.PlatformIDs))))])
 		elif self.MultiPurpose2 * 4 == self.UpdateSize * 4 : pt.add_row(['Update Size (MP2)', '0x%X' % (self.MultiPurpose2 * 4)])
 		elif self.MultiPurpose2 * 4 == mc_len - 0x30 : pt.add_row(['Padded Size (MP2)', '0x%X' % (self.MultiPurpose2 * 4)])
@@ -337,6 +332,7 @@ class Intel_MC_Header_Extra_R2(ctypes.LittleEndianStructure) :
 		pt.add_row(['Reserved', '0x%X' % int.from_bytes(self.Reserved, 'little')])
 		pt.add_row(['Unknown 2', '%s [...]' % Unknown2[:8]])
 		pt.add_row(['RSA Public Key', '%s [...]' % RSAPublicKey[:8]])
+		pt.add_row(['RSA Exponent', '0x10001'])
 		pt.add_row(['RSA Signature', '%s [...]' % RSASignature[:8]])
 		
 		print(pt)
@@ -619,7 +615,7 @@ class MCB_Entry(ctypes.LittleEndianStructure) :
 		
 		print(pt)
 		
-def mce_exit(code=0) :
+def mce_exit(code) :
 	if not param.mce_extr and not param.skip_pause : input('\nPress enter to exit')
 	
 	try :
@@ -729,7 +725,7 @@ def update_check() :
 		if os.path.isfile('MCE.db.temp') : os.remove('MCE.db.temp')
 		
 		script_db_rev = (cursor.execute('SELECT revision FROM MCE')).fetchone()[0]
-		db_is_upd = True if script_db_rev >= latest_db_rev else False
+		db_is_upd = script_db_rev >= latest_db_rev
 		
 		pt, pt_empty = mc_table(['#','Current','Latest','Updated'], True, 1)
 		pt.title = col_y + 'MC Extractor & DB Update Check' + col_e
@@ -764,8 +760,8 @@ def mce_is_latest(ver_before, ver_after) :
 	if int(ver_before[0]) > int(ver_after[0]) or (int(ver_before[0]) == int(ver_after[0]) and (int(ver_before[1]) > int(ver_after[1])
 	or (int(ver_before[1]) == int(ver_after[1]) and int(ver_before[2]) >= int(ver_after[2])))) :
 		return True
-	else :
-		return False
+	
+	return False
 	
 def chk_mc_mod(mc_nr, msg_vendor, mc_db_note) :
 	mod_info = ' (%s)' % mc_db_note if mc_db_note != '' else ''
@@ -776,7 +772,7 @@ def chk_mc_mod(mc_nr, msg_vendor, mc_db_note) :
 def chk_mc_cross(match_ucode_idx, match_list_vendor, msg_vendor, mc_nr, mc_bgn, mc_len) :
 	if match_ucode_idx + 1 in range(len(match_list_vendor)) and match_list_vendor[match_ucode_idx + 1].start() < mc_bgn + mc_len :
 		msg_vendor.append(col_m + '\nWarning: Microcode #%d is crossing over to the next microcode(s), please report it!' % mc_nr + col_e)
-		if not param.mce_extr : copy_file_with_warn()
+		copy_file_with_warn()
 		
 	return msg_vendor
 	
@@ -791,6 +787,8 @@ def db_new_MCE() :
 		cursor.execute('UPDATE MCE SET developer=1 WHERE ROWID=1')
 	
 def copy_file_with_warn() :
+	if param.mce_extr : return
+	
 	file_name = os.path.basename(in_file)
 	warn_dir = os.path.join(mce_dir, 'Warnings', '')
 	warn_name = os.path.join(warn_dir, file_name)
@@ -1126,14 +1124,14 @@ if param.get_last :
 	
 	mce_exit(0)
 	
-# Intel - HeaderRev 01, Year 1993-2022, Day 01-31, Month 01-12, CPUID xxxxxx00, LoaderRev 00-01, PlatformIDs 000000xx, DataSize xxxxxx00, TotalSize xxxxxx00, Reserved1
-pat_icpu = re.compile(br'\x01\x00{3}.{4}(([\x00-\x22]\x20)|([\x93-\x99]\x19))[\x01-\x31][\x01-\x12].{3}\x00.{4}[\x01\x00]\x00{3}.\x00{3}.{3}\x00.{3}\x00{13}', re.DOTALL)
+# Intel - HeaderRev 01, Year 1993-2023, Day 01-31, Month 01-12, CPUID xxxxxx00, LoaderRev 00-01, PlatformIDs 000000xx, DataSize xxxxxx00, TotalSize xxxxxx00, Reserved1
+pat_icpu = re.compile(br'\x01\x00{3}.{4}(([\x00-\x23]\x20)|([\x93-\x99]\x19))[\x01-\x31][\x01-\x12].{3}\x00.{4}[\x01\x00]\x00{3}.\x00{3}.{3}\x00.{3}\x00{13}', re.DOTALL)
 
 # AMD - Year 20xx, Month 01-13, LoaderID 00-06, DataSize 00|10|20, InitFlag 00-01, NorthBridgeVEN_ID 0000|1022, SouthBridgeVEN_ID 0000|1022, BiosApiREV_ID 00-01, Reserved 00|AA
 pat_acpu = re.compile(br'\x20[\x01-\x31][\x01-\x13].{4}[\x00-\x06]\x80[\x00\x20\x10][\x00\x01].{4}((\x00{2})|(\x22\x10)).{2}((\x00{2})|(\x22\x10)).{6}[\x00\x01](\x00{3}|\xAA{3})', re.DOTALL)
 
-# VIA - Signature RRAS, Year 2006-2022 (0x07D6-0x07E5), Day 01-31, Month 01-12, LoaderRev 01, Reserved, DataSize xxxxxx00, TotalSize xxxxxx00
-pat_vcpu = re.compile(br'\x52\x52\x41\x53.{4}[\xD6-\xE6]\x07[\x01-\x1F][\x01-\x0C].{3}\x00.{4}\x01\x00{3}.{7}\x00.{3}\x00', re.DOTALL)
+# VIA - Signature RRAS, Year 2006-2023 (0x07D6-0x07E7), Day 01-31, Month 01-12, LoaderRev 01, Reserved, DataSize xxxxxx00, TotalSize xxxxxx00
+pat_vcpu = re.compile(br'\x52\x52\x41\x53.{4}[\xD6-\xE7]\x07[\x01-\x1F][\x01-\x0C].{3}\x00.{4}\x01\x00{3}.{7}\x00.{3}\x00', re.DOTALL)
 
 # Freescale - Signature QEF, HeaderRev 01, IRAM 00-01, Reserved0, Reserved1
 pat_fcpu = re.compile(br'\x51\x45\x46\x01.{62}[\x00\x01].{5}\x00{4}.{40}\x00{4}', re.DOTALL)
@@ -1192,7 +1190,7 @@ for in_file in source :
 		print('Detected' + col_y + ' AMI BIOS Guard (PFAT) ' + col_e + 'protected image, prior extraction required!' + \
 			  '\n\nUse "AMI BIOS Guard Extractor" from https://github.com/platomav/BIOSUtilities')
 		
-		if not param.mce_extr : copy_file_with_warn()
+		copy_file_with_warn()
 		
 		continue
 	
@@ -1206,7 +1204,7 @@ for in_file in source :
 					if (line[:4],line[12:13]) == ('dd 0','h') :
 						type_conv = '.inc'
 						break
-					elif '0x00000001,' in line[:13] :
+					if '0x00000001,' in line[:13] :
 						type_conv = '.dat'
 						break
 				
@@ -1218,9 +1216,9 @@ for in_file in source :
 					line = line.strip('\n ')
 					
 					if type_conv == '.dat' :
-						if line[0] == '/' : # Comment
-							continue
-						elif len(line) >= 47 and (line[:2],line[10:11]) == ('0x',',') : # "0xjjjjjjjj, 0xjjjjjjjj, 0xjjjjjjjj, 0xjjjjjjjj,"
+						if line[0] == '/' : continue # Comment
+						
+						if len(line) >= 47 and (line[:2],line[10:11]) == ('0x',',') : # "0xjjjjjjjj, 0xjjjjjjjj, 0xjjjjjjjj, 0xjjjjjjjj,"
 							wlp = line.split(',')
 							for i in range(0,4) :
 								wlp[i] = wlp[i].replace('\t','').replace('0x','').replace(' ','')
@@ -1265,7 +1263,7 @@ for in_file in source :
 		mc_latest = None
 		
 		# noinspection PyRedeclaration
-		(mc_bgn, end_mc_match) = match_list_i[match_ucode_idx].span()
+		mc_bgn = match_list_i[match_ucode_idx].start()
 		
 		mc_hdr = get_struct(reading, mc_bgn, Intel_MC_Header)
 		
@@ -1301,8 +1299,8 @@ for in_file in source :
 		try :
 			date_chk = datetime.datetime.strptime(full_date, '%Y-%m-%d')
 		except :
-			msg_i.append(col_m + '\nWarning: Skipped Intel microcode at 0x%X, invalid Date of %s!' % (mc_bgn, full_date) + col_e)
-			if not param.mce_extr : copy_file_with_warn()
+			msg_i.append(col_m + '\nWarning: Skipped potential Intel microcode at 0x%X, invalid Date of %s!' % (mc_bgn, full_date) + col_e)
+			copy_file_with_warn()
 			continue
 		
 		# Analyze Extra Header
@@ -1316,17 +1314,11 @@ for in_file in source :
 			if cpu_id != 0 and cpu_id not in mc_hdr_extra.get_cpuids() : mc_cpuid_chk = False
 			if patch_u != mc_hdr_extra.UpdateRevision and (cpu_id,patch_u,full_date) not in [(0x306C3,0x99,'2013-01-21'),(0x506E3,0xFF,'2016-01-05')] : mc_patch_chk = False
 			
-			# RSA Signature cannot be validated, Hash is probably derived from Header + Decrypted Patch (Commented out for performance)
-			"""
-			rsa_pexp = mc_hdr_extra.RSAExponent if ctypes.sizeof(mc_hdr_extra) == 0x284 else 65537 # 17 for RSA 2048-bit or 65537 for RSA 3072-bit
-			rsa_pkey = int.from_bytes(mc_hdr_extra.RSAPublicKey, 'little')
-			rsa_sign = int.from_bytes(mc_hdr_extra.RSASignature, 'little')
-			if rsa_pexp and rsa_pkey and rsa_sign : mc_sign = '%X' % pow(rsa_sign, rsa_pexp, rsa_pkey) # SHA-1 or SHA-256 or Unknown + SHA-256
-			"""
+			# RSA Signature cannot be validated, Hash is probably derived from Header + Decrypted Patch
 			
 			if param.print_hdr : mc_hdr_extra.mc_print()
 		
-		# Analyze, Validate & Extract optional Extended Header, each field only once
+		# Analyze, Validate & Extract optional Extended Header, each Entry only once
 		if mc_hdr.TotalSize > mc_hdr.DataSize + 0x30 and in_file not in temp_mc_paths :
 			ext_hdr_size = ctypes.sizeof(Intel_MC_Header_Extended)
 			ext_fld_size = ctypes.sizeof(Intel_MC_Header_Extended_Field)
@@ -1336,9 +1328,8 @@ for in_file in source :
 			mc_reserved_all += int.from_bytes(mc_hdr_ext.Reserved, 'little')
 			if param.print_hdr : mc_hdr_ext.mc_print()
 			
-			ext_header_checksum = mc_hdr_ext.ExtendedChecksum
 			ext_fields_count = mc_hdr_ext.ExtendedSignatureCount
-			ext_header_size = ext_hdr_size + ext_fields_count * ext_fld_size # 20 intro bytes, 12 for each field
+			ext_header_size = ext_hdr_size + ext_fields_count * ext_fld_size # 0x14 Header, 0xC for each Entry
 			ext_header_data = reading[mc_bgn + 0x30 + mc_hdr.DataSize:mc_bgn + 0x30 + mc_hdr.DataSize + ext_header_size]
 			valid_ext_chk = checksum32(ext_header_data) # Extended Header + Fields Checksum
 			
@@ -1369,17 +1360,17 @@ for in_file in source :
 		# Check if any Reserved fields are not empty/0
 		if mc_reserved_all != 0 :
 			msg_i.append(col_m + '\nWarning: Microcode #%d has non-empty Reserved fields, please report it!' % mc_nr + col_e)
-			if not param.mce_extr : copy_file_with_warn()
+			copy_file_with_warn()
 			
 		# Check if Main and/or Extended Header CPUID is contained in the Extra Header CPUIDs 0-7 (ignore microcode containers with CPUID 0)
 		if not mc_cpuid_chk :
 			msg_i.append(col_m + '\nWarning: Microcode #%d has Header CPUID discrepancy, please report it!' % mc_nr + col_e)
-			if not param.mce_extr : copy_file_with_warn()
+			copy_file_with_warn()
 		
 		# Check if Main and Extra Header UpdateRevision values are the same (ignore certain special OEM modified Main Headers)
 		if not mc_patch_chk :
 			msg_i.append(col_m + '\nWarning: Microcode #%d has Header Update Revision discrepancy, please report it!' % mc_nr + col_e)
-			if not param.mce_extr : copy_file_with_warn()
+			copy_file_with_warn()
 		
 		# Check if Microcode crosses over to the next one(s), when applicable
 		msg_i = chk_mc_cross(match_ucode_idx, match_list_i, msg_i, mc_nr, mc_bgn, mc_len)
@@ -1481,7 +1472,7 @@ for in_file in source :
 		mc_latest = None
 		
 		# noinspection PyRedeclaration
-		(mc_bgn, end_mc_match) = match_list_a[match_ucode_idx].span()
+		mc_bgn = match_list_a[match_ucode_idx].start()
 		
 		mc_bgn -= 1 # Pattern starts from 2nd byte for performance (Year 20xx in BE)
 		
@@ -1517,18 +1508,18 @@ for in_file in source :
 		try :
 			date_chk = datetime.datetime.strptime(full_date, '%Y-%m-%d')
 			
-			if date_chk.year > 2022 : raise() # 1st MC from 1999 (K7), 2000 for K7 Erratum and performance
+			if date_chk.year > 2023 : raise() # 1st MC from 1999 (K7), 2001+ for K7 Erratum and performance
 		except :
 			if (full_date,patch) == ('2011-13-09',0x3000027) : pass # Drunk AMD employee 1, Happy 13th month from AMD!
 			else :
-				msg_a.append(col_m + '\nWarning: Skipped AMD microcode at 0x%X, invalid Date of %s!' % (mc_bgn, full_date) + col_e)
-				if not param.mce_extr : copy_file_with_warn()
+				msg_a.append(col_m + '\nWarning: Skipped potential AMD microcode at 0x%X, invalid Date of %s!' % (mc_bgn, full_date) + col_e)
+				copy_file_with_warn()
 				continue
 		
 		# Remove false results, based on data
 		if reading[mc_bgn + 0x40:mc_bgn + 0x44] == b'\x00' * 4 : # 0x40 has non-null data
-			msg_a.append(col_m + '\nWarning: Skipped AMD microcode at 0x%X, null data at 0x40!' % mc_bgn + col_e)
-			if not param.mce_extr : copy_file_with_warn()
+			msg_a.append(col_m + '\nWarning: Skipped potential AMD microcode at 0x%X, null data at 0x40!' % mc_bgn + col_e)
+			copy_file_with_warn()
 			continue
 		
 		# Print the Header
@@ -1556,18 +1547,16 @@ for in_file in source :
 		mc_nr += 1
 		
 		if mc_len == 0 :
-			msg_a.append(col_r + '\nError: Skipped Microcode #%d at 0x%X, unknown %s size, please report it!' % (mc_nr, mc_bgn, cpu_id) + col_e)
-			if not param.mce_extr : copy_file_with_warn()
+			msg_a.append(col_r + '\nError: Skipped potential AMD Microcode #%d at 0x%X, unknown %s size, please report it!' % (mc_nr, mc_bgn, cpu_id) + col_e)
+			copy_file_with_warn()
 			continue
-		else :
-			mc_len_db = '%0.8X' % mc_len
 		
 		# Check if Microcode crosses over to the next one(s), when applicable
 		msg_a = chk_mc_cross(match_ucode_idx, match_list_a, msg_a, mc_nr, mc_bgn, mc_len)
 		
 		mc_at_db = (cursor.execute('SELECT * FROM AMD WHERE cpuid=? AND nbdevid=? AND sbdevid=? AND nbsbrev=? AND version=? \
 									AND yyyymmdd=? AND size=? AND chkbody=? AND chkmc=?', (cpu_id, nb_id, sb_id, nbsb_rev_id,
-									'%0.8X' % patch, year + month + day, mc_len_db, '%0.8X' % mc_chk, '%0.8X' % mc_file_chk, ))).fetchone()
+									'%0.8X' % patch, year + month + day, '%0.8X' % mc_len, '%0.8X' % mc_chk, '%0.8X' % mc_file_chk, ))).fetchone()
 		
 		mc_is_mod = mc_at_db[9] if mc_at_db else 0 # Get microcode modded state
 		
@@ -1577,7 +1566,7 @@ for in_file in source :
 				
 				cursor.execute('INSERT INTO AMD (cpuid, nbdevid, sbdevid, nbsbrev, version, yyyymmdd, size, chkbody, chkmc) \
 								VALUES (?,?,?,?,?,?,?,?,?)', (cpu_id, nb_id, sb_id, nbsb_rev_id, '%0.8X' % patch, year + month + day,
-								mc_len_db, '%0.8X' % mc_chk, '%0.8X' % mc_file_chk))
+								'%0.8X' % mc_len, '%0.8X' % mc_chk, '%0.8X' % mc_file_chk))
 				
 				connection.commit()
 				
@@ -1661,7 +1650,7 @@ for in_file in source :
 		mc_latest = None
 		
 		# noinspection PyRedeclaration
-		(mc_bgn, end_mc_match) = match_list_v[match_ucode_idx].span()
+		mc_bgn = match_list_v[match_ucode_idx].start()
 		
 		mc_hdr = get_struct(reading, mc_bgn, VIA_MC_Header)
 		
@@ -1687,8 +1676,8 @@ for in_file in source :
 		try :
 			date_chk = datetime.datetime.strptime(full_date, '%Y-%m-%d')
 		except :
-			msg_v.append(col_m + '\nWarning: Skipped VIA microcode at 0x%X, invalid Date of %s!\n' % (mc_bgn, full_date) + col_e)
-			if not param.mce_extr : copy_file_with_warn()
+			msg_v.append(col_m + '\nWarning: Skipped potential VIA microcode at 0x%X, invalid Date of %s!\n' % (mc_bgn, full_date) + col_e)
+			copy_file_with_warn()
 			continue
 		
 		# Print the Header(s)
@@ -1786,7 +1775,7 @@ for in_file in source :
 		mc_latest = None
 		
 		# noinspection PyRedeclaration
-		(mc_bgn, end_mc_match) = match_list_f[match_ucode_idx].span()
+		mc_bgn = match_list_f[match_ucode_idx].start()
 		
 		mc_bgn -= 4 # Pattern starts from 5th byte for performance (Signature QEF)
 		
@@ -1809,7 +1798,7 @@ for in_file in source :
 		if param.print_hdr : mc_hdr.mc_print()
 			
 		qe_off = ctypes.sizeof(FSL_MC_Header) # Header size
-		for qe_mc in range(mc_hdr.CountMC) :
+		for _ in range(mc_hdr.CountMC) :
 			qe_hdr = get_struct(reading, qe_off, FSL_MC_Entry)
 			mc_reserved_all += (qe_hdr.Reserved0 + qe_hdr.Reserved1)
 			if param.print_hdr : qe_hdr.mc_print()
@@ -1823,7 +1812,7 @@ for in_file in source :
 		# Check if any Reserved fields are not empty/0
 		if mc_reserved_all != 0 :
 			msg_f.append(col_m + '\nWarning: Microcode #%d has non-empty Reserved fields, please report it!' % mc_nr + col_e)
-			if not param.mce_extr : copy_file_with_warn()
+			copy_file_with_warn()
 		
 		# Check if Microcode crosses over to the next one(s), when applicable
 		msg_f = chk_mc_cross(match_ucode_idx, match_list_f, msg_f, mc_nr, mc_bgn, mc_len)
@@ -1895,7 +1884,7 @@ for in_file in source :
 		print(col_y + 'Note: Detected Intel Microcode Container...' + col_e)
 	elif total == 0 and in_file in temp_mc_paths :
 		print(col_r + 'Error: File should contain CPU microcodes, please report it!' + col_e)
-		if not param.mce_extr : copy_file_with_warn()
+		copy_file_with_warn()
 	elif total == 0 :
 		print('File does not contain CPU microcodes')
 	
