@@ -1,3 +1,7 @@
+r173
+
+Intel cpu906C0_plat01_ver24000014_2020-11-03_PRD_82B58483
+
 v1.52.4
 
 Increased year ranges for better future proofing
