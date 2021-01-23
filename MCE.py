@@ -7,7 +7,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2021 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.52.4'
+title = 'MC Extractor v1.52.5'
 
 import sys
 
@@ -15,7 +15,7 @@ import sys
 sys_py = sys.version_info
 if sys_py < (3,7) :
 	sys.stdout.write('%s\n\nError: Python >= 3.7 required, not %d.%d!\n' % (title, sys_py[0], sys_py[1]))
-	if '-exit' not in sys.argv : (raw_input if sys_py[0] <= 2 else input)('\nPress enter to exit')
+	if '-exit' not in sys.argv : (raw_input if sys_py[0] <= 2 else input)('\nPress enter to exit') # pylint: disable=E0602
 	sys.exit(-1)
 
 # Detect OS platform
@@ -155,7 +155,7 @@ class Intel_MC_Header(ctypes.LittleEndianStructure) :
 	]
 	
 	def mc_print(self) :		
-		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
+		pt, _ = mc_table(['Field', 'Value'], False, 1)
 		
 		pt.title = col_b + 'Intel Header Main' + col_e
 		pt.add_row(['Header Version', self.HeaderVersion])
@@ -216,7 +216,7 @@ class Intel_MC_Header_Extra_R1(ctypes.LittleEndianStructure) :
 		RSAPublicKey = '%0.*X' % (0x100 * 2, int.from_bytes(self.RSAPublicKey, 'little'))
 		RSASignature = '%0.*X' % (0x100 * 2, int.from_bytes(self.RSASignature, 'little'))
 		
-		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
+		pt, _ = mc_table(['Field', 'Value'], False, 1)
 		
 		pt.title = col_b + 'Intel Header Extra' + col_e
 		pt.add_row(['Module Type', self.ModuleType])
@@ -303,7 +303,7 @@ class Intel_MC_Header_Extra_R2(ctypes.LittleEndianStructure) :
 		RSAPublicKey = '%0.*X' % (0x180 * 2, int.from_bytes(self.RSAPublicKey, 'little'))
 		RSASignature = '%0.*X' % (0x180 * 2, int.from_bytes(self.RSASignature, 'little'))
 		
-		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
+		pt, _ = mc_table(['Field', 'Value'], False, 1)
 		
 		pt.title = col_b + 'Intel Header Extra' + col_e
 		pt.add_row(['Module Type', self.ModuleType])
@@ -371,7 +371,7 @@ class Intel_MC_Header_Extended(ctypes.LittleEndianStructure) :
 	def mc_print(self) :
 		print()
 
-		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
+		pt, _ = mc_table(['Field', 'Value'], False, 1)
 		
 		pt.title = col_b + 'Intel Header Extended' + col_e
 		pt.add_row(['Extended Signatures', self.ExtendedSignatureCount])
@@ -392,7 +392,7 @@ class Intel_MC_Header_Extended_Field(ctypes.LittleEndianStructure) :
 	def mc_print(self) :
 		print()
 		
-		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
+		pt, _ = mc_table(['Field', 'Value'], False, 1)
 		
 		pt.title = col_b + 'Intel Header Extended Field' + col_e
 		pt.add_row(['CPUID', '%0.5X' % self.ProcessorSignature])
@@ -423,7 +423,7 @@ class AMD_MC_Header(ctypes.LittleEndianStructure) :
 	]
 
 	def mc_print(self) :
-		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
+		pt, _ = mc_table(['Field', 'Value'], False, 1)
 		
 		pt.title = col_r + 'AMD Header' + col_e
 		pt.add_row(['Date', '%0.4X-%0.2X-%0.2X' % (self.Date & 0xFFFF, self.Date >> 24, self.Date >> 16 & 0xFF)])
@@ -464,7 +464,7 @@ class VIA_MC_Header(ctypes.LittleEndianStructure) :
 	]
 
 	def mc_print(self) :
-		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
+		pt, _ = mc_table(['Field', 'Value'], False, 1)
 		
 		pt.title = col_c + 'VIA Header' + col_e
 		pt.add_row(['Signature', self.Signature.decode('utf-8')])
@@ -504,7 +504,7 @@ class FSL_MC_Header(ctypes.BigEndianStructure) :
 	]
 
 	def mc_print(self) :
-		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
+		pt, _ = mc_table(['Field', 'Value'], False, 1)
 		
 		pt.title = col_y + 'Freescale Header Main' + col_e
 		pt.add_row(['Signature', self.Signature.decode('utf-8')])
@@ -541,7 +541,7 @@ class FSL_MC_Entry(ctypes.BigEndianStructure) :
 	]
 
 	def mc_print(self) :
-		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
+		pt, _ = mc_table(['Field', 'Value'], False, 1)
 		
 		pt.title = col_y + 'Freescale Header Entry' + col_e
 		pt.add_row(['Name', self.Name.decode('utf-8')])
@@ -572,7 +572,7 @@ class MCB_Header(ctypes.LittleEndianStructure) :
 	]
 	
 	def mc_print(self) :
-		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
+		pt, _ = mc_table(['Field', 'Value'], False, 1)
 		
 		pt.title = col_y + 'Microcode Blob Header' + col_e
 		pt.add_row(['Tag', self.Tag.decode('utf-8')])
@@ -602,7 +602,7 @@ class MCB_Entry(ctypes.LittleEndianStructure) :
 	]
 	
 	def mc_print(self) :
-		pt, pt_empty = mc_table(['Field', 'Value'], False, 1)
+		pt, _ = mc_table(['Field', 'Value'], False, 1)
 		
 		pt.title = col_y + 'Microcode Blob Entry' + col_e
 		pt.add_row(['CPUID', '%0.8X' % self.CPUID])
@@ -709,7 +709,7 @@ def update_check() :
 		latest_py = urllib.request.urlopen('https://raw.githubusercontent.com/platomav/MCExtractor/master/MCE.py').read()
 		latest_py_utf = latest_py.decode('utf-8')
 		latest_py_idx = latest_py_utf.find('title = \'MC Extractor v')
-		if latest_py_idx == -1 : raise()
+		if latest_py_idx == -1 : raise Exception('BAD_PY_FORMAT')
 		latest_py_ver = latest_py_utf[latest_py_idx:][23:].split('\'')[0].split('_')[0]
 		script_py_ver = title[14:].split('_')[0]
 		py_is_upd = mce_is_latest(script_py_ver.split('.')[:3], latest_py_ver.split('.')[:3])
@@ -727,7 +727,7 @@ def update_check() :
 		script_db_rev = (cursor.execute('SELECT revision FROM MCE')).fetchone()[0]
 		db_is_upd = script_db_rev >= latest_db_rev
 		
-		pt, pt_empty = mc_table(['#','Current','Latest','Updated'], True, 1)
+		pt, _ = mc_table(['#','Current','Latest','Updated'], True, 1)
 		pt.title = col_y + 'MC Extractor & DB Update Check' + col_e
 		pt.add_row(['MCE', script_py_ver, latest_py_ver, col_g + 'Yes' + col_e if py_is_upd else col_r + 'No' + col_e])
 		pt.add_row(['DB', script_db_rev, latest_db_rev, col_g + 'Yes' + col_e if db_is_upd else col_r + 'No' + col_e])
@@ -749,7 +749,7 @@ def update_check() :
 			
 			mce_exit(1)
 	
-	except Exception :
+	except :
 		print(col_r + '\nError: Failed to check for MC Extractor & Database updates!' + col_e)
 		
 		mce_exit(-1)
@@ -900,14 +900,14 @@ def display_sql(cursor,title,header,padd):
 	print('\n%s' % sqlr)
 	
 def mce_hdr(hdr_title) :
-	hdr_pt,hdr_pt_empty = mc_table([], False, 1)
+	hdr_pt, _ = mc_table([], False, 1)
 	hdr_pt.add_row([col_y + '        %s        ' % hdr_title + col_e])
 	
 	print(hdr_pt)
 	
 def mass_scan(f_path) :
 	mass_files = []
-	for root, dirs, files in os.walk(f_path):
+	for root, _, files in os.walk(f_path):
 		for name in files :
 			mass_files.append(os.path.join(root, name))
 			
@@ -1137,6 +1137,7 @@ pat_vcpu = re.compile(br'\x52\x52\x41\x53.{4}[\xD6-\xE7]\x07[\x01-\x1F][\x01-\x0
 pat_fcpu = re.compile(br'\x51\x45\x46\x01.{62}[\x00\x01].{5}\x00{4}.{40}\x00{4}', re.DOTALL)
 
 # Global Variable Initialization
+in_file = ''
 mc_latest = None
 match_list_i = None
 repo_included = []
@@ -1208,7 +1209,7 @@ for in_file in source :
 						type_conv = '.dat'
 						break
 				
-			if not type_conv : raise()
+			if not type_conv : raise Exception('UNKNOWN_CONTAINER_TYPE')
 			
 			with open(in_file, 'r', encoding = 'utf-8') as in_cont :
 				
@@ -1508,7 +1509,7 @@ for in_file in source :
 		try :
 			date_chk = datetime.datetime.strptime(full_date, '%Y-%m-%d')
 			
-			if date_chk.year > 2023 : raise() # 1st MC from 1999 (K7), 2001+ for K7 Erratum and performance
+			if date_chk.year < 2001 or date_chk.year > 2023 : raise Exception('BAD_YEAR_RANGE') # 1st MC from 1999 but 2001+ for K7 Erratum and performance
 		except :
 			if (full_date,patch) == ('2011-13-09',0x3000027) : pass # Drunk AMD employee 1, Happy 13th month from AMD!
 			else :
@@ -1915,7 +1916,6 @@ if param.build_blob and param.search :
 		
 		if (mcb_tag,mcb_rev,mcb_res) == (b'$MCB',2,b'$$') : # Sanity checks
 			mcb_count = mcb_hdr.MCCount
-			mcb_dbrev = mcb_hdr.MCEDBRev
 			mcb_ven = mcb_hdr.MCVendor
 			mcb_crc = mcb_hdr.Checksum
 			

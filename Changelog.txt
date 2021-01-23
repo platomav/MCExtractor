@@ -1,3 +1,13 @@
+v1.52.5
+
+Applied various static analysis code fixes
+
+r175
+
+Intel cpuA0671_plat02_ver0000001C_2020-12-14_PRD_7921A253
+Intel cpu306F4_plat80_ver00000017_2020-11-25_PRD_1EFC0424
+Intel cpu406F1_platEF_ver0B00003C_2020-11-19_PRD_7A1A7840
+
 r174
 
 Intel cpuA0671_plat02_ver00000024_2021-01-05_PRD_B6938E0F
