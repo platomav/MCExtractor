@@ -1,3 +1,8 @@
+r176
+
+Intel cpuA0670_plat02_ver0000002C_2020-11-24_PRD_7C2D0B60
+Intel cpu5065B_platBF_ver07000020_2020-11-20_PRD_FA8921B6
+
 v1.52.5
 
 Applied various static analysis code fixes
