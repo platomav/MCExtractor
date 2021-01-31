@@ -1,3 +1,7 @@
+v1.52.6
+
+Fixed error when checking for MCE/DB updates (#41)
+
 r176
 
 Intel cpuA0670_plat02_ver0000002C_2020-11-24_PRD_7C2D0B60

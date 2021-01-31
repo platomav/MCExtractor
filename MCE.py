@@ -7,7 +7,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2021 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.52.5'
+title = 'MC Extractor v1.52.6'
 
 import sys
 
@@ -705,6 +705,8 @@ def mc_db_name(in_file, mc_name, mc_nr) :
 	else : print(col_r + 'Error: A file with the same name already exists!' + col_e)
 
 def update_check() :
+	exit_code = 0
+	
 	try :
 		latest_py = urllib.request.urlopen('https://raw.githubusercontent.com/platomav/MCExtractor/master/MCE.py').read()
 		latest_py_utf = latest_py.decode('utf-8')
@@ -737,7 +739,6 @@ def update_check() :
 		if py_is_upd and db_is_upd :
 			print(col_g + '\nMC Extractor & Database are up to date!' + col_e)
 			
-			mce_exit(0)
 		else :
 			if not py_is_upd and not db_is_upd : print(col_m + '\nMC Extractor & Database are outdated!\n\n%s' % mce_github + col_e)
 			elif not py_is_upd : print(col_m + '\nMC Extractor is outdated!\n\n%s' % mce_github + col_e)
@@ -747,12 +748,14 @@ def update_check() :
 				with open('MCE.py.temp', 'wb') as temp_py : temp_py.write(latest_py)
 				with open('MCE.db.temp', 'wb') as temp_db : temp_db.write(latest_db)
 			
-			mce_exit(1)
+			exit_code = 1
 	
 	except :
 		print(col_r + '\nError: Failed to check for MC Extractor & Database updates!' + col_e)
 		
-		mce_exit(-1)
+		exit_code = -1
+	finally :
+		mce_exit(exit_code)
 	
 def mce_is_latest(ver_before, ver_after) :
 	# ver_before/ver_after = [X.X.X]
