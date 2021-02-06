@@ -1,3 +1,9 @@
+r177
+
+Intel cpu50657_platBF_ver05003005_2020-11-25_PRD_66041F35
+Intel cpu50656_platBF_ver04003005_2020-11-25_PRD_DC065523
+Intel cpu50654_platB7_ver02006A09_2020-11-05_PRD_24607645
+
 v1.52.6
 
 Fixed error when checking for MCE/DB updates (#41)
