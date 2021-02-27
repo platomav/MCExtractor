@@ -1,5 +1,5 @@
 # MCExtractor
-Intel, AMD, VIA &amp; Freescale Microcode Extraction Tool
+**Intel, AMD, VIA &amp; Freescale Microcode Extraction Tool**
 
 [MC Extractor News Feed](https://twitter.com/platomaniac)
 
@@ -7,7 +7,7 @@ Intel, AMD, VIA &amp; Freescale Microcode Extraction Tool
 
 [Intel, AMD, VIA &amp; Freescale CPU Microcode Repositories](https://github.com/platomav/CPUMicrocodes)
 
-[![MC Extractor Donation](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=DJDZD3PRGCSCL)
+<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=DJDZD3PRGCSCL"><img border="0" title="MC Extractor Donation via Paypal or Debit/Credit Card" alt="MC Extractor Donation via Paypal or Debit/Credit Card" src="https://user-images.githubusercontent.com/11527726/109392268-e0f68280-7923-11eb-83d8-0a63f0d20783.png"></a>
 
 ![](https://i.imgur.com/YN1bfmo.png)
 
@@ -85,7 +85,7 @@ During operation, MC Extractor may encounter issues that can trigger Notes, Warn
 
 ## **C. Download MC Extractor**
 
-MC Extractor consists of two files, the executable (MCE.exe or MCE) and the database (MCE.db). An already built/frozen/compiled binary is provided by me for Windows only (icon designed by [Alfredo Hernandez](https://www.alfredocreates.com/)). Thus, **you don't need to manually build/freeze/compile MC Extractor under Windows**. Instead, download the latest version from the [Releases](https://github.com/platomav/MCExtractor/releases) tab, title should be "MC Extractor v1.X.X". You may need to scroll down a bit if there are DB releases at the top. The latter can be used to update the outdated DB which was bundled with the latest executable release, title should be "DB rXX". To extract the already built/frozen/compiled archive, you need to use programs which support RAR5 compression.
+MC Extractor consists of two files, the executable (MCE.exe or MCE) and the database (MCE.db). An already built/frozen/compiled binary is provided by me for Windows only (icon designed by [Alfredo Hernandez](https://www.alfredocreates.com/) under Flaticon license). Thus, **you don't need to manually build/freeze/compile MC Extractor under Windows**. Instead, download the latest version from the [Releases](https://github.com/platomav/MCExtractor/releases) tab, title should start with "MC Extractor v1.X.X". You may need to scroll down a bit if there are DB releases at the top. The latter can be used to update the outdated DB which was bundled with the latest executable release, title should start with "DB rXX". To extract the already built/frozen/compiled archive, you need to use programs which support RAR5 compression.
 
 #### **C1. Compatibility**
 
@@ -172,3 +172,6 @@ Some Anti-Virus software may claim that the built/frozen/compiled MCE executable
 ![](https://i.imgur.com/zXdm2Xo.png)
 
 ![](https://i.imgur.com/zfEpxUv.png)
+
+###### _Donate Button Card Image: [Credit and Loan Pack](https://flaticon.com/free-icon/credit-card_3898076) by **Freepik** under Flaticon license_
+###### _Donate Button Paypal Image: [Credit Cards Pack](https://flaticon.com/free-icon/paypal_349278) by **Freepik** under Flaticon license_
