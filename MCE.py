@@ -7,7 +7,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2021 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.52.6'
+title = 'MC Extractor v1.53.0'
 
 import sys
 
@@ -644,12 +644,15 @@ def show_exception_and_exit(exc_type, exc_value, tb) :
 	if exc_type is KeyboardInterrupt :
 		print('\n')
 	else :
-		print(col_r + '\nError: MC Extractor crashed, please report the following:\n')
+		print(col_r + '\nError: %s crashed, please report the following:\n' % title)
 		traceback.print_exception(exc_type, exc_value, tb)
 		print(col_e)
 	if not param.skip_pause : input('Press enter to exit')
 	colorama.deinit() # Stop Colorama
 	sys.exit(-1)
+
+def report_msg(msg_len) :
+	return ' You can help this project by\n%squickly uploading it to https://mega.nz/megadrop/pRUG54UU1bs/. Thank you!' % (' ' * msg_len)
 	
 def adler32(data, iv=1) :
 	return zlib.adler32(data, iv) & 0xFFFFFFFF
@@ -660,11 +663,10 @@ def crc32(data, iv=0) :
 def checksum32(data) :	
 	chk32 = 0
 	
-	for idx in range(0, len(data), 4) : # Move 4 bytes at a time
-		chkbt = int.from_bytes(data[idx:idx + 4], 'little') # Convert to int
-		chk32 += chkbt
+	for idx in range(0, len(data), 4) :
+		chk32 += int.from_bytes(data[idx:idx + 4], 'little')
 	
-	return -chk32 & 0xFFFFFFFF # Return 0
+	return -chk32 & 0xFFFFFFFF
 	
 # https://github.com/skochinsky/me-tools/blob/master/me_unpack.py by Igor Skochinsky
 def get_struct(input_stream, start_offset, class_name, param_list = None) :
@@ -774,7 +776,7 @@ def chk_mc_mod(mc_nr, msg_vendor, mc_db_note) :
 	
 def chk_mc_cross(match_ucode_idx, match_list_vendor, msg_vendor, mc_nr, mc_bgn, mc_len) :
 	if match_ucode_idx + 1 in range(len(match_list_vendor)) and match_list_vendor[match_ucode_idx + 1].start() < mc_bgn + mc_len :
-		msg_vendor.append(col_m + '\nWarning: Microcode #%d is crossing over to the next microcode(s), please report it!' % mc_nr + col_e)
+		msg_vendor.append(col_m + '\nWarning: Microcode #%d is crossing over to the next microcode(s)!%s' % (mc_nr, report_msg(9)) + col_e)
 		copy_file_with_warn()
 		
 	return msg_vendor
@@ -1363,17 +1365,17 @@ for in_file in source :
 		
 		# Check if any Reserved fields are not empty/0
 		if mc_reserved_all != 0 :
-			msg_i.append(col_m + '\nWarning: Microcode #%d has non-empty Reserved fields, please report it!' % mc_nr + col_e)
+			msg_i.append(col_m + '\nWarning: Microcode #%d has non-empty Reserved fields!%s' % (mc_nr, report_msg(9)) + col_e)
 			copy_file_with_warn()
-			
+		
 		# Check if Main and/or Extended Header CPUID is contained in the Extra Header CPUIDs 0-7 (ignore microcode containers with CPUID 0)
 		if not mc_cpuid_chk :
-			msg_i.append(col_m + '\nWarning: Microcode #%d has Header CPUID discrepancy, please report it!' % mc_nr + col_e)
+			msg_i.append(col_m + '\nWarning: Microcode #%d has Header CPUID discrepancy!%s' % (mc_nr, report_msg(9)) + col_e)
 			copy_file_with_warn()
 		
 		# Check if Main and Extra Header UpdateRevision values are the same (ignore certain special OEM modified Main Headers)
 		if not mc_patch_chk :
-			msg_i.append(col_m + '\nWarning: Microcode #%d has Header Update Revision discrepancy, please report it!' % mc_nr + col_e)
+			msg_i.append(col_m + '\nWarning: Microcode #%d has Header Update Revision discrepancy!%s' % (mc_nr, report_msg(9)) + col_e)
 			copy_file_with_warn()
 		
 		# Check if Microcode crosses over to the next one(s), when applicable
@@ -1441,13 +1443,13 @@ for in_file in source :
 			if patch_u == 0xFF and cpu_id == 0x506E3 and full_date == '2016-01-05' : # Someone "fixed" the modded MC checksum wrongfully
 				mc_path = '%s%s.bin' % (mc_extract, mc_name)
 			else :
-				msg_i.append(col_m + '\nWarning: Microcode #%d is corrupted, please report it!' % mc_nr + col_e)
+				msg_i.append(col_m + '\nWarning: Microcode #%d is corrupted!%s' % (mc_nr, report_msg(9)) + col_e)
 				mc_path = '%s!Bad_%s.bin' % (mc_extract, mc_name)
 		elif len(mc_data) < mc_len :
-			msg_i.append(col_m + '\nWarning: Microcode #%d is truncated, please report it!' % mc_nr + col_e)
+			msg_i.append(col_m + '\nWarning: Microcode #%d is truncated!%s' % (mc_nr, report_msg(9)) + col_e)
 			mc_path = '%s!Bad_%s.bin' % (mc_extract, mc_name)
 		elif mc_at_db is None :
-			msg_i.append(col_g + "\nNote: Microcode #%d was not found at the database, please report it!" % mc_nr + col_e)
+			msg_i.append(col_g + '\nNote: Microcode #%d is not in the database!%s' % (mc_nr, report_msg(6)) + col_e)
 			mc_path = '%s!New_%s.bin' % (mc_extract, mc_name)
 		else :
 			mc_path = '%s%s.bin' % (mc_extract, mc_name)
@@ -1551,7 +1553,7 @@ for in_file in source :
 		mc_nr += 1
 		
 		if mc_len == 0 :
-			msg_a.append(col_r + '\nError: Skipped potential AMD Microcode #%d at 0x%X, unknown %s size, please report it!' % (mc_nr, mc_bgn, cpu_id) + col_e)
+			msg_a.append(col_r + '\nError: Skipped potential AMD Microcode #%d at 0x%X, unknown %s size!%s' % (mc_nr, mc_bgn, cpu_id, report_msg(7)) + col_e)
 			copy_file_with_warn()
 			continue
 		
@@ -1619,13 +1621,13 @@ for in_file in source :
 		if not param.mce_ubu and not os.path.exists(mc_extract) : os.makedirs(mc_extract)
 		
 		if int(cpu_id[2:4], 16) < 0x50 and (valid_chk + mc_chk) & 0xFFFFFFFF != 0 :
-			msg_a.append(col_m + '\nWarning: Microcode #%d is corrupted, please report it!' % mc_nr + col_e)
+			msg_a.append(col_m + '\nWarning: Microcode #%d is corrupted!%s' % (mc_nr, report_msg(9)) + col_e)
 			mc_path = '%s!Bad_%s.bin' % (mc_extract, mc_name)
 		elif len(mc_data) < mc_len :
-			msg_a.append(col_m + '\nWarning: Microcode #%d is truncated, please report it!' % mc_nr + col_e)
+			msg_a.append(col_m + '\nWarning: Microcode #%d is truncated!%s' % (mc_nr, report_msg(9)) + col_e)
 			mc_path = '%s!Bad_%s.bin' % (mc_extract, mc_name)
 		elif mc_at_db is None :
-			msg_a.append(col_g + '\nNote: Microcode #%d was not found at the database, please report it!' % mc_nr + col_e)
+			msg_a.append(col_g + '\nNote: Microcode #%d is not in the database!%s' % (mc_nr, report_msg(6)) + col_e)
 			mc_path = '%s!New_%s.bin' % (mc_extract, mc_name)
 		else :
 			mc_path = '%s%s.bin' % (mc_extract, mc_name)
@@ -1743,13 +1745,13 @@ for in_file in source :
 			elif full_date == '2011-08-09' and name == '06FE105A' and mc_chk == 0x8F396F73 : # Drunk VIA employee 2, Checksum for Reserved FF*4 instead of 00FF*3
 				mc_path = '%s%s.bin' % (mc_extract, mc_name)
 			else :
-				msg_v.append(col_m + '\nWarning: Microcode #%d is corrupted, please report it!\n' % mc_nr + col_e)
+				msg_v.append(col_m + '\nWarning: Microcode #%d is corrupted!%s' % (mc_nr, report_msg(9)) + col_e)
 				mc_path = '%s!Bad_%s.bin' % (mc_extract, mc_name)
 		elif len(mc_data) < mc_len :
-			msg_v.append(col_m + '\nWarning: Microcode #%d is truncated, please report it!\n' % mc_nr + col_e)
+			msg_v.append(col_m + '\nWarning: Microcode #%d is truncated!%s' % (mc_nr, report_msg(9)) + col_e)
 			mc_path = '%s!Bad_%s.bin' % (mc_extract, mc_name)
 		elif mc_at_db is None :
-			msg_v.append(col_g + '\nNote: Microcode #%d was not found at the database, please report it!\n' % mc_nr + col_e)
+			msg_v.append(col_g + '\nNote: Microcode #%d is not in the database!%s' % (mc_nr, report_msg(6)) + col_e)
 			mc_path = '%s!New_%s.bin' % (mc_extract, mc_name)
 		else :
 			mc_path = '%s%s.bin' % (mc_extract, mc_name)
@@ -1815,7 +1817,7 @@ for in_file in source :
 		
 		# Check if any Reserved fields are not empty/0
 		if mc_reserved_all != 0 :
-			msg_f.append(col_m + '\nWarning: Microcode #%d has non-empty Reserved fields, please report it!' % mc_nr + col_e)
+			msg_f.append(col_m + '\nWarning: Microcode #%d has non-empty Reserved fields!%s' % (mc_nr, report_msg(9)) + col_e)
 			copy_file_with_warn()
 		
 		# Check if Microcode crosses over to the next one(s), when applicable
@@ -1865,13 +1867,13 @@ for in_file in source :
 		if not param.mce_ubu and not os.path.exists(mc_extract) : os.makedirs(mc_extract)
 		
 		if calc_crc != mc_chk :
-			msg_f.append(col_m + '\nWarning: Microcode #%d is corrupted, please report it!\n' % mc_nr + col_e)
+			msg_f.append(col_m + '\nWarning: Microcode #%d is corrupted!%s' % (mc_nr, report_msg(9)) + col_e)
 			mc_path = '%s!Bad_%s.bin' % (mc_extract, mc_name)
 		elif len(mc_data) < mc_len :
-			msg_f.append(col_m + '\nWarning: Microcode #%d is truncated, please report it!\n' % mc_nr + col_e)
+			msg_f.append(col_m + '\nWarning: Microcode #%d is truncated!%s' % (mc_nr, report_msg(9)) + col_e)
 			mc_path = '%s!Bad_%s.bin' % (mc_extract, mc_name)
 		elif mc_at_db is None :
-			msg_f.append(col_g + '\nNote: Microcode #%d was not found at the database, please report it!\n' % mc_nr + col_e)
+			msg_f.append(col_g + '\nNote: Microcode #%d is not in the database!%s' % (mc_nr, report_msg(6)) + col_e)
 			mc_path = '%s!New_%s.bin' % (mc_extract, mc_name)
 		else :
 			mc_path = '%s%s.bin' % (mc_extract, mc_name)
@@ -1887,7 +1889,7 @@ for in_file in source :
 	if mc_conv_data :
 		print(col_y + 'Note: Detected Intel Microcode Container...' + col_e)
 	elif total == 0 and in_file in temp_mc_paths :
-		print(col_r + 'Error: File should contain CPU microcodes, please report it!' + col_e)
+		print(col_r + 'Error: File should contain CPU microcodes!%s' % report_msg(7) + col_e)
 		copy_file_with_warn()
 	elif total == 0 :
 		print('File does not contain CPU microcodes')
