@@ -1,3 +1,11 @@
+r191
+
+Intel cpu806C1_plat80_ver0000008A_2021-04-09_PRD_BC41F8D2
+Intel cpu50657_platBF_ver05003102_2021-03-08_PRD_DDE3B62C
+Intel cpu50654_platB7_ver02006B06_2021-03-08_PRD_095E1DFE
+Intel cpuA0652_plat20_ver000000EA_2021-02-07_PRD_B7D0AB6B
+Intel cpu906C0_plat01_ver0000001B_2021-01-14_PRD_DEDE0AFE
+
 v1.60.0
 
 Improved microcode analysis performance greatly
