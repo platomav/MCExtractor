@@ -1,3 +1,13 @@
+v1.70.0
+
+Added automatic check for MCE & DB updates
+Improved microcode corruption error reporting
+Removed manual update check parameter (-updchk)
+
+r197
+
+Intel cpu606A6_plat87_ver0D0002B1_2021-05-13_PRD_496BAB22
+
 r196
 
 Intel cpu806C1_plat80_ver0000007E_2021-03-08_PRD_2C353F4D

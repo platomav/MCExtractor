@@ -7,7 +7,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2021 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.60.0'
+title = 'MC Extractor v1.70.0'
 
 import sys
 
@@ -38,6 +38,7 @@ import shutil
 import ctypes
 import inspect
 import sqlite3
+import threading
 import traceback
 import urllib.request
 import importlib.util
@@ -80,7 +81,6 @@ def mce_help() :
 		  '-add    : Adds new input microcode to DB\n'
 		  '-dbname : Renames input file based on DB name\n'
 		  '-search : Searches for microcodes based on CPUID\n'
-		  '-updchk : Checks for MC Extractor & DB updates\n'
 		  '-last   : Shows \"Last\" status based on user input\n'
 		  '-repo   : Builds microcode repositories from input\n'
 		  '-blob   : Builds a Microcode Blob (MCB) from input'
@@ -96,7 +96,7 @@ class MCE_Param :
 
 	def __init__(self, sys_os, source) :
 	
-		self.val = ['-?','-skip','-info','-add','-mass','-search','-dbname','-repo','-exit','-blob','-last','-updchk']
+		self.val = ['-?','-skip','-info','-add','-mass','-search','-dbname','-repo','-exit','-blob','-last']
 		if sys_os == 'win32' : self.val.extend(['-ubu']) # Windows only
 		
 		self.help_scr = False
@@ -111,7 +111,6 @@ class MCE_Param :
 		self.skip_pause = False
 		self.build_blob = False
 		self.get_last = False
-		self.upd_check = False
 		
 		if '-?' in source : self.help_scr = True
 		if '-skip' in source : self.skip_intro = True
@@ -124,10 +123,20 @@ class MCE_Param :
 		if '-exit' in source : self.skip_pause = True
 		if '-blob' in source : self.build_blob = True
 		if '-last' in source : self.get_last = True
-		if '-updchk' in source : self.upd_check = True
 		if '-ubu' in source : self.mce_ubu = True # Hidden
 			
-		if self.mass_scan or self.search or self.build_repo or self.build_blob or self.get_last or self.upd_check : self.skip_intro = True
+		if self.mass_scan or self.search or self.build_repo or self.build_blob or self.get_last : self.skip_intro = True
+
+# https://stackoverflow.com/a/65447493 by Shail-Shouryya
+class Thread_With_Result(threading.Thread) :
+	def __init__(self, group=None, target=None, name=None, args=(), kwargs=None, *, daemon=None) :
+		self.result = None
+		if kwargs is None : kwargs = {}
+
+		def function() :
+			self.result = target(*args, **kwargs)
+
+		super().__init__(group=group, target=function, name=name, daemon=daemon)
 
 class Intel_MC_Header(ctypes.LittleEndianStructure) :
 	_pack_ = 1
@@ -612,15 +621,19 @@ class MCB_Entry(ctypes.LittleEndianStructure) :
 		print(pt)
 		
 def mce_exit(code) :
-	if not param.skip_pause : input('\nPress enter to exit')
-	
 	try :
+		# Before exiting, print output of MCE & DB update check Thread, if completed/dead
+		if not thread_update.is_alive() and thread_update.result : print(thread_update.result)
+		
+		# Before exiting, close DB
 		cursor.close() # Close DB Cursor
 		connection.close() # Close DB Connection
 	except :
 		pass
 	
 	colorama.deinit() # Stop Colorama
+	
+	if not param.skip_pause : input('\nPress enter to exit')
 	
 	sys.exit(code)
 	
@@ -714,58 +727,46 @@ def date_check(year, month, day) :
 	
 	return True
 	
-def update_check() :
-	exit_code = 0
+def mce_upd_check(db_path) :
+	result = None
 	
 	try :
-		latest_py = urllib.request.urlopen('https://raw.githubusercontent.com/platomav/MCExtractor/master/MCE.py').read()
-		latest_py_utf = latest_py.decode('utf-8')
-		latest_py_idx = latest_py_utf.find('title = \'MC Extractor v')
-		if latest_py_idx == -1 : raise Exception('BAD_PY_FORMAT')
-		latest_py_ver = latest_py_utf[latest_py_idx:][23:].split('\'')[0].split('_')[0]
-		script_py_ver = title[14:].split('_')[0]
-		py_is_upd = mce_is_latest(script_py_ver.split('.')[:3], latest_py_ver.split('.')[:3])
+		with urllib.request.urlopen('https://raw.githubusercontent.com/platomav/MCExtractor/master/MCE.py') as gpy : git_py = gpy.read(0x100)
+		git_py_utf = git_py.decode('utf-8','ignore')
+		git_py_idx = git_py_utf.find('title = \'MC Extractor v')
+		if git_py_idx == -1 : raise Exception('BAD_PY_FORMAT')
+		git_py_ver = git_py_utf[git_py_idx:][23:].split('\'')[0].split('_')[0]
+		cur_py_ver = title[14:].split('_')[0]
+		py_print = '(v%s --> v%s)' % (cur_py_ver, git_py_ver)
+		py_is_upd = mce_is_latest(cur_py_ver.split('.')[:3], git_py_ver.split('.')[:3])
 		
-		latest_db = urllib.request.urlopen('https://raw.githubusercontent.com/platomav/MCExtractor/master/MCE.db').read()
-		with open('MCE.db.temp', 'wb') as temp_db : temp_db.write(latest_db)
-		connection_temp = sqlite3.connect('MCE.db.temp')
-		cursor_temp = connection_temp.cursor()
-		cursor_temp.execute('PRAGMA quick_check')
-		latest_db_rev = (cursor_temp.execute('SELECT revision FROM MCE')).fetchone()[0]
-		cursor_temp.close()
-		connection_temp.close()
-		if os.path.isfile('MCE.db.temp') : os.remove('MCE.db.temp')
+		with urllib.request.urlopen('https://raw.githubusercontent.com/platomav/MCExtractor/master/MCE.db') as gdb : git_db = gdb.read()
+		tmp_db = db_path + '.temp'
+		with open(tmp_db, 'wb') as db : db.write(git_db)
+		git_conn = sqlite3.connect(tmp_db)
+		git_curs = git_conn.cursor()
+		git_curs.execute('PRAGMA quick_check')
+		git_db_ver = (git_curs.execute('SELECT revision FROM MCE')).fetchone()[0]
+		git_curs.close()
+		git_conn.close()
+		if os.path.isfile(tmp_db) : os.remove(tmp_db)
+		cur_conn = sqlite3.connect(db_path)
+		cur_curs = cur_conn.cursor()
+		cur_curs.execute('PRAGMA quick_check')
+		cur_db_ver = (cur_curs.execute('SELECT revision FROM MCE')).fetchone()[0]
+		cur_curs.close()
+		cur_conn.close()
+		db_print = '(r%s --> r%s)' % (cur_db_ver, git_db_ver)
+		db_is_upd = cur_db_ver >= git_db_ver
 		
-		script_db_rev = (cursor.execute('SELECT revision FROM MCE')).fetchone()[0]
-		db_is_upd = script_db_rev >= latest_db_rev
-		
-		pt, _ = mc_table(['#','Current','Latest','Updated'], True, 1)
-		pt.title = col_y + 'MC Extractor & DB Update Check' + col_e
-		pt.add_row(['MCE', script_py_ver, latest_py_ver, col_g + 'Yes' + col_e if py_is_upd else col_r + 'No' + col_e])
-		pt.add_row(['DB', script_db_rev, latest_db_rev, col_g + 'Yes' + col_e if db_is_upd else col_r + 'No' + col_e])
-		print('\n%s' % pt)
-		
-		mce_github = 'Download the latest from https://github.com/platomav/MCExtractor/'
-		if py_is_upd and db_is_upd :
-			print(col_g + '\nMC Extractor & Database are up to date!' + col_e)
-			
-		else :
-			if not py_is_upd and not db_is_upd : print(col_m + '\nMC Extractor & Database are outdated!\n\n%s' % mce_github + col_e)
-			elif not py_is_upd : print(col_m + '\nMC Extractor is outdated!\n\n%s' % mce_github + col_e)
-			elif not db_is_upd : print(col_m + '\nMC Extractor Database is outdated!\n\n%s' % mce_github + col_e)
-			
-			if param.mce_ubu :
-				with open('MCE.py.temp', 'wb') as temp_py : temp_py.write(latest_py)
-				with open('MCE.db.temp', 'wb') as temp_db : temp_db.write(latest_db)
-			
-			exit_code = 1
-	
+		git_link = '\n         Download the latest from https://github.com/platomav/MCExtractor/'
+		if not py_is_upd and not db_is_upd : result = col_m + '\nWarning: Outdated MC Extractor %s & Database %s!' % (py_print,db_print) + git_link + col_e
+		elif not py_is_upd : result = col_m + '\nWarning: Outdated MC Extractor %s!' % py_print + git_link + col_e
+		elif not db_is_upd : result = col_m + '\nWarning: Outdated Database %s!' % db_print + git_link + col_e
 	except :
-		print(col_r + '\nError: Failed to check for MC Extractor & Database updates!' + col_e)
-		
-		exit_code = -1
-	finally :
-		mce_exit(exit_code)
+		result = None
+	
+	return result
 	
 def mce_is_latest(ver_before, ver_after) :
 	# ver_before/ver_after = [X.X.X]
@@ -784,7 +785,7 @@ def chk_mc_mod(mc_nr, msg_vendor, mc_db_note) :
 	
 def chk_mc_cross(match_ucode_idx, match_list_vendor, msg_vendor, mc_nr, mc_bgn, mc_len) :
 	if match_ucode_idx + 1 in range(len(match_list_vendor)) and match_list_vendor[match_ucode_idx + 1].start() < mc_bgn + mc_len :
-		msg_vendor.append(col_m + '\nWarning: Microcode #%d is crossing over to the next microcode(s)!%s' % (mc_nr, report_msg(9)) + col_e)
+		msg_vendor.append(col_m + '\nWarning: Microcode #%d is crossing over to the next microcode(s)!' % mc_nr + col_e)
 		copy_file_with_warn()
 		
 	return msg_vendor
@@ -940,6 +941,10 @@ mce_dir = get_script_dir()
 # Set DB location
 db_path = os.path.join(mce_dir, 'MCE.db')
 
+# Initialize & Start background Thread for MCE & DB update check
+thread_update = Thread_With_Result(target=mce_upd_check, args=(db_path,), daemon=True)
+thread_update.start() # Start as soon as possible (mce_dir, db_path)
+
 # Set MCB location
 mcb_path = os.path.join(mce_dir, 'MCB.bin')
 
@@ -976,11 +981,11 @@ if os.path.isfile(db_path) :
 	
 	# Check for MCE & DB incompatibility
 	db_rev = (cursor.execute('SELECT revision FROM MCE')).fetchone()[0]
-	db_dev = ['','Dev'][(cursor.execute('SELECT developer FROM MCE')).fetchone()[0]]
+	db_dev = ['',' Dev'][(cursor.execute('SELECT developer FROM MCE')).fetchone()[0]]
 	db_min = (cursor.execute('SELECT minimum FROM MCE')).fetchone()[0]
 	if not mce_is_latest(title[14:].split('_')[0].split('.')[:3], db_min.split('_')[0].split('.')[:3]) :
 		mce_hdr(title)
-		print(col_r + '\nError: DB r%d %s requires MCE >= v%s!' % (db_rev, db_dev, db_min) + col_e)
+		print(col_r + '\nError: DB r%d%s requires MCE >= v%s!' % (db_rev, db_dev, db_min) + col_e)
 		mce_exit(-1)
 	
 else :
@@ -1039,7 +1044,7 @@ if not param.skip_intro :
 elif not param.get_last :
 	mce_hdr(mce_title)
 
-if (arg_num < 2 and not param.upd_check and not param.help_scr and not param.mass_scan
+if (arg_num < 2 and not param.help_scr and not param.mass_scan
 and not param.search and not param.get_last) or param.help_scr :
 	mce_help()
 
@@ -1048,8 +1053,6 @@ if param.mass_scan :
 	source = mass_scan(in_path)
 else :
 	source = sys.argv[1:] # Skip script/executable
-	
-if param.upd_check : update_check()
 
 # Search DB by CPUID (Intel/AMD/VIA) or Model (Freescale)
 if param.search and not param.build_blob :
@@ -1464,10 +1467,10 @@ for in_file in source :
 			if (patch_u,cpu_id,full_date) == (0xFF,0x506E3,'2016-01-05') : # Someone "fixed" the modded MC checksum wrongfully
 				mc_path = '%s%s.bin' % (extr_dir_int, mc_name)
 			else :
-				msg_i.append(col_m + '\nWarning: Microcode #%d is corrupted!%s' % (mc_nr, report_msg(9)) + col_e)
+				msg_i.append(col_m + '\nWarning: Microcode #%d is corrupted!' % mc_nr + col_e)
 				mc_path = '%s!Bad_%s.bin' % (extr_dir_int, mc_name)
 		elif len(mc_data) < mc_len :
-			msg_i.append(col_m + '\nWarning: Microcode #%d is truncated!%s' % (mc_nr, report_msg(9)) + col_e)
+			msg_i.append(col_m + '\nWarning: Microcode #%d is truncated!' % mc_nr + col_e)
 			mc_path = '%s!Bad_%s.bin' % (extr_dir_int, mc_name)
 		elif mc_at_db is None :
 			msg_i.append(col_g + '\nNote: Microcode #%d is not in the database!%s' % (mc_nr, report_msg(6)) + col_e)
@@ -1644,10 +1647,10 @@ for in_file in source :
 		else : mc_chk_ok = 0
 		
 		if mc_chk_ok != 0 :
-			msg_a.append(col_m + '\nWarning: Microcode #%d is corrupted!%s' % (mc_nr, report_msg(9)) + col_e)
+			msg_a.append(col_m + '\nWarning: Microcode #%d is corrupted!' % mc_nr + col_e)
 			mc_path = '%s!Bad_%s.bin' % (extr_dir_amd, mc_name)
 		elif len(mc_data) < mc_len :
-			msg_a.append(col_m + '\nWarning: Microcode #%d is truncated!%s' % (mc_nr, report_msg(9)) + col_e)
+			msg_a.append(col_m + '\nWarning: Microcode #%d is truncated!' % mc_nr + col_e)
 			mc_path = '%s!Bad_%s.bin' % (extr_dir_amd, mc_name)
 		elif mc_at_db is None :
 			msg_a.append(col_g + '\nNote: Microcode #%d is not in the database!%s' % (mc_nr, report_msg(6)) + col_e)
@@ -1768,10 +1771,10 @@ for in_file in source :
 			elif (full_date,name,mc_chk) == ('2011-08-09','06FE105A',0x8F396F73) : # Drunk VIA employee 2, Checksum for Reserved FF*4 instead of 00FF*3
 				mc_path = '%s%s.bin' % (extr_dir_via, mc_name)
 			else :
-				msg_v.append(col_m + '\nWarning: Microcode #%d is corrupted!%s' % (mc_nr, report_msg(9)) + col_e)
+				msg_v.append(col_m + '\nWarning: Microcode #%d is corrupted!' % mc_nr + col_e)
 				mc_path = '%s!Bad_%s.bin' % (extr_dir_via, mc_name)
 		elif len(mc_data) < mc_len :
-			msg_v.append(col_m + '\nWarning: Microcode #%d is truncated!%s' % (mc_nr, report_msg(9)) + col_e)
+			msg_v.append(col_m + '\nWarning: Microcode #%d is truncated!' % mc_nr + col_e)
 			mc_path = '%s!Bad_%s.bin' % (extr_dir_via, mc_name)
 		elif mc_at_db is None :
 			msg_v.append(col_g + '\nNote: Microcode #%d is not in the database!%s' % (mc_nr, report_msg(6)) + col_e)
@@ -1890,10 +1893,10 @@ for in_file in source :
 		if not param.mce_ubu and not os.path.exists(extr_dir_fsl) : os.makedirs(extr_dir_fsl)
 		
 		if mc_chk_ok != mc_chk :
-			msg_f.append(col_m + '\nWarning: Microcode #%d is corrupted!%s' % (mc_nr, report_msg(9)) + col_e)
+			msg_f.append(col_m + '\nWarning: Microcode #%d is corrupted!' % mc_nr + col_e)
 			mc_path = '%s!Bad_%s.bin' % (extr_dir_fsl, mc_name)
 		elif len(mc_data) < mc_len :
-			msg_f.append(col_m + '\nWarning: Microcode #%d is truncated!%s' % (mc_nr, report_msg(9)) + col_e)
+			msg_f.append(col_m + '\nWarning: Microcode #%d is truncated!' % mc_nr + col_e)
 			mc_path = '%s!Bad_%s.bin' % (extr_dir_fsl, mc_name)
 		elif mc_at_db is None :
 			msg_f.append(col_g + '\nNote: Microcode #%d is not in the database!%s' % (mc_nr, report_msg(6)) + col_e)

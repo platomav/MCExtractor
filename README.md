@@ -9,7 +9,7 @@
 
 <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=DJDZD3PRGCSCL"><img border="0" title="MC Extractor Donation via Paypal or Debit/Credit Card" alt="MC Extractor Donation via Paypal or Debit/Credit Card" src="https://user-images.githubusercontent.com/11527726/109392268-e0f68280-7923-11eb-83d8-0a63f0d20783.png"></a>
 
-![](https://i.imgur.com/YN1bfmo.png)
+![](https://i.imgur.com/25peZby.png)
 
 ## **A. About MC Extractor**
 
@@ -32,6 +32,7 @@ MC Extractor is a tool which parses Intel, AMD, VIA and Freescale processor micr
 - Ability to check for MC Extractor and/or DB updates on demand
 - Ability to analyze multiple files by drag & drop or by input path
 - Ability to ignore extracted duplicates based on name and contents
+- Ability to automatically scan for newer MC Extractor & Database releases
 - Reports all microcodes which are not found at the Microcode Repositories
 - Features command line parameters to enhance functionality & assist research
 - Features user friendly messages & proper handling of unexpected code errors
@@ -66,7 +67,6 @@ There are various parameters which enhance or modify the default behavior of MC 
 * -add    : Adds new input microcode to DB
 * -dbname : Renames input file based on DB name
 * -search : Searches for microcodes based on CPUID
-* -updchk : Checks for MC Extractor & DB updates
 * -last   : Shows "Last" status based on user input
 * -repo   : Builds microcode repositories from input
 * -blob   : Builds a Microcode Blob (MCB) from input
@@ -135,43 +135,45 @@ Some Anti-Virus software may claim that the built/frozen/compiled MCE executable
 
 ## **D. Pictures**
 
-**Note:** Some pictures are outdated and depict older MC Extractor versions.
+**Note:** Some pictures may be outdated and depict older MC Extractor versions.
 
-![](https://i.imgur.com/YN1bfmo.png)
+![](https://i.imgur.com/25peZby.png)
 
-![](https://i.imgur.com/LcFVxwI.png)
+![](https://i.imgur.com/xd5jtZd.png)
 
-![](https://i.imgur.com/g6e8deP.png)
+![](https://i.imgur.com/IE9fKfj.png)
 
-![](https://i.imgur.com/MpDwImf.png)
+![](https://i.imgur.com/5M3w5Fs.png)
 
-![](https://i.imgur.com/iIC6CfR.png)
+![](https://i.imgur.com/DfpkcYV.png)
 
-![](https://i.imgur.com/S3qvvIp.png)
+![](https://i.imgur.com/AidY4WK.png)
 
-![](https://i.imgur.com/5sRuTXi.png)
+![](https://i.imgur.com/5pb7C8q.png)
 
-![](https://i.imgur.com/tin1cl1.png)
+![](https://i.imgur.com/AMO6G38.png)
 
-![](https://i.imgur.com/r8Iaq7y.png)
+![](https://i.imgur.com/qssM45a.png)
 
-![](https://i.imgur.com/AELEJeP.png)
+![](https://i.imgur.com/97reP91.png)
 
-![](https://i.imgur.com/3LFAqEz.png)
+![](https://i.imgur.com/IcqtKju.png)
 
-![](https://i.imgur.com/WZgJuHv.png)
+![](https://i.imgur.com/lBmtfiW.png)
 
-![](https://i.imgur.com/6g4X1qD.png)
+![](https://i.imgur.com/mUDPeZw.png)
 
-![](https://i.imgur.com/ASV52pd.png)
+![](https://i.imgur.com/YqCwKIN.png)
 
-![](https://i.imgur.com/e7HU95o.png)
+![](https://i.imgur.com/34Q0cZx.png)
 
-![](https://i.imgur.com/T1mLYm7.png)
+![](https://i.imgur.com/FKF2l5O.png)
 
-![](https://i.imgur.com/zXdm2Xo.png)
+![](https://i.imgur.com/0kKFIVt.png)
 
-![](https://i.imgur.com/zfEpxUv.png)
+![](https://i.imgur.com/FlmmYjV.png)
+
+![](https://i.imgur.com/sprxSn3.png)
 
 ###### _Donate Button Card Image: [Credit and Loan Pack](https://flaticon.com/free-icon/credit-card_3898076) by **Freepik** under Flaticon license_
 ###### _Donate Button Paypal Image: [Credit Cards Pack](https://flaticon.com/free-icon/paypal_349278) by **Freepik** under Flaticon license_
