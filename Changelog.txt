@@ -1,3 +1,7 @@
+r198
+
+Intel cpu806C2_platC2_ver00000006_2021-01-04_PRD_4CDCF2FE
+
 v1.70.0
 
 Added automatic check for MCE & DB updates
