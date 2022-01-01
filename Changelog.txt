@@ -1,3 +1,12 @@
+v1.71.0
+
+Increased year ranges for better future proofing
+
+r212
+
+Intel cpu90675_plat03_ver00000018_2021-12-07_PRD_8963E307
+Intel cpu90672_plat03_ver00000018_2021-12-07_PRD_8963E30A
+
 r211
 
 Intel cpu90675_plat03_ver00000016_2021-11-11_PRD_0E7DD8F6

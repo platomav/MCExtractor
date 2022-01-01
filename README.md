@@ -63,10 +63,10 @@ There are various parameters which enhance or modify the default behavior of MC 
 * -skip   : Skips welcome & options screen
 * -exit   : Skips Press enter to exit prompt
 * -mass   : Scans all files of a given directory
-* -info   : Displays microcode header(s)
-* -add    : Adds new input microcode to DB
-* -dbname : Renames input file based on DB name
-* -search : Searches for microcodes based on CPUID
+* -info   : Displays microcode structure info
+* -add    : Adds input microcode to DB, if new
+* -dbn    : Renames input file based on unique DB name
+* -search : Searches for microcodes based on CPUID/Model
 * -last   : Shows "Last" status based on user input
 * -repo   : Builds microcode repositories from input
 * -blob   : Builds a Microcode Blob (MCB) from input

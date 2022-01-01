@@ -4,10 +4,10 @@
 """
 MC Extractor
 Intel, AMD, VIA & Freescale Microcode Extractor
-Copyright (C) 2016-2021 Plato Mavropoulos
+Copyright (C) 2016-2022 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.70.0'
+title = 'MC Extractor v1.71.0'
 
 import sys
 
@@ -77,16 +77,16 @@ def mce_help() :
 		  '-skip   : Skips welcome & options screen\n'
 		  '-exit   : Skips Press enter to exit prompt\n'
 		  '-mass   : Scans all files of a given directory\n'
-		  '-info   : Displays microcode header(s)\n'
-		  '-add    : Adds new input microcode to DB\n'
-		  '-dbname : Renames input file based on DB name\n'
-		  '-search : Searches for microcodes based on CPUID\n'
+		  '-info   : Displays microcode structure info\n'
+		  '-add    : Adds input microcode to DB, if new\n'
+		  '-dbn    : Renames input file based on unique DB name\n'
+		  '-search : Searches for microcodes based on CPUID/Model\n'
 		  '-last   : Shows \"Last\" status based on user input\n'
 		  '-repo   : Builds microcode repositories from input\n'
 		  '-blob   : Builds a Microcode Blob (MCB) from input'
 		  )
 	
-	print(col_g + '\nCopyright (C) 2016-2021 Plato Mavropoulos' + col_e)
+	print(col_g + '\nCopyright (C) 2016-2022 Plato Mavropoulos' + col_e)
 	
 	if getattr(sys, 'frozen', False) : print(col_c + '\nIcon by Alfredo Hernandez (alfredocreates.com, Flaticon License)' + col_e)
 	
@@ -96,7 +96,7 @@ class MCE_Param :
 
 	def __init__(self, sys_os, source) :
 	
-		self.val = ['-?','-skip','-info','-add','-mass','-search','-dbname','-repo','-exit','-blob','-last']
+		self.val = ['-?','-skip','-info','-add','-mass','-search','-dbn','-repo','-exit','-blob','-last']
 		if sys_os == 'win32' : self.val.extend(['-ubu']) # Windows only
 		
 		self.help_scr = False
@@ -118,7 +118,7 @@ class MCE_Param :
 		if '-info' in source : self.print_hdr = True
 		if '-mass' in source : self.mass_scan = True
 		if '-search' in source : self.search = True
-		if '-dbname' in source : self.give_db_name = True
+		if '-dbn' in source : self.give_db_name = True
 		if '-repo' in source : self.build_repo = True
 		if '-exit' in source : self.skip_pause = True
 		if '-blob' in source : self.build_blob = True
@@ -1140,14 +1140,14 @@ if param.get_last :
 	
 	mce_exit(0)
 
-# Intel - HeaderRev 01, Year 1993-2023, Day 01-31, Month 01-12, CPUID xxxxxx00, LoaderRev 00-01, PlatformIDs 000000xx, DataSize xxxxxx00, TotalSize xxxxxx00, Reserved1
-pat_int = re.compile(br'\x01\x00{3}.{4}(([\x00-\x09\x10-\x19\x20-\x23]\x20)|([\x93-\x99]\x19))[\x01-\x09\x10-\x19\x20-\x29\x30-\x31][\x01-\x09\x10-\x12].{3}\x00.{4}[\x01\x00]\x00{3}.\x00{3}.{3}\x00.{3}\x00{13}', re.DOTALL)
+# Intel - HeaderRev 01, Year 1993-2024, Day 01-31, Month 01-12, CPUID xxxxxx00, LoaderRev 00-01, PlatformIDs 000000xx, DataSize xxxxxx00, TotalSize xxxxxx00, Reserved1
+pat_int = re.compile(br'\x01\x00{3}.{4}(([\x00-\x09\x10-\x19\x20-\x24]\x20)|([\x93-\x99]\x19))[\x01-\x09\x10-\x19\x20-\x29\x30-\x31][\x01-\x09\x10-\x12].{3}\x00.{4}[\x01\x00]\x00{3}.\x00{3}.{3}\x00.{3}\x00{13}', re.DOTALL)
 
 # AMD - Year 20xx, Month 01-13, LoaderID 00-06, DataSize 00|10|20, InitFlag 00-01, NorthBridgeVEN_ID 0000|1022, SouthBridgeVEN_ID 0000|1022, BiosApiREV_ID 00-01, Reserved 00|AA
 pat_amd = re.compile(br'\x20[\x01-\x09\x10-\x19\x20-\x29\x30-\x31][\x01-\x09\x10-\x13].{4}[\x00-\x06]\x80[\x00\x20\x10][\x00\x01].{4}((\x00{2})|(\x22\x10)).{2}((\x00{2})|(\x22\x10)).{6}[\x00\x01](\x00{3}|\xAA{3})', re.DOTALL)
 
-# VIA - Signature RRAS, Year 2006-2023 (0x07D6-0x07E7), Day 01-31 (0x01-0x1F), Month 01-12 (0x01-0x0C), LoaderRev 01, Reserved, DataSize xxxxxx00, TotalSize xxxxxx00
-pat_via = re.compile(br'\x52\x52\x41\x53.{4}[\xD6-\xE7]\x07[\x01-\x1F][\x01-\x0C].{3}\x00.{4}\x01\x00{3}.{7}\x00.{3}\x00', re.DOTALL)
+# VIA - Signature RRAS, Year 2006-2024 (0x07D6-0x07E8), Day 01-31 (0x01-0x1F), Month 01-12 (0x01-0x0C), LoaderRev 01, Reserved, DataSize xxxxxx00, TotalSize xxxxxx00
+pat_via = re.compile(br'\x52\x52\x41\x53.{4}[\xD6-\xE8]\x07[\x01-\x1F][\x01-\x0C].{3}\x00.{4}\x01\x00{3}.{7}\x00.{3}\x00', re.DOTALL)
 
 # Freescale - Signature QEF, HeaderRev 01, IRAM 00-01, Reserved0, Reserved1
 pat_fsl = re.compile(br'\x51\x45\x46\x01.{62}[\x00\x01].{5}\x00{4}.{40}\x00{4}', re.DOTALL)
@@ -1532,7 +1532,7 @@ for in_file in source :
 		full_date = "%s-%s-%s" % (year, month, day)
 		
 		# Remove false results, based on Date (1st MC from 1999 but 2000+ for K7 Erratum and performance)
-		if any(h in year[2:4] for h in ['A','B','C','D','E','F']) or not date_check(year, month, day) or int(year) > 2023 :
+		if any(h in year[2:4] for h in ['A','B','C','D','E','F']) or not date_check(year, month, day) or int(year) > 2024 :
 			if (full_date,patch) == ('2011-13-09',0x3000027) : pass # Drunk AMD employee 1, Happy 13th month from AMD!
 			else :
 				msg_a.append(col_m + '\nWarning: Skipped potential AMD microcode at 0x%X, invalid Date of %s!' % (mc_bgn, full_date) + col_e)
