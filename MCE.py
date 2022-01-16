@@ -7,7 +7,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2022 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.71.0'
+title = 'MC Extractor v1.72.0'
 
 import sys
 
@@ -80,6 +80,7 @@ def mce_help() :
 		  '-info   : Displays microcode structure info\n'
 		  '-add    : Adds input microcode to DB, if new\n'
 		  '-dbn    : Renames input file based on unique DB name\n'
+		  '-duc    : Disables automatic check for MCE & DB updates\n'
 		  '-search : Searches for microcodes based on CPUID/Model\n'
 		  '-last   : Shows \"Last\" status based on user input\n'
 		  '-repo   : Builds microcode repositories from input\n'
@@ -96,7 +97,7 @@ class MCE_Param :
 
 	def __init__(self, sys_os, source) :
 	
-		self.val = ['-?','-skip','-info','-add','-mass','-search','-dbn','-repo','-exit','-blob','-last']
+		self.val = ['-?','-skip','-info','-add','-mass','-search','-dbn','-repo','-exit','-blob','-last','-duc']
 		if sys_os == 'win32' : self.val.extend(['-ubu']) # Windows only
 		
 		self.help_scr = False
@@ -111,6 +112,7 @@ class MCE_Param :
 		self.skip_pause = False
 		self.build_blob = False
 		self.get_last = False
+		self.upd_dis = False
 		
 		if '-?' in source : self.help_scr = True
 		if '-skip' in source : self.skip_intro = True
@@ -123,6 +125,7 @@ class MCE_Param :
 		if '-exit' in source : self.skip_pause = True
 		if '-blob' in source : self.build_blob = True
 		if '-last' in source : self.get_last = True
+		if '-duc' in source : self.upd_dis = True
 		if '-ubu' in source : self.mce_ubu = True # Hidden
 			
 		if self.mass_scan or self.search or self.build_repo or self.build_blob or self.get_last : self.skip_intro = True
@@ -943,7 +946,7 @@ db_path = os.path.join(mce_dir, 'MCE.db')
 
 # Initialize & Start background Thread for MCE & DB update check
 thread_update = Thread_With_Result(target=mce_upd_check, args=(db_path,), daemon=True)
-thread_update.start() # Start as soon as possible (mce_dir, db_path)
+if not param.upd_dis : thread_update.start() # Start as soon as possible (mce_dir, db_path)
 
 # Set MCB location
 mcb_path = os.path.join(mce_dir, 'MCB.bin')

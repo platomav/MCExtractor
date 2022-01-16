@@ -1,3 +1,15 @@
+v1.72.0
+
+Added option to disable automatic update check
+
+r213
+
+Intel cpu906A2_plat80_ver00000313_2021-11-29_PRD_B995890C
+Intel cpu906A4_plat80_ver00000413_2021-11-22_PRD_B32F5DEB
+Intel cpu906A3_plat80_ver00000413_2021-11-22_PRD_B32F5DEC
+Intel cpu906A0_plat82_ver0000001C_2021-06-14_PRD_41B7E13C
+Intel cpu90671_plat82_ver0000001C_2021-06-14_PRD_41B7E16B
+
 v1.71.0
 
 Increased year ranges for better future proofing

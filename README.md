@@ -66,6 +66,7 @@ There are various parameters which enhance or modify the default behavior of MC 
 * -info   : Displays microcode structure info
 * -add    : Adds input microcode to DB, if new
 * -dbn    : Renames input file based on unique DB name
+* -duc    : Disables automatic check for MCE & DB updates
 * -search : Searches for microcodes based on CPUID/Model
 * -last   : Shows "Last" status based on user input
 * -repo   : Builds microcode repositories from input
