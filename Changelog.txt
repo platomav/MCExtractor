@@ -1,3 +1,7 @@
+r214
+
+Intel cpu906C0_plat01_ver2400001E_2021-05-18_PRD_3CCB1826
+
 v1.72.0
 
 Added option to disable automatic update check
