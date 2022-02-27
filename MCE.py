@@ -7,7 +7,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2022 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.72.0'
+title = 'MC Extractor v1.73.0'
 
 import sys
 
@@ -1167,6 +1167,14 @@ extr_dir_amd = os.path.join(mce_dir, 'Extracted', 'AMD', '')
 extr_dir_via = os.path.join(mce_dir, 'Extracted', 'VIA', '')
 extr_dir_fsl = os.path.join(mce_dir, 'Extracted', 'Freescale', '')
 
+# Known Bad Intel Microcodes
+known_bad_intel = [
+	(0x306C3,0x99,'2013-01-21'),
+	(0x506E3,0xFF,'2016-01-05'),
+	(0x90672,0xFF,'2021-11-11'),
+	(0x90675,0xFF,'2021-11-11'),
+	]
+
 # Global Variable Initialization
 in_file = ''
 mc_latest = None
@@ -1334,7 +1342,8 @@ for in_file in source :
 			mc_reserved_all += (int.from_bytes(mc_hdr_extra.Reserved, 'little') + mc_hdr_extra.get_flags()[1])
 			
 			if cpu_id != 0 and cpu_id not in mc_hdr_extra.get_cpuids() : mc_cpuid_chk = False
-			if patch_u != mc_hdr_extra.UpdateRevision and (cpu_id,patch_u,full_date) not in [(0x306C3,0x99,'2013-01-21'),(0x506E3,0xFF,'2016-01-05')] : mc_patch_chk = False
+			
+			if patch_u != mc_hdr_extra.UpdateRevision and (cpu_id,patch_u,full_date) not in known_bad_intel : mc_patch_chk = False
 			
 			# RSA Signature cannot be validated, Hash is probably derived from Header + Decrypted Patch
 			
@@ -1467,7 +1476,7 @@ for in_file in source :
 		mc_chk_ok = 0 if mc_at_db and mc_chk_mce == int(mc_at_db[6], 16) else checksum32(mc_data)
 		
 		if mc_chk_ok != 0 or valid_ext_chk != 0 :
-			if (patch_u,cpu_id,full_date) == (0xFF,0x506E3,'2016-01-05') : # Someone "fixed" the modded MC checksum wrongfully
+			if (cpu_id,patch_u,full_date) in known_bad_intel : # Someone "fixed" the modded MC checksum wrongfully
 				mc_path = '%s%s.bin' % (extr_dir_int, mc_name)
 			else :
 				msg_i.append(col_m + '\nWarning: Microcode #%d is corrupted!' % mc_nr + col_e)

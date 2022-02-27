@@ -1,3 +1,11 @@
+v1.73.0
+
+Improved known OEM/User modified microcodes display
+
+r218
+
+Intel cpu906A1_plat82_ver0000011F_2021-11-04_PRD_322B7C90
+
 r217
 
 Intel cpu906A4_plat80_ver00000416_2022-01-09_PRD_8F7C0137
