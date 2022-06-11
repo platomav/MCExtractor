@@ -3,11 +3,9 @@
 
 [MC Extractor News Feed](https://twitter.com/platomaniac)
 
-[MC Extractor Discussion Topic](https://www.win-raid.com/t2199f47-MC-Extractor-Intel-AMD-VIA-amp-Freescale-Microcode-Extraction-Tool-Discussion.html)
+[MC Extractor Discussion Topic](https://winraid.level1techs.com/t/mc-extractor-intel-amd-via-freescale-microcode-extraction-tool-discussion/31555)
 
 [Intel, AMD, VIA &amp; Freescale CPU Microcode Repositories](https://github.com/platomav/CPUMicrocodes)
-
-<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=DJDZD3PRGCSCL"><img border="0" title="MC Extractor Donation via Paypal or Debit/Credit Card" alt="MC Extractor Donation via Paypal or Debit/Credit Card" src="https://user-images.githubusercontent.com/11527726/109392268-e0f68280-7923-11eb-83d8-0a63f0d20783.png"></a>
 
 ![](https://i.imgur.com/25peZby.png)
 
@@ -41,11 +39,11 @@ MC Extractor is a tool which parses Intel, AMD, VIA and Freescale processor micr
 
 #### **A2. Microcode Repository Database**
 
-MC Extractor allows end-users and/or researchers to quickly extract, view, convert & report new microcode versions without the use of special tools or Hex Editors. To do that effectively, a database had to be built. The [Intel, AMD, VIA &amp; Freescale CPU Microcode Repositories](https://github.com/platomav/CPUMicrocodes) is a collection of every Latest Production Intel, AMD &amp; VIA CPU Microcodes we have found. Its existence is very important for MC Extractor as it allows us to continue doing research, find new types of microcode, compare releases for similarities, check for updated binaries etc. Bundled with MC Extractor is a file called MCE.db which is required for the program to run. It includes entries for all Microcode binaries that are available to us. This accommodates primarily two actions: a) Check whether the imported microcode is up to date and b) Help find new Microcode releases sooner by reporting them at the [Intel, AMD, VIA &amp; Freescale CPU Microcode Repositories Discussion](https://www.win-raid.com/t3355f47-Intel-AMD-VIA-amp-Freescale-CPU-Microcode-Repositories-Discussion.html) thread.
+MC Extractor allows end-users and/or researchers to quickly extract, view, convert & report new microcode versions without the use of special tools or Hex Editors. To do that effectively, a database had to be built. The [Intel, AMD, VIA &amp; Freescale CPU Microcode Repositories](https://github.com/platomav/CPUMicrocodes) is a collection of every Latest Production Intel, AMD &amp; VIA CPU Microcodes we have found. Its existence is very important for MC Extractor as it allows us to continue doing research, find new types of microcode, compare releases for similarities, check for updated binaries etc. Bundled with MC Extractor is a file called MCE.db which is required for the program to run. It includes entries for all Microcode binaries that are available to us. This accommodates primarily two actions: a) Check whether the imported microcode is up to date and b) Help find new Microcode releases sooner by reporting them at the [Intel, AMD, VIA &amp; Freescale CPU Microcode Repositories Discussion](https://winraid.level1techs.com/t/intel-amd-via-freescale-cpu-microcode-repositories-discussion/32301) thread.
 
 #### **A3. Sources and Inspiration**
 
-MC Extractor was initially based on a fraction of [Lordkag's](http://www.win-raid.com/u369_lordkag.html) UEFIStrip tool so, first and foremost, I thank him for all his work which inspired this project. Among others, great places to learn about microcodes are Intel's own download site and official documentation, [Intel Microcode Patch Authentication](https://patents.google.com/patent/US20030196096A1/en), Coreboot ([a](https://chromium.googlesource.com/chromiumos/third_party/coreboot/),[b](https://review.coreboot.org/cgit/coreboot.git/tree/src/cpu?id=HEAD),[c](https://review.coreboot.org/cgit/coreboot.git/tree/src/cpu/via/nano/update_ucode.h?id=HEAD)), [Microparse](https://github.com/ddcc/microparse) by Dominic Chen, Ben Hawkes's [Notes and Research](http://inertiawar.com/microcode/), Richard A Burton's [Microdecode](http://www.onlinecompiler.net/sourcecode&id=18684), [AIDA64 CPUID dumps](http://instlatx64.atw.hu/), [Sandpile CPUID](http://sandpile.org/x86/cpuid.htm), Free Electrons ([a](http://lxr.free-electrons.com/source/arch/x86/include/asm/microcode_amd.h), [b](http://elixir.free-electrons.com/linux/latest/source/Documentation/powerpc/qe_firmware.txt)), Freescale ([a](https://github.com/NXP/qoriq-fm-ucode/), [b](https://github.com/NXP/qoriq-qe-ucode/), [c](http://opensource.freescale.com/firmware/)) and many more which I may have forgotten but would have been here otherwise.
+MC Extractor was initially based on a fraction of [Lordkag's](https://winraid.level1techs.com/u/lordkag) UEFIStrip tool so, first and foremost, I thank him for all his work which inspired this project. Among others, great places to learn about microcodes are Intel's own download site and official documentation, [Intel Microcode Patch Authentication](https://patents.google.com/patent/US20030196096A1/en), Coreboot ([a](https://chromium.googlesource.com/chromiumos/third_party/coreboot/),[b](https://review.coreboot.org/plugins/gitiles/coreboot/+/refs/heads/master/src/cpu/),[c](https://review.coreboot.org/plugins/gitiles/coreboot/+/refs/heads/4.11_branch/src/cpu/via/nano/)), [Microparse](https://github.com/ddcc/microparse) by Dominic Chen, Ben Hawkes's [Notes and Research](http://inertiawar.com/microcode/), Richard A Burton's [Microdecode](http://wp.xin.at/archives/tag/microdecode), [AIDA64 CPUID dumps](http://instlatx64.atw.hu/), [Sandpile CPUID](https://sandpile.org/x86/cpuid.htm), Free Electrons ([a](https://code.woboq.org/linux/linux/arch/x86/include/asm/microcode_amd.h.html), [b](https://www.kernel.org/doc/Documentation/powerpc/qe_firmware.txt)), Freescale ([a](https://github.com/NXP/qoriq-fm-ucode/), [b](https://github.com/NXP/qoriq-qe-ucode/), [c](https://github.com/Freescale)) and many more which I may have forgotten but would have been here otherwise.
 
 ## **B. How to use MC Extractor**
 
@@ -175,6 +173,3 @@ Some Anti-Virus software may claim that the built/frozen/compiled MCE executable
 ![](https://i.imgur.com/FlmmYjV.png)
 
 ![](https://i.imgur.com/sprxSn3.png)
-
-###### _Donate Button Card Image: [Credit and Loan Pack](https://flaticon.com/free-icon/credit-card_3898076) by **Freepik** under Flaticon license_
-###### _Donate Button Paypal Image: [Credit Cards Pack](https://flaticon.com/free-icon/paypal_349278) by **Freepik** under Flaticon license_
