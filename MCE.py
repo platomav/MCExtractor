@@ -7,7 +7,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2022 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.74.0'
+title = 'MC Extractor v1.74.1'
 
 import sys
 
@@ -614,7 +614,7 @@ def show_exception_and_exit(exc_type, exc_value, tb) :
     sys.exit(-1)
 
 def report_msg(msg_len) :
-    return ' You can help this project by\n%squickly uploading it to https://mega.nz/megadrop/pRUG54UU1bs/. Thank you!' % (' ' * msg_len)
+    return f' You can help this project\n{" " * msg_len}by sharing it at https://win-raid.com forum. Thank you!'
     
 def adler32(data, iv=1) :
     return zlib.adler32(data, iv) & 0xFFFFFFFF
