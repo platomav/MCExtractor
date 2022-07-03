@@ -1,3 +1,8 @@
+r233
+
+Intel cpuB0671_plat32_ver00000105_2022-06-01_PRD_6F68F320
+Intel cpuA0671_plat02_ver00000054_2022-03-17_PRD_CE482700
+
 v1.74.1
 
 Adjusted report message link from drop folder to forum
