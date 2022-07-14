@@ -7,7 +7,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2022 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.74.1'
+title = 'MC Extractor v1.74.2'
 
 import sys
 
@@ -1395,7 +1395,7 @@ for in_file in source :
         if param.build_repo :
             mc_repo_id = 'Intel_%0.5X_%0.2X' % (cpu_id, plat) # Unique Intel Repo Entry: CPUID + Platform
             
-            if in_file not in temp_mc_paths and rel_file == 'PRD' and cpu_id != 0 and is_latest and mc_repo_id not in repo_included  :
+            if in_file not in temp_mc_paths and rel_file == 'PRD' and cpu_id not in [0,0x506C0] and is_latest and mc_repo_id not in repo_included  :
                 build_mc_repo('INTEL', mc_name)
                 repo_included.append(mc_repo_id)
             
