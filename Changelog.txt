@@ -1,3 +1,8 @@
+r238
+
+Intel cpuB0671_plat32_ver00000107_2022-07-28_PRD_FA49FC5C
+Intel cpuB0670_plat02_ver0000000D_2022-01-25_PRD_BC5C2A0C
+
 v1.76.0
 
 Adjusted AMD microcode pattern for AM5 detection
