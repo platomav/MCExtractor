@@ -7,7 +7,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2022 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.76.0'
+title = 'MC Extractor v1.77.0'
 
 import sys
 
@@ -1526,6 +1526,7 @@ for in_file in source :
         elif cpu_id[2:4] in ['68','69'] : mc_len = 0x980
         elif cpu_id[2:4] in ['70','73'] : mc_len = 0xD60
         elif cpu_id[2:4] in ['80','81','82','83','85','86','87'] : mc_len = 0xC80
+        elif cpu_id[2:4] in ['8A'] : mc_len = 0xD80
         elif cpu_id[2:4] in ['A0','A1','A2','A3','A4','A5','A6'] : mc_len = 0x15C0
         else :
             msg_a.append(col_r + '\nError: Skipped potential AMD Microcode #%d at 0x%X, unknown %s size!%s' % (mc_nr, mc_bgn, cpu_id, report_msg(7)) + col_e)
