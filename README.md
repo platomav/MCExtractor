@@ -47,11 +47,11 @@ MC Extractor was initially based on a fraction of [Lordkag's](https://winraid.le
 
 ## **B. How to use MC Extractor**
 
-There are two ways to use MC Extractor, MCE executable & Command Prompt. The MCE executable allows you to drag & drop one or more firmware and view them one by one or recursively scan entire directories. To manually call MC Extractor, a Command Prompt can be used with -skip as parameter.
+There are two ways to use MC Extractor, MCE script & command prompt. The MCE script allows you to input or drag & drop one or more firmware and view them one by one or recursively scan entire directories. To manually use MC Extractor, a command prompt can be used with -skip as parameter.
 
-#### **B1. MC Extractor Executable**
+#### **B1. MC Extractor Script**
 
-To use MC Extractor, select one or multiple files and Drag & Drop them to its executable. You can also input certain optional parameters either by running MCE directly or by first dropping one or more files to it. Keep in mind that, due to operating system limitations, there is a limit on how many files can be dropped at once. If the latter is a problem, you can always use the -mass parameter to recursively scan entire directories as explained below.
+To use MC Extractor, select one or multiple files and input or Drag & Drop them to its script. You can also input certain optional parameters either by running MCE directly or by first dropping one or more files to it. Keep in mind that, due to operating system limitations, there is a limit on how many files can be dropped at once. If the latter is a problem, you can always use the -mass parameter to recursively scan entire directories, as explained below.
 
 #### **B2. MC Extractor Parameters**
 
@@ -78,59 +78,26 @@ MC Extractor can build its own Microcode Blob (MCB) format, which combines multi
 
 To build a MCE Microcode Blob (MCB.bin), input the desired Intel or AMD microcode binaries and use -blob parameter. You can use your own microcodes or find the Latest Production Intel and AMD ones at the [Intel, AMD, VIA &amp; Freescale CPU Microcodes](https://github.com/platomav/CPUMicrocodes/) repository. To extract the latest microcode from a MCB, input a single microcode binary and use -blob -search parameters. MC Extractor will validate the detected MCB, check if the microcode is already up-to-date before extracting the latest and notify accordingly.
 
-#### **B4. MC Extractor Error Control**
+#### **B4. MC Extractor Flow Control**
 
 During operation, MC Extractor may encounter issues that can trigger Notes, Warnings and/or Errors. Notes (yellow/green color) provide useful information about a characteristic of this particular firmware. Warnings (purple color) notify the user of possible problems that can cause system instability. Errors (red color) are shown when something unexpected or problematic is encountered.
 
 ## **C. Download MC Extractor**
 
-MC Extractor consists of two files, the executable (MCE.exe or MCE) and the database (MCE.db). An already built/frozen/compiled binary is provided by me for Windows only (icon designed by [Alfredo Hernandez](https://www.alfredocreates.com/) under Flaticon license). Thus, **you don't need to manually build/freeze/compile MC Extractor under Windows**. Instead, download the latest version from the [Releases](https://github.com/platomav/MCExtractor/releases) tab, title should start with "MC Extractor v1.X.X". You may need to scroll down a bit if there are DB releases at the top. The latter can be used to update the outdated DB which was bundled with the latest executable release, title should start with "DB rXX". To extract the already built/frozen/compiled archive, you need to use programs which support RAR5 compression.
+MC Extractor consists of two files, the script (MCE.py) and its database (MCE.db). Download the latest version from the [Releases](https://github.com/platomav/MCExtractor/releases) tab, title should start with "MC Extractor vX.Y.Z". You may need to scroll down a bit if there are DB releases at the top. The latter can be used to update the outdated DB which was bundled with the latest "MC Extractor vX.Y.Z" release, title should start with "DB rXY".
 
 #### **C1. Compatibility**
 
-MC Extractor should work at all Windows, Linux, macOS or BSD operating systems which have Python >= 3.7 support. Windows users who plan to use the already built/frozen/compiled binaries must make sure that they have the latest Windows Updates installed which include all required "Universal C Runtime (CRT)" libraries.
+MC Extractor should work at all Windows, Linux or macOS operating systems which have [Python >= 3.7](https://www.python.org/downloads/) support.
 
-#### **C2. Code Prerequisites**
+#### **C2. Prerequisites**
 
-To run MC Extractor's python script, you need to have the following 3rd party Python modules installed:
+To run MC Extractor, you need to install [Python >= 3.7](https://www.python.org/downloads/), followed by these 3rd party Python modules:
 
-* [Colorama](https://pypi.org/project/colorama/)
+* [colorama](https://pypi.org/project/colorama/)
+* [pltable](https://pypi.org/project/PLTable/)
 
-> pip3 install colorama
-
-* [PLTable](https://github.com/platomav/PLTable/)
-
-> pip3 install pltable
-
-#### **C3. Build/Freeze/Compile with PyInstaller**
-
-PyInstaller can build/freeze/compile MC Extractor at all three supported platforms, it is simple to run and gets updated often.
-
-1. Make sure Python 3.7.0 or newer is installed:
-
-> python --version
-
-2. Use pip to install PyInstaller:
-
-> pip3 install pyinstaller
-
-3. Use pip to install colorama:
-
-> pip3 install colorama
-
-4. Use pip to install PLTable:
-
-> pip3 install pltable
-
-5. Build/Freeze/Compile MC Extractor:
-
-> pyinstaller --noupx --onefile MCE.py
-
-At dist folder you should find the final MCE executable
-
-#### **C4. Anti-Virus False Positives**
-
-Some Anti-Virus software may claim that the built/frozen/compiled MCE executable contains viruses. Any such detections are false positives, usually of PyInstaller. You can switch to a better Anti-Virus software, report the false positive to their support, add the MCE executable to the exclusions, build/freeze/compile MCE yourself or use the Python script directly.
+> pip3 install colorama pltable
 
 ## **D. Pictures**
 
