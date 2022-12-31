@@ -1,3 +1,15 @@
+v1.78.2
+
+Increased year ranges for better future proofing
+Updated help screen year and frozen status
+
+r253
+
+Intel cpu706A8_plat01_ver00000022_2022-09-20_PRD_A1E68518
+AMD cpu00A00F12_ver0A00122F_2022-09-16_F77196C1
+AMD cpu00A00F11_ver0A0011A9_2022-09-16_843098B5
+AMD cpu00A00F10_ver0A001076_2022-09-16_6B33A2E7
+
 r252
 
 Intel cpuA0671_plat02_ver00000057_2022-08-31_PRD_EF0001C5
