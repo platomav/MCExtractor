@@ -7,7 +7,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2023 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.78.2'
+title = 'MC Extractor v1.80.0'
 
 import sys
 
@@ -144,19 +144,21 @@ class Thread_With_Result(threading.Thread) :
 class Intel_MC_Header(ctypes.LittleEndianStructure) :
     _pack_ = 1
     _fields_ = [
-        ('HeaderVersion',            uint32_t),        # 0x00 00000001
-        ('UpdateRevision',            uint32_t),        # 0x04 Signed to signify PRD/PRE
-        ('Year',                    uint16_t),        # 0x08
-        ('Day',                        uint8_t),        # 0x0A
-        ('Month',                    uint8_t),        # 0x0B
-        ('ProcessorSignature',        uint32_t),        # 0x0C
-        ('Checksum',                uint32_t),        # 0x10 OEM validation only
-        ('LoaderRevision',            uint32_t),        # 0x14 00000001
-        ('PlatformIDs',                uint8_t),        # 0x18 Supported Platforms
-        ('Reserved0',                uint8_t*3),        # 0x19 00 * 3
-        ('DataSize',                uint32_t),        # 0x1C Extra + Patch
-        ('TotalSize',                uint32_t),        # 0x20 Header + Extra + Patch + Extended
-        ('Reserved1',                uint32_t*3),    # 0x24 00 * 12
+        ('HeaderVersion',           uint32_t),      # 0x00 00000001
+        ('UpdateRevision',          uint32_t),      # 0x04 Signed to signify PRD/PRE
+        ('Year',                    uint16_t),      # 0x08
+        ('Day',                     uint8_t),       # 0x0A
+        ('Month',                   uint8_t),       # 0x0B
+        ('ProcessorSignature',      uint32_t),      # 0x0C
+        ('Checksum',                uint32_t),      # 0x10 OEM validation only
+        ('LoaderRevision',          uint32_t),      # 0x14 00000001
+        ('PlatformIDs',             uint8_t),       # 0x18 Supported Platforms
+        ('Reserved0',               uint8_t*3),     # 0x19 00 * 3
+        ('DataSize',                uint32_t),      # 0x1C Extra + Patch
+        ('TotalSize',               uint32_t),      # 0x20 Header + Extra + Patch + Extended
+        ('Reserved1',               uint32_t),      # 0x24
+        ('UpdateRevisionUnknown',   uint32_t),      # 0x28 Unknown (minimum downgrade UpdateRevision ?)
+        ('Reserved2',               uint32_t),      # 0x2C
         # 0x30
     ]
     
@@ -174,7 +176,9 @@ class Intel_MC_Header(ctypes.LittleEndianStructure) :
         pt.add_row(['Reserved 0', '0x%X' % int.from_bytes(self.Reserved0, 'little')])
         pt.add_row(['Data Size', '0x%X' % self.DataSize])
         pt.add_row(['Total Size', '0x%X' % self.TotalSize])
-        pt.add_row(['Reserved 1', '0x%X' % int.from_bytes(self.Reserved1, 'little')])
+        pt.add_row(['Reserved 1', '0x%0.8X' % self.Reserved1])
+        pt.add_row(['Unknown Version', '%X' % self.UpdateRevisionUnknown])
+        pt.add_row(['Reserved 2', '0x%0.8X' % self.Reserved2])
         
         print(pt)
 
@@ -1093,8 +1097,8 @@ if param.get_last :
     
     mce_exit(0)
 
-# Intel - HeaderRev 01, Year 1993-2025, Day 01-31, Month 01-12, CPUID xxxxxx00, LoaderRev 00-01, PlatformIDs 000000xx, DataSize xxxxxx00, TotalSize xxxxxx00, Reserved1
-pat_int = re.compile(br'\x01\x00{3}.{4}(([\x00-\x09\x10-\x19\x20-\x25]\x20)|([\x93-\x99]\x19))[\x01-\x09\x10-\x19\x20-\x29\x30-\x31][\x01-\x09\x10-\x12].{3}\x00.{4}[\x01\x00]\x00{3}.\x00{3}.{3}\x00.{3}\x00{13}', re.DOTALL)
+# Intel - HeaderRev 01, Year 1993-2025, Day 01-31, Month 01-12, CPUID xxxxxx00, LoaderRev 00-01, PlatformIDs 000000xx, DataSize xxxxxx00, TotalSize xxxxxx00
+pat_int = re.compile(br'\x01\x00{3}.{4}(([\x00-\x09\x10-\x19\x20-\x25]\x20)|([\x93-\x99]\x19))[\x01-\x09\x10-\x19\x20-\x29\x30-\x31][\x01-\x09\x10-\x12].{3}\x00.{4}[\x01\x00]\x00{3}.\x00{3}.{3}\x00.{3}\x00', re.DOTALL)
 
 # AMD - Year 20xx, Month 01-13, LoaderID 00-06, NorthBridgeVEN_ID 0000|1022, SouthBridgeVEN_ID 0000|1022, BiosApiREV_ID 00-01, Reserved 00|AA
 pat_amd = re.compile(br'\x20[\x01-\x09\x10-\x19\x20-\x29\x30-\x31][\x01-\x09\x10-\x13].{4}[\x00-\x06]\x80.{6}((\x00{2})|(\x22\x10)).{2}((\x00{2})|(\x22\x10)).{6}[\x00\x01](\x00{3}|\xAA{3})', re.DOTALL)
