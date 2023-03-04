@@ -1,3 +1,12 @@
+r261
+
+Intel cpu906A4_plat80_ver0000042A_2023-02-14_PRD_B0B83A9D
+Intel cpu906A3_plat80_ver0000042A_2023-02-14_PRD_B0B83A9E
+Intel cpuB0671_plat32_ver00000113_2023-02-06_PRD_7FC06AF8
+Intel cpu80667_plat01_ver4C000021_2022-08-15_PRD_8FB005AB
+Intel cpu80665_plat01_ver4C000021_2022-08-15_PRD_8FB005AD
+Intel cpu80664_plat01_ver4C000021_2022-08-15_PRD_8FB005AE
+
 v1.80.0
 
 Adjusted Intel pattern for non-null Reserved fields (#59, thanks @ichee)
