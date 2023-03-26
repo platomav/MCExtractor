@@ -7,7 +7,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2023 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.80.0'
+title = 'MC Extractor v1.90.0'
 
 import sys
 
@@ -144,49 +144,47 @@ class Thread_With_Result(threading.Thread) :
 class Intel_MC_Header(ctypes.LittleEndianStructure) :
     _pack_ = 1
     _fields_ = [
-        ('HeaderVersion',           uint32_t),      # 0x00 00000001
+        ('HeaderType',              uint32_t),      # 0x00 1 Microcode, 2 In-Field Scan (IFS)
         ('UpdateRevision',          uint32_t),      # 0x04 Signed to signify PRD/PRE
         ('Year',                    uint16_t),      # 0x08
         ('Day',                     uint8_t),       # 0x0A
         ('Month',                   uint8_t),       # 0x0B
-        ('ProcessorSignature',      uint32_t),      # 0x0C
+        ('ProcessorSignature',      uint32_t),      # 0x0C CPUID
         ('Checksum',                uint32_t),      # 0x10 OEM validation only
-        ('LoaderRevision',          uint32_t),      # 0x14 00000001
-        ('PlatformIDs',             uint8_t),       # 0x18 Supported Platforms
-        ('Reserved0',               uint8_t*3),     # 0x19 00 * 3
+        ('LoaderRevision',          uint32_t),      # 0x14 1
+        ('PlatformIDs',             uint32_t),      # 0x18 Supported Platforms
         ('DataSize',                uint32_t),      # 0x1C Extra + Patch
         ('TotalSize',               uint32_t),      # 0x20 Header + Extra + Patch + Extended
-        ('Reserved1',               uint32_t),      # 0x24
-        ('UpdateRevisionUnknown',   uint32_t),      # 0x28 Unknown (minimum downgrade UpdateRevision ?)
-        ('Reserved2',               uint32_t),      # 0x2C
+        ('MetadataSize',            uint32_t),      # 0x24 In-Field Scan (IFS) Metadata Structures
+        ('UpdateRevisionMin',       uint32_t),      # 0x28 Minimum Required Version (OS Kernel Late Loading)
+        ('Reserved',                uint32_t),      # 0x2C 0
         # 0x30
     ]
-    
-    def mc_print(self) :        
+
+    def mc_print(self) :
         pt, _ = mc_table(['Field', 'Value'], False, 1)
-        
+
         pt.title = col_b + 'Intel Header Main' + col_e
-        pt.add_row(['Header Version', self.HeaderVersion])
+        pt.add_row(['Header Type', intel_header_types[self.HeaderType]])
         pt.add_row(['Update Version', '%X' % self.UpdateRevision])
-        pt.add_row(['Date', '%0.4X-%0.2X-%0.2X' % (self.Year, self.Month, self.Day)])
+        pt.add_row(['Release Date', '%0.4X-%0.2X-%0.2X' % (self.Year, self.Month, self.Day)])
         pt.add_row(['CPUID', '%0.5X' % self.ProcessorSignature])
         pt.add_row(['Checksum', '%0.8X' % self.Checksum])
         pt.add_row(['Loader Version', self.LoaderRevision])
-        pt.add_row(['Platform', '%0.2X (%s)' % (self.PlatformIDs, ','.join(map(str, intel_plat(mc_hdr.PlatformIDs))))])
-        pt.add_row(['Reserved 0', '0x%X' % int.from_bytes(self.Reserved0, 'little')])
+        pt.add_row(['Platforms', '%0.2X (%s)' % (self.PlatformIDs, ','.join(map(str, intel_plat(mc_hdr.PlatformIDs))))])
         pt.add_row(['Data Size', '0x%X' % self.DataSize])
         pt.add_row(['Total Size', '0x%X' % self.TotalSize])
-        pt.add_row(['Reserved 1', '0x%0.8X' % self.Reserved1])
-        pt.add_row(['Unknown Version', '%X' % self.UpdateRevisionUnknown])
-        pt.add_row(['Reserved 2', '0x%0.8X' % self.Reserved2])
-        
+        pt.add_row(['Metadata Size', '0x%X' % self.MetadataSize])
+        pt.add_row(['Minimum Version', '%X' % self.UpdateRevisionMin])
+        pt.add_row(['Reserved', '0x%0.8X' % self.Reserved])
+
         print(pt)
 
 class IntelMicrocodeHeaderExtraBase(ctypes.LittleEndianStructure):
     _pack_ = 1
     _fields_ = [
-        ('ModuleType',              uint16_t),      # 0x00 0000 (always)
-        ('ModuleSubType',           uint16_t),      # 0x02 0000 (always)
+        ('ModuleType',              uint16_t),      # 0x00 0
+        ('ModuleSubType',           uint16_t),      # 0x02 0
         ('ModuleSize',              uint32_t),      # 0x04 dwords
         ('Flags',                   uint16_t),      # 0x08 0 RSA Signed, 1-31 Reserved
         ('RSAKeySize',              uint16_t),      # 0x0A 1K multiple (e.g. 3 * 1024 = 3072)
@@ -207,13 +205,19 @@ class IntelMicrocodeHeaderExtraBase(ctypes.LittleEndianStructure):
         ('ProcessorSignature6',     uint32_t),      # 0x3C
         ('ProcessorSignature7',     uint32_t),      # 0x40
         ('MultiPurpose2',           uint32_t),      # 0x44 dwords from Extra + encrypted padding, UpdateSize, Platform, Empty
-        ('SVN',                     uint32_t),      # 0x48 Security Version Number
-        ('Unknown0',                uint32_t),      # 0x4C
-        ('Unknown1',                uint32_t),      # 0x50
-        ('Unknown2',                uint32_t),      # 0x54
-        ('Unknown3',                uint32_t),      # 0x58
-        ('Unknown4',                uint32_t),      # 0x5C
-        ('Unknown5',                uint32_t*8),    # 0x60
+        ('ProcessorSignature0Unk',  uint8_t),       # 0x48
+        ('ProcessorSignature1Unk',  uint8_t),       # 0x49
+        ('ProcessorSignature2Unk',  uint8_t),       # 0x4A
+        ('ProcessorSignature3Unk',  uint8_t),       # 0x4B
+        ('ProcessorSignature4Unk',  uint8_t),       # 0x4C
+        ('ProcessorSignature5Unk',  uint8_t),       # 0x4D
+        ('ProcessorSignature6Unk',  uint8_t),       # 0x4E
+        ('ProcessorSignature7Unk',  uint8_t),       # 0x4F
+        ('Unknown0',                uint32_t),      # 0x50 Could be flags or struct length (e.g. 0x80, 0x00)
+        ('Unknown1',                uint32_t),      # 0x54
+        ('Unknown2',                uint32_t),      # 0x58
+        ('Unknown3',                uint32_t),      # 0x5C
+        ('Nonce',                   uint32_t*8),    # 0x60 RC4 Nonce
         # 0x80 (parent class, base)
     ]
     
@@ -227,15 +231,20 @@ class IntelMicrocodeHeaderExtraBase(ctypes.LittleEndianStructure):
         flags.asbytes = self.Flags
         
         return flags.b.RSASigned, flags.b.Reserved
-        
+
     def get_cpuids(self):
         return (self.ProcessorSignature0,self.ProcessorSignature1,self.ProcessorSignature2,self.ProcessorSignature3,
                 self.ProcessorSignature4,self.ProcessorSignature5,self.ProcessorSignature6,self.ProcessorSignature7)
+
+    def get_cpuids_unk(self):
+        return (self.ProcessorSignature0Unk,self.ProcessorSignature1Unk,self.ProcessorSignature2Unk,self.ProcessorSignature3Unk,
+                self.ProcessorSignature4Unk,self.ProcessorSignature5Unk,self.ProcessorSignature6Unk,self.ProcessorSignature7Unk)
     
     def mc_print(self):
         self.f1,self.f2 = self.get_flags()
         self.cpuids = self.get_cpuids()
-        self.unknown5 = '%0.*X' % (0x20 * 2, int.from_bytes(self.Unknown5, 'little'))
+        self.cpuids_unk = self.get_cpuids_unk()
+        self.nonce = '%0.*X' % (0x20 * 2, int.from_bytes(self.Nonce, 'little'))
         
         pt,_ = mc_table(['Field', 'Value'], False, 1)
         
@@ -249,35 +258,34 @@ class IntelMicrocodeHeaderExtraBase(ctypes.LittleEndianStructure):
         pt.add_row(['Update Version', '%X' % self.UpdateRevision])
         pt.add_row(['Version Control Number', self.VCN])
         if self.MultiPurpose1 == mc_hdr.PlatformIDs:
-            pt.add_row(['Platform (MP1)', '%0.2X (%s)' % (self.MultiPurpose1, ','.join(map(str, intel_plat(mc_hdr.PlatformIDs))))])
+            pt.add_row(['Platforms (MP1)', '%0.2X (%s)' % (self.MultiPurpose1, ','.join(map(str, intel_plat(self.MultiPurpose1))))])
         elif self.MultiPurpose1 * 4 == self.UpdateSize * 4:
             pt.add_row(['Update Size (MP1)', '0x%X' % (self.MultiPurpose1 * 4)])
-        elif self.MultiPurpose1 * 4 == mc_len - 0x30:
+        elif self.MultiPurpose1 * 4 == mc_len - int_hdr_size:
             pt.add_row(['Padded Size (MP1)', '0x%X' % (self.MultiPurpose1 * 4)])
         else:
             pt.add_row(['Multi Purpose 1', '0x%X' % self.MultiPurpose1])
-        pt.add_row(['Date', '%0.4X-%0.2X-%0.2X' % (self.Year, self.Month, self.Day)])
+        pt.add_row(['Build Date', '%0.4X-%0.2X-%0.2X' % (self.Year, self.Month, self.Day)])
         pt.add_row(['Update Size', '0x%X' % (self.UpdateSize * 4)])
         pt.add_row(['CPU Signatures', self.ProcessorSignatureCount])
         any(pt.add_row(['CPUID %d' % i, '%0.5X' % self.cpuids[i]]) for i in range(len(self.cpuids)) if self.cpuids[i] != 0)
         if self.MultiPurpose2 == mc_hdr.PlatformIDs:
-            pt.add_row(['Platform (MP2)', '%0.2X (%s)' % (self.MultiPurpose2, ','.join(map(str, intel_plat(mc_hdr.PlatformIDs))))])
+            pt.add_row(['Platforms (MP2)', '%0.2X (%s)' % (self.MultiPurpose2, ','.join(map(str, intel_plat(self.MultiPurpose2))))])
         elif self.MultiPurpose2 * 4 == self.UpdateSize * 4:
             pt.add_row(['Update Size (MP2)', '0x%X' % (self.MultiPurpose2 * 4)])
-        elif self.MultiPurpose2 * 4 == mc_len - 0x30:
+        elif self.MultiPurpose2 * 4 == mc_len - int_hdr_size:
             pt.add_row(['Padded Size (MP2)', '0x%X' % (self.MultiPurpose2 * 4)])
         else:
             pt.add_row(['Multi Purpose 2', '0x%X' % self.MultiPurpose2])
-        pt.add_row(['Security Version Number', self.SVN])
+        any(pt.add_row(['CPUID %d Unknown' % i, '0x%X' % self.cpuids_unk[i]]) for i in range(len(self.cpuids_unk)) if self.cpuids_unk[i] != 0)
         pt.add_row(['Unknown 0', '0x%X' % self.Unknown0])
         pt.add_row(['Unknown 1', '0x%X' % self.Unknown1])
         pt.add_row(['Unknown 2', '0x%X' % self.Unknown2])
         pt.add_row(['Unknown 3', '0x%X' % self.Unknown3])
-        pt.add_row(['Unknown 4', '0x%X' % self.Unknown4])
-        pt.add_row(['Unknown 5', '%s [...]' % self.unknown5[:8]])
-        pt.add_row(['RSA Public Key', '%s [...]' % self.rsa_mod[:8]])
+        pt.add_row(['RC4 Nonce', '%s [...]' % self.nonce[:14]])
+        pt.add_row(['RSA Public Key', '%s [...]' % self.rsa_mod[:14]])
         pt.add_row(['RSA Exponent', '0x%X' % self.rsa_exp])
-        pt.add_row(['RSA Signature', '%s [...]' % self.rsa_sig[:8]])
+        pt.add_row(['RSA Signature', '%s [...]' % self.rsa_sig[:14]])
         
         print()
         print(pt)
@@ -319,6 +327,54 @@ class IntelMicrocodeHeaderExtraGetFlags(ctypes.Union):
         ('asbytes', uint16_t)
     ]
 
+class IntelMetadataHeader(ctypes.LittleEndianStructure):
+    _pack_ = 1
+    _fields_ = [
+        ('MetaType',                uint32_t),      # 0x00 0 END, 1 IFS 
+        ('MetaSize',                uint32_t),      # 0x04 Entire struct including headers
+        # 0x08
+    ]
+
+    def mc_print(self):
+        pt, _ = mc_table(['Field', 'Value'], False, 1)
+
+        pt.title = col_b + 'Intel Metadata Header' + col_e
+        pt.add_row(['Metadata Type', intel_meta_types[self.MetaType]])
+        pt.add_row(['Metadata Size', '0x%X' % self.MetaSize])
+
+        print(pt)
+
+class IntelMetadataEntry(ctypes.LittleEndianStructure):
+    _pack_ = 1
+    _fields_ = [
+        ('TestType',                uint32_t),      # 0x00 IFS test type
+        ('FusaInfo',                uint32_t),      # 0x04 FUSA info
+        ('ImageCount',              uint32_t),      # 0x08 Total images count
+        ('ImageCurrent',            uint32_t),      # 0x0C Current image number
+        ('ChunkCount',              uint32_t),      # 0x10 Chunks count in image
+        ('ChunkStart',              uint32_t),      # 0x14 Starting chunk in image
+        ('ChunkSize',               uint32_t),      # 0x18 Size of each chunk
+        ('StrideChunks',            uint32_t),      # 0x1C Chunks in a stride
+        ('Reserved',                uint32_t*54),   # 0x20 Alignment padding
+        # 0xF8
+    ]
+
+    def mc_print(self):
+        pt, _ = mc_table(['Field', 'Value'], False, 1)
+
+        pt.title = col_b + 'Intel Metadata Entry' + col_e
+        pt.add_row(['Test Type', '0x%X' % self.TestType])
+        pt.add_row(['FUSA Info', '0x%X' % self.FusaInfo])
+        pt.add_row(['Total Images', self.ImageCount])
+        pt.add_row(['Current Image', self.ImageCurrent])
+        pt.add_row(['Total Chunks', self.ChunkCount])
+        pt.add_row(['Starting Chunk', self.ChunkStart])
+        pt.add_row(['Chunk Size', '0x%X' % self.ChunkSize])
+        pt.add_row(['Stride Chunks', self.StrideChunks])
+        pt.add_row(['Reserved', '0x%X' % self.Reserved])
+
+        print(pt)
+
 class Intel_MC_Header_Extended(ctypes.LittleEndianStructure) :
     _pack_ = 1
     _fields_ = [
@@ -356,7 +412,7 @@ class Intel_MC_Header_Extended_Field(ctypes.LittleEndianStructure) :
         
         pt.title = col_b + 'Intel Header Extended Field' + col_e
         pt.add_row(['CPUID', '%0.5X' % self.ProcessorSignature])
-        pt.add_row(['Platform', '%0.2X %s' % (self.PlatformIDs, intel_plat(self.PlatformIDs))])
+        pt.add_row(['Platforms', '%0.2X (%s)' % (self.PlatformIDs, ','.join(map(str, intel_plat(self.PlatformIDs))))])
         pt.add_row(['Checksum', '%0.8X' % self.Checksum])
         
         print(pt)
@@ -740,11 +796,16 @@ def chk_mc_mod(mc_nr, msg_vendor, mc_db_note) :
     
     return msg_vendor
     
-def chk_mc_cross(match_ucode_idx, match_list_vendor, msg_vendor, mc_nr, mc_bgn, mc_len) :
-    if match_ucode_idx + 1 in range(len(match_list_vendor)) and match_list_vendor[match_ucode_idx + 1].start() < mc_bgn + mc_len :
-        msg_vendor.append(col_m + '\nWarning: Microcode #%d is crossing over to the next microcode(s)!' % mc_nr + col_e)
-        copy_file_with_warn()
-        
+def chk_mc_cross(cross_list, msg_vendor) :
+    for mc_index, mc_cross in enumerate(cross_list, 1):
+        if mc_index != len(cross_list):
+            mc_curr_num, _, mc_curr_end = mc_cross
+            _, mc_next_bgn, _ = cross_list[mc_index]
+
+            if mc_next_bgn < mc_curr_end:
+                msg_vendor.append(col_m + '\nWarning: Microcode #%d is crossing over to the next microcode(s)!' % mc_curr_num + col_e)
+                copy_file_with_warn()
+
     return msg_vendor
     
 def db_new_MCE() :
@@ -923,7 +984,7 @@ if os.path.isfile(db_path) :
     
     # Initialize DB, if found empty
     cursor.execute('CREATE TABLE IF NOT EXISTS MCE(revision INTEGER DEFAULT 0, developer INTEGER DEFAULT 1, minimum BLOB DEFAULT "0.0.0")')
-    cursor.execute('CREATE TABLE IF NOT EXISTS Intel(cpuid BLOB, platform BLOB, version BLOB, yyyymmdd TEXT, size BLOB, checksum BLOB DEFAULT "00000000", \
+    cursor.execute('CREATE TABLE IF NOT EXISTS Intel(type BLOB, cpuid BLOB, platform BLOB, version BLOB, yyyymmdd TEXT, size BLOB, checksum BLOB DEFAULT "00000000", \
                     adler32 BLOB DEFAULT "00000000", adler32e BLOB DEFAULT "00000000", modded INTEGER DEFAULT 0, notes TEXT DEFAULT "")')
     cursor.execute('CREATE TABLE IF NOT EXISTS AMD(cpuid BLOB, nbdevid BLOB, sbdevid BLOB, nbsbrev BLOB, version BLOB, yyyymmdd TEXT, size BLOB, \
                     checksum BLOB DEFAULT "00000000", adler32 BLOB DEFAULT "00000000", modded INTEGER DEFAULT 0, notes TEXT DEFAULT "")')
@@ -1024,7 +1085,7 @@ if param.search and not param.build_blob :
         print(col_r + '\nError: Invalid CPUID (Intel, AMD, VIA) or Model (Freescale)!' + col_e)
         mce_exit(-1)
     
-    res_i = cursor.execute('SELECT cpuid,platform,version,yyyymmdd,size,modded,notes FROM Intel WHERE cpuid=? ORDER BY yyyymmdd DESC', (cpu_id,))
+    res_i = cursor.execute('SELECT type,cpuid,platform,version,yyyymmdd,size,modded,notes FROM Intel WHERE cpuid=? ORDER BY yyyymmdd DESC', (cpu_id,))
     display_sql(res_i, col_b + 'Intel' + col_e, True, 1)
     
     res_a = cursor.execute('SELECT cpuid,version,yyyymmdd,size,modded,notes FROM AMD WHERE cpuid=? ORDER BY yyyymmdd DESC', (cpu_id,))
@@ -1097,8 +1158,8 @@ if param.get_last :
     
     mce_exit(0)
 
-# Intel - HeaderRev 01, Year 1993-2025, Day 01-31, Month 01-12, CPUID xxxxxx00, LoaderRev 00-01, PlatformIDs 000000xx, DataSize xxxxxx00, TotalSize xxxxxx00
-pat_int = re.compile(br'\x01\x00{3}.{4}(([\x00-\x09\x10-\x19\x20-\x25]\x20)|([\x93-\x99]\x19))[\x01-\x09\x10-\x19\x20-\x29\x30-\x31][\x01-\x09\x10-\x12].{3}\x00.{4}[\x01\x00]\x00{3}.\x00{3}.{3}\x00.{3}\x00', re.DOTALL)
+# Intel - HeaderType 01-02, Year 1993-2025, Day 01-31, Month 01-12, CPUID xxxxxx00, LoaderRev 00-01, PlatformIDs 000000xx, DataSize xxxxxx00, TotalSize xxxxxx00, MetaSize xxxxxx00
+pat_int = re.compile(br'[\x01\x02]\x00{3}.{4}(([\x00-\x09\x10-\x19\x20-\x25]\x20)|([\x93-\x99]\x19))[\x01-\x09\x10-\x19\x20-\x29\x30-\x31][\x01-\x09\x10-\x12].{3}\x00.{4}[\x01\x00]\x00{3}.\x00{3}.{3}\x00.{3}\x00.{3}\x00', re.DOTALL)
 
 # AMD - Year 20xx, Month 01-13, LoaderID 00-06, NorthBridgeVEN_ID 0000|1022, SouthBridgeVEN_ID 0000|1022, BiosApiREV_ID 00-01, Reserved 00|AA
 pat_amd = re.compile(br'\x20[\x01-\x09\x10-\x19\x20-\x29\x30-\x31][\x01-\x09\x10-\x13].{4}[\x00-\x06]\x80.{6}((\x00{2})|(\x22\x10)).{2}((\x00{2})|(\x22\x10)).{6}[\x00\x01](\x00{3}|\xAA{3})', re.DOTALL)
@@ -1110,6 +1171,9 @@ pat_via = re.compile(br'\x52\x52\x41\x53.{4}[\xD6-\xE9]\x07[\x01-\x1F][\x01-\x0C
 pat_fsl = re.compile(br'\x51\x45\x46\x01.{62}[\x00\x01].{5}\x00{4}.{40}\x00{4}', re.DOTALL)
 
 # Ctypes Structure Size Initialization
+int_hdr_size = ctypes.sizeof(Intel_MC_Header)
+int_meta_hdr_size = ctypes.sizeof(IntelMetadataHeader)
+int_meta_mod_size = ctypes.sizeof(IntelMetadataEntry)
 fsl_hdr_size = ctypes.sizeof(FSL_MC_Header)
 fsl_mod_size = ctypes.sizeof(FSL_MC_Entry)
 ext_hdr_size = ctypes.sizeof(Intel_MC_Header_Extended)
@@ -1128,6 +1192,18 @@ known_bad_intel = [
     (0x90672,0xFF,'2021-11-11'),
     (0x90675,0xFF,'2021-11-11'),
     ]
+
+# Intel Microcode/IFS Header Types
+intel_header_types = {
+    1: 'Microcode',
+    2: 'In-Field Scan'
+    }
+
+# Intel Metadata Header Types
+intel_meta_types = {
+    0: 'Metadata End',
+    1: 'In-Field Scan'
+    }
 
 # Global Variable Initialization
 in_file = ''
@@ -1167,6 +1243,10 @@ for in_file in source :
     match_list_a = []
     match_list_v = []
     match_list_f = []
+    cross_list_i = []
+    cross_list_a = []
+    cross_list_v = []
+    cross_list_f = []
     mc_conv_data = b''
     no_yes = [col_r + 'No' + col_e,col_g + 'Yes' + col_e]
     cur_count += 1
@@ -1238,9 +1318,9 @@ for in_file in source :
     
     total += len(match_list_i)
     
-    pt, pt_empty = mc_table(['#','CPUID','Platform','Revision','Date','Type','Size','Offset','Last'], True, 1)
+    pt, pt_empty = mc_table(['#','Type','CPUID','Platforms','Revision','Date','State','Size','Offset','Last'], True, 1)
     
-    for match_ucode_idx in range(len(match_list_i)) :
+    for match_ucode_i in match_list_i :
         
         # Microcode Variable Initialization
         ext_chk_mce = 0
@@ -1251,9 +1331,11 @@ for in_file in source :
         mc_patch_chk = True
         mc_latest = None
         
-        mc_bgn = match_list_i[match_ucode_idx].start()
+        mc_bgn = match_ucode_i.start()
         
         mc_hdr = get_struct(reading, mc_bgn, Intel_MC_Header)
+        
+        mc_type = mc_hdr.HeaderType
         
         patch_u = mc_hdr.UpdateRevision # Unsigned, general usage
         patch_s = ctypes.c_int(patch_u).value # Signed, release usage
@@ -1273,6 +1355,8 @@ for in_file in source :
         
         mc_len_data = 0x7D0 if mc_hdr.DataSize == 0 else mc_hdr.DataSize
         
+        mc_len_meta = mc_hdr.MetadataSize
+        
         mc_chk = mc_hdr.Checksum # For OEM validation, not checked by CPU
         
         full_date = '%s-%s-%s' % (year, month, day)
@@ -1289,9 +1373,11 @@ for in_file in source :
         mc_data = reading[mc_bgn:mc_bgn + mc_len]
         
         # Analyze Extra Header
-        if mc_data[0x30:0x38] == b'\x00\x00\x00\x00\xA1\x00\x00\x00' : mc_hdr_extra = get_struct(mc_data, 0x30, IntelMicrocodeHeaderExtraR1)
-        elif mc_data[0x30:0x38] == b'\x00\x00\x00\x00\xE0\x00\x00\x00' : mc_hdr_extra = get_struct(mc_data, 0x30, IntelMicrocodeHeaderExtraR2)
-            
+        if mc_data[int_hdr_size:int_hdr_size + 0x8] == b'\x00\x00\x00\x00\xA1\x00\x00\x00':
+            mc_hdr_extra = get_struct(mc_data, int_hdr_size, IntelMicrocodeHeaderExtraR1)
+        elif mc_data[int_hdr_size:int_hdr_size + 0x8] == b'\x00\x00\x00\x00\xE0\x00\x00\x00':
+            mc_hdr_extra = get_struct(mc_data, int_hdr_size, IntelMicrocodeHeaderExtraR2)
+        
         if mc_hdr_extra :
             mc_reserved_all += mc_hdr_extra.get_flags()[1]
             
@@ -1303,23 +1389,43 @@ for in_file in source :
             
             if param.print_hdr : mc_hdr_extra.mc_print()
         
-        mc_at_db = (cursor.execute('SELECT * FROM Intel WHERE cpuid=? AND platform=? AND version=? AND yyyymmdd=? AND size=? AND checksum=?',
-                   ('%0.8X' % cpu_id, '%0.8X' % plat, '%0.8X' % patch_u, year + month + day, '%0.8X' % mc_len, '%0.8X' % mc_chk,))).fetchone()
+        mc_at_db = (cursor.execute('SELECT * FROM Intel WHERE type=? AND cpuid=? AND platform=? AND version=? AND yyyymmdd=? AND size=? AND checksum=?',
+                   ('%0.8X' % mc_type, '%0.8X' % cpu_id, '%0.8X' % plat, '%0.8X' % patch_u, year + month + day, '%0.8X' % mc_len, '%0.8X' % mc_chk,))).fetchone()
+        
+        # Analyze optional Metadata area (IFS-type)
+        # TODO: UNTESTED, WAITING FOR IFS v2 SAMPLE
+        if mc_len_meta:
+            mc_meta_off = int_hdr_size + mc_len_data - mc_len_meta
+            
+            while mc_meta_off <= int_hdr_size + mc_len_data - int_meta_hdr_size:
+                mc_meta_hdr = get_struct(mc_data, mc_meta_off, IntelMetadataHeader)
+                
+                mc_meta_hdr.mc_print()
+                
+                if (mc_meta_hdr.MetaType, mc_meta_hdr.MetaSize) == (0, int_meta_hdr_size):
+                    break
+                
+                if mc_meta_hdr.MetaType == 1 and mc_meta_hdr.MetaSize >= int_meta_hdr_size + int_meta_mod_size:
+                    mc_meta_mod = get_struct(mc_data, mc_meta_off + int_meta_hdr_size, IntelMetadataEntry)
+                    
+                    mc_meta_mod.mc_print()
+                
+                mc_meta_off += max(mc_meta_hdr.MetaSize, int_meta_hdr_size)
         
         # Analyze, Validate & Extract optional Extended Header, each Entry only once
-        if mc_len > mc_len_data + 0x30 and in_file not in temp_mc_paths :
-            mc_ext_off = 0x30 + mc_len_data
+        if mc_len > mc_len_data + int_hdr_size and in_file not in temp_mc_paths :
+            mc_ext_off = int_hdr_size + mc_len_data
             mc_hdr_ext = get_struct(mc_data, mc_ext_off, Intel_MC_Header_Extended)
             mc_reserved_all += int.from_bytes(mc_hdr_ext.Reserved, 'little')
             if param.print_hdr : mc_hdr_ext.mc_print()
             
             ext_fields_count = mc_hdr_ext.ExtendedSignatureCount
             ext_header_size = ext_hdr_size + ext_fields_count * ext_mod_size # 0x14 Header, 0xC for each Entry
-            ext_header_data = mc_data[0x30 + mc_len_data:0x30 + mc_len_data + ext_header_size]
+            ext_header_data = mc_data[int_hdr_size + mc_len_data:int_hdr_size + mc_len_data + ext_header_size]
             ext_chk_mce = adler32(ext_header_data) # Custom Intel Microcode Extended Checksum
             
             # Check Extended Header + Fields Checksum (Adler32 > Checksum32)
-            valid_ext_chk = 0 if mc_at_db and ext_chk_mce == int(mc_at_db[7], 16) else checksum32(ext_header_data)
+            valid_ext_chk = 0 if mc_at_db and ext_chk_mce == int(mc_at_db[8], 16) else checksum32(ext_header_data)
             
             mc_ext_field_off = mc_ext_off + ext_hdr_size
             for ext_idx in range(ext_fields_count) :
@@ -1363,10 +1469,7 @@ for in_file in source :
             msg_i.append(col_m + '\nWarning: Microcode #%d has Header Update Revision discrepancy!%s' % (mc_nr, report_msg(9)) + col_e)
             copy_file_with_warn()
         
-        # Check if Microcode crosses over to the next one(s), when applicable
-        msg_i = chk_mc_cross(match_ucode_idx, match_list_i, msg_i, mc_nr, mc_bgn, mc_len)
-        
-        mc_is_mod = mc_at_db[8] if mc_at_db else 0 # Get microcode modded state
+        mc_is_mod = mc_at_db[9] if mc_at_db else 0 # Get microcode modded state
         
         mc_chk_mce = adler32(mc_data) # Custom Intel Microcode Checksum
         
@@ -1374,8 +1477,8 @@ for in_file in source :
             if mc_at_db is None and in_file not in temp_mc_paths :
                 db_new_MCE()
                 
-                cursor.execute('INSERT INTO Intel (cpuid, platform, version, yyyymmdd, size, checksum, adler32, adler32e) VALUES (?,?,?,?,?,?,?,?)',
-                              ('%0.8X' % cpu_id, '%0.8X' % plat, '%0.8X' % patch_u, year + month + day, '%0.8X' % mc_len, '%0.8X' % mc_chk,
+                cursor.execute('INSERT INTO Intel (type, cpuid, platform, version, yyyymmdd, size, checksum, adler32, adler32e) VALUES (?,?,?,?,?,?,?,?,?)',
+                              ('%0.8X' % mc_type, '%0.8X' % cpu_id, '%0.8X' % plat, '%0.8X' % patch_u, year + month + day, '%0.8X' % mc_len, '%0.8X' % mc_chk,
                               '%0.8X' % mc_chk_mce, '%0.8X' % ext_chk_mce))
                 
                 connection.commit()
@@ -1418,16 +1521,18 @@ for in_file in source :
             continue # Next microcode
 
         # Check if Microcode is marked as OEM/User modified in DB
-        if mc_at_db and mc_is_mod : msg_i = chk_mc_mod(mc_nr, msg_i, mc_at_db[9])
+        if mc_at_db and mc_is_mod : msg_i = chk_mc_mod(mc_nr, msg_i, mc_at_db[10])
         
-        row = [mc_nr, '%X' % cpu_id, '%0.2X (%s)' % (plat, ','.join(map(str, plat_bit))), '%X' % patch_u, full_date, rel_file, '0x%X' % mc_len, '0x%X' % mc_bgn, no_yes[is_latest]]
+        row = [mc_nr, intel_header_types[mc_type], '%X' % cpu_id, '%0.2X (%s)' % (plat, ','.join(map(str, plat_bit))),
+               '%X' % patch_u, full_date, rel_file, '0x%X' % mc_len, '0x%X' % mc_bgn, no_yes[is_latest]]
+
         pt.add_row(row)
         
         # Create extraction folder
         if not param.mce_ubu and not os.path.exists(extr_dir_int) : os.makedirs(extr_dir_int)
         
         # Check Microcode Checksum (Adler32 > Checksum32)
-        mc_chk_ok = 0 if mc_at_db and mc_chk_mce == int(mc_at_db[6], 16) else checksum32(mc_data)
+        mc_chk_ok = 0 if mc_at_db and mc_chk_mce == int(mc_at_db[7], 16) else checksum32(mc_data)
         
         if mc_chk_ok != 0 or valid_ext_chk != 0 :
             if (cpu_id,patch_u,full_date) in known_bad_intel : # Someone "fixed" the modded MC checksum wrongfully
@@ -1445,6 +1550,10 @@ for in_file in source :
             mc_path = '%s%s.bin' % (extr_dir_int, mc_name)
         
         save_mc_file(mc_path, mc_data, mc_chk_mce)
+        
+        cross_list_i.append((mc_nr, mc_bgn, mc_bgn + mc_len))
+
+    msg_i = chk_mc_cross(cross_list_i, msg_i)
     
     if str(pt) != pt_empty :
         pt.title = col_b + 'Intel' + col_e
@@ -1460,12 +1569,12 @@ for in_file in source :
     
     pt, pt_empty = mc_table(['#', 'CPUID', 'Revision', 'Date', 'Size', 'Offset', 'Last'], True, 1)
     
-    for match_ucode_idx in range(len(match_list_a)) :
+    for match_ucode_a in match_list_a :
         
         # Microcode Variable Initialization
         mc_latest = None
         
-        mc_bgn = match_list_a[match_ucode_idx].start()
+        mc_bgn = match_ucode_a.start()
         
         mc_bgn -= 1 # Pattern starts from 2nd byte for performance (Year 20xx in BE)
         
@@ -1533,8 +1642,9 @@ for in_file in source :
         elif cpu_id[2:4] in ['8A'] : mc_len = 0xD80
         elif cpu_id[2:4] in ['A0','A1','A2','A3','A4','A5','A6','AA'] : mc_len = 0x15C0
         else :
-            msg_a.append(col_r + '\nError: Skipped potential AMD Microcode #%d at 0x%X, unknown %s size!%s' % (mc_nr, mc_bgn, cpu_id, report_msg(7)) + col_e)
-            copy_file_with_warn()
+            if cpu_id != '00000F00': # Avoid common AMD false positive CPUID 00000F00 w/o mc_len_data
+                msg_a.append(col_r + '\nError: Skipped potential AMD Microcode #%d at 0x%X, unknown %s size!%s' % (mc_nr, mc_bgn, cpu_id, report_msg(7)) + col_e)
+                copy_file_with_warn()
             
             continue # Next microcode
         
@@ -1543,9 +1653,6 @@ for in_file in source :
         mc_chk_mce = adler32(mc_data) # Custom AMD Microcode Checksum
         
         mc_name = 'cpu%s_ver%0.8X_%s_%0.8X' % (cpu_id, patch, full_date, mc_chk_mce)
-        
-        # Check if Microcode crosses over to the next one(s), when applicable
-        msg_a = chk_mc_cross(match_ucode_idx, match_list_a, msg_a, mc_nr, mc_bgn, mc_len)
         
         mc_at_db = (cursor.execute('SELECT * FROM AMD WHERE cpuid=? AND nbdevid=? AND sbdevid=? AND nbsbrev=? AND version=? \
                     AND yyyymmdd=? AND size=? AND checksum=? AND adler32=?', (cpu_id, nb_id, sb_id, nbsb_rev_id, '%0.8X' % patch,
@@ -1626,7 +1733,11 @@ for in_file in source :
             mc_path = '%s%s.bin' % (extr_dir_amd, mc_name)
             
         save_mc_file(mc_path, mc_data, mc_chk_mce)
-        
+
+        cross_list_a.append((mc_nr, mc_bgn, mc_bgn + mc_len))
+
+    msg_a = chk_mc_cross(cross_list_a, msg_a)
+
     if str(pt) != pt_empty :
         pt.title = col_r + 'AMD' + col_e
         if match_list_i or match_list_v or match_list_f : print()
@@ -1641,12 +1752,12 @@ for in_file in source :
     
     pt, pt_empty = mc_table(['#', 'CPUID', 'Name', 'Revision', 'Date', 'Size', 'Offset'], True, 1)
     
-    for match_ucode_idx in range(len(match_list_v)) :
+    for match_ucode_v in match_list_v :
         
         # Microcode Variable Initialization
         mc_latest = None
         
-        mc_bgn = match_list_v[match_ucode_idx].start()
+        mc_bgn = match_ucode_v.start()
         
         mc_hdr = get_struct(reading, mc_bgn, VIA_MC_Header)
         
@@ -1686,9 +1797,6 @@ for in_file in source :
         
         mc_name = 'cpu%0.5X_ver%0.8X_sig[%s]_%s_%0.8X' % (cpu_id, patch, name, full_date, mc_chk)
         mc_nr += 1
-        
-        # Check if Microcode crosses over to the next one(s), when applicable
-        msg_v = chk_mc_cross(match_ucode_idx, match_list_v, msg_v, mc_nr, mc_bgn, mc_len)
         
         mc_at_db = (cursor.execute('SELECT * FROM VIA WHERE cpuid=? AND signature=? AND version=? AND yyyymmdd=? AND size=? AND checksum=?',
                    ('%0.8X' % cpu_id, name, '%0.8X' % patch, year + month + day, '%0.8X' % mc_len, '%0.8X' % mc_chk,))).fetchone()
@@ -1751,6 +1859,10 @@ for in_file in source :
         
         save_mc_file(mc_path, mc_data, mc_chk_mce)
 
+        cross_list_v.append((mc_nr, mc_bgn, mc_bgn + mc_len))
+
+    msg_v = chk_mc_cross(cross_list_v, msg_v)
+
     if str(pt) != pt_empty :
         pt.title = col_c + 'VIA' + col_e
         if match_list_i or match_list_a or match_list_f : print()
@@ -1765,13 +1877,13 @@ for in_file in source :
     
     pt, pt_empty = mc_table(['#', 'Name', 'SoC Model', 'SoC Major', 'SoC Minor', 'Size', 'Offset'], True, 1)
     
-    for match_ucode_idx in range(len(match_list_f)) :
+    for match_ucode_f in match_list_f :
         
         # Microcode Variable Initialization
         mc_reserved_all = 0
         mc_latest = None
         
-        mc_bgn = match_list_f[match_ucode_idx].start()
+        mc_bgn = match_ucode_f.start()
         
         mc_bgn -= 4 # Pattern starts from 5th byte for performance (Signature QEF)
         
@@ -1811,9 +1923,6 @@ for in_file in source :
         if mc_reserved_all != 0 :
             msg_f.append(col_m + '\nWarning: Microcode #%d has non-empty Reserved fields!%s' % (mc_nr, report_msg(9)) + col_e)
             copy_file_with_warn()
-        
-        # Check if Microcode crosses over to the next one(s), when applicable
-        msg_f = chk_mc_cross(match_ucode_idx, match_list_f, msg_f, mc_nr, mc_bgn, mc_len)
         
         mc_at_db = (cursor.execute('SELECT * FROM FSL WHERE name=? AND model=? AND major=? AND minor=? AND size=? AND checksum=?',
                    (name, model, major, minor, '%0.8X' % mc_len, '%0.8X' % mc_chk,))).fetchone()
@@ -1872,13 +1981,17 @@ for in_file in source :
             mc_path = '%s%s.bin' % (extr_dir_fsl, mc_name)
         
         save_mc_file(mc_path, mc_data, mc_chk_mce)
-    
+
+        cross_list_f.append((mc_nr, mc_bgn, mc_bgn + mc_len))
+
+    msg_f = chk_mc_cross(cross_list_f, msg_f)
+
     if str(pt) != pt_empty :
         pt.title = col_y + 'Freescale' + col_e
         if match_list_i or match_list_a or match_list_v : print()
         print(pt)
     for msg in msg_f: print(msg)
-        
+
     if mc_conv_data :
         print(col_y + 'Note: Detected Intel Microcode Container...' + col_e)
     elif total == 0 and in_file in temp_mc_paths :
