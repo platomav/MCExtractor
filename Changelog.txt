@@ -1,3 +1,7 @@
+v1.90.1
+
+Fixed AMD false positive Header structure display (-info)
+
 v1.90.0
 
 Added Intel In-Field Scan (IFS) Microcode Type detection (#60)

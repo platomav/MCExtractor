@@ -7,7 +7,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2023 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.90.0'
+title = 'MC Extractor v1.90.1'
 
 import sys
 
@@ -1621,7 +1621,11 @@ for in_file in source :
             copy_file_with_warn()
             
             continue # Next microcode
-        
+
+        # Remove false positive CPUID 00000F00 w/o mc_len_data
+        if cpu_id == '00000F00' and mc_len_data not in ['10', '20']:
+            continue # Next microcode
+
         # Print the Header
         if param.print_hdr :
             mc_hdr.mc_print()
@@ -1642,9 +1646,8 @@ for in_file in source :
         elif cpu_id[2:4] in ['8A'] : mc_len = 0xD80
         elif cpu_id[2:4] in ['A0','A1','A2','A3','A4','A5','A6','AA'] : mc_len = 0x15C0
         else :
-            if cpu_id != '00000F00': # Avoid common AMD false positive CPUID 00000F00 w/o mc_len_data
-                msg_a.append(col_r + '\nError: Skipped potential AMD Microcode #%d at 0x%X, unknown %s size!%s' % (mc_nr, mc_bgn, cpu_id, report_msg(7)) + col_e)
-                copy_file_with_warn()
+            msg_a.append(col_r + '\nError: Skipped potential AMD Microcode #%d at 0x%X, unknown %s size!%s' % (mc_nr, mc_bgn, cpu_id, report_msg(7)) + col_e)
+            copy_file_with_warn()
             
             continue # Next microcode
         
