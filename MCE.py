@@ -7,7 +7,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2023 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.90.2'
+title = 'MC Extractor v1.92.1'
 
 import sys
 
@@ -253,7 +253,7 @@ class IntelMicrocodeHeaderExtraBase(ctypes.LittleEndianStructure):
         pt.add_row(['Module Sub Type', self.ModuleSubType])
         pt.add_row(['Module Size', '0x%X' % (self.ModuleSize * 4)])
         pt.add_row(['RSA Signed', ['No','Yes'][self.f1]])
-        pt.add_row(['Flags Reserved', '{0:07b}b'.format(self.f2)])
+        pt.add_row(['Flags Reserved', '{0:015b}b'.format(self.f2)])
         pt.add_row(['RSA Key Size', self.RSAKeySize * 1024])
         pt.add_row(['Update Version', '%X' % self.UpdateRevision])
         pt.add_row(['Version Control Number', self.VCN])
@@ -318,7 +318,7 @@ class IntelMicrocodeHeaderExtraR2(IntelMicrocodeHeaderExtraBase):
 class IntelMicrocodeHeaderExtraFlags(ctypes.LittleEndianStructure):
     _fields_ = [
         ('RSASigned', uint16_t, 1), # RSA Signature usage
-        ('Reserved', uint16_t, 7)
+        ('Reserved', uint16_t, 15)
     ]
     
 class IntelMicrocodeHeaderExtraGetFlags(ctypes.Union):
@@ -417,50 +417,82 @@ class Intel_MC_Header_Extended_Field(ctypes.LittleEndianStructure) :
         
         print(pt)
 
-class AMD_MC_Header(ctypes.LittleEndianStructure) :
+class AMD_MC_Header(ctypes.LittleEndianStructure):
     _pack_ = 1
     _fields_ = [
-        ('Year',                    uint16_t),        # 0x00
-        ('Day',                        uint8_t),        # 0x02
-        ('Month',                    uint8_t),        # 0x03
-        ('UpdateRevision',            uint32_t),        # 0x04
-        ('LoaderID',                uint16_t),        # 0x08 00-05 80
-        ('DataSize',                uint8_t),        # 0x0A 00 or 10 or 20 or 2nd byte of AM5 DataSize (?)
-        ('InitializationFlag',        uint8_t),        # 0x0B 00 or 01 or 1st byte of AM5 DataSize (?)
-        ('DataChecksum',            uint32_t),        # 0x0C OEM validation only
-        ('NorthBridgeVEN_ID',        uint16_t),        # 0x10 0000 or 1022
-        ('NorthBridgeDEV_ID',        uint16_t),        # 0x12
-        ('SouthBridgeVEN_ID',        uint16_t),        # 0x14 0000 or 1022
-        ('SouthBridgeDEV_ID',        uint16_t),        # 0x16
-        ('ProcessorSignature',        uint16_t),        # 0x18
-        ('NorthBridgeREV_ID',        uint8_t),        # 0x1A
-        ('SouthBridgeREV_ID',        uint8_t),        # 0x1B
-        ('BiosApiREV_ID',            uint8_t),        # 0x1C 00 or 01
-        ('Reserved',                uint8_t*3),        # 0x1D 000000 or AAAAAA
+        ('Year',                    uint16_t),      # 0x00
+        ('Day',                     uint8_t),       # 0x02
+        ('Month',                   uint8_t),       # 0x03
+        ('UpdateRevision',          uint32_t),      # 0x04
+        ('LoaderID',                uint16_t),      # 0x08 00-05 80
+        ('DataSize',                uint8_t),       # 0x0A 00 or 10 or 20 or AM5+ DataSize [16:31]
+        ('InitializationFlag',      uint8_t),       # 0x0B 00 or 01 or AM5+ DataSize [00:15]
+        ('DataChecksum',            uint32_t),      # 0x0C OEM validation only
+        ('NorthBridgeVEN_ID',       uint16_t),      # 0x10 0000 or 1022
+        ('NorthBridgeDEV_ID',       uint16_t),      # 0x12
+        ('SouthBridgeVEN_ID',       uint16_t),      # 0x14 0000 or 1022
+        ('SouthBridgeDEV_ID',       uint16_t),      # 0x16
+        ('ProcessorSignature',      uint16_t),      # 0x18
+        ('NorthBridgeREV_ID',       uint8_t),       # 0x1A
+        ('SouthBridgeREV_ID',       uint8_t),       # 0x1B
+        ('BiosApiRevision',         uint8_t),       # 0x1C 00 or 01
+        ('LoadControl',             uint8_t),       # 0x1D 00 or AA Reserved (AM4-), Bits 0-1 Flags (AM5+)
+        ('Reserved_1E',             uint8_t),       # 0x1E 00 or AA
+        ('Reserved_1F',             uint8_t),       # 0x1F 00 or AA
         # 0x20
     ]
 
-    def mc_print(self) :
+    def _get_load_control(self):
+        load_ctrl = AMDMicrocodeHeaderGetLoadControl()
+        load_ctrl.asbytes = self.LoadControl
+
+        return load_ctrl.b.SerializedLoad, load_ctrl.b.LoadOnBothThreads, load_ctrl.b.Reserved
+
+    def mc_print(self):
         pt, _ = mc_table(['Field', 'Value'], False, 1)
-        
+
         pt.title = col_r + 'AMD Header' + col_e
         pt.add_row(['Date', '%0.4X-%0.2X-%0.2X' % (self.Year, self.Month, self.Day)])
         pt.add_row(['Update Version', '%X' % self.UpdateRevision])
         pt.add_row(['Loader ID', '0x%X' % self.LoaderID])
-        pt.add_row(['Data Size', '0x%X' % self.DataSize])
-        pt.add_row(['Initialization Flag', '0x%X' % self.InitializationFlag])
-        pt.add_row(['Checksum', '%0.8X' % self.DataChecksum])
-        pt.add_row(['NorthBridge Vendor ID', '0x%X' % self.NorthBridgeVEN_ID])
-        pt.add_row(['NorthBridge Device ID', '0x%X' % self.NorthBridgeDEV_ID])
-        pt.add_row(['SouthBridge Vendor ID', '0x%X' % self.SouthBridgeVEN_ID])
-        pt.add_row(['SouthBridge Device ID', '0x%X' % self.SouthBridgeDEV_ID])
-        pt.add_row(['CPUID', '%0.2X0F%0.2X' % (self.ProcessorSignature >> 8, self.ProcessorSignature & 0xFF)])
-        pt.add_row(['NorthBridge Revision', '0x%X' % self.NorthBridgeREV_ID])
-        pt.add_row(['SouthBridge Revision', '0x%X' % self.SouthBridgeREV_ID])
-        pt.add_row(['BIOS API Revision', '0x%X' % self.BiosApiREV_ID])
-        pt.add_row(['Reserved', '0x%X' % int.from_bytes(self.Reserved, 'little')])
-        
+        if self.LoaderID >= 0x8005:
+            pt.add_row(['Data Size', f'0x{int(f"0x{self.InitializationFlag:X}{self.DataSize:X}", 16) * 0x10:X}'])
+        else:
+            pt.add_row(['Data Size', f'0x{self.DataSize:X}'])
+            pt.add_row(['Initialization Flag', f'0x{self.InitializationFlag:X}'])
+        pt.add_row(['Checksum', f'0x{self.DataChecksum:08X}'])
+        pt.add_row(['NorthBridge Vendor ID', f'0x{self.NorthBridgeVEN_ID:04X}'])
+        pt.add_row(['NorthBridge Device ID', f'0x{self.NorthBridgeDEV_ID:04X}'])
+        pt.add_row(['SouthBridge Vendor ID', f'0x{self.SouthBridgeVEN_ID:04X}'])
+        pt.add_row(['SouthBridge Device ID', f'0x{self.SouthBridgeDEV_ID:04X}'])
+        pt.add_row(['CPUID', f'{self.ProcessorSignature >> 8:02X}0F{self.ProcessorSignature & 0xFF:02X}'])
+        pt.add_row(['NorthBridge Revision', f'0x{self.NorthBridgeREV_ID:02X}'])
+        pt.add_row(['SouthBridge Revision', f'0x{self.SouthBridgeREV_ID:02X}'])
+        pt.add_row(['BIOS API Revision', f'0x{self.BiosApiRevision:02X}'])
+        if self.LoadControl in (0x00, 0xAA):
+            pt.add_row(['Reserved 0x1D', f'0x{self.LoadControl:X}'])
+        else:
+            load_serial, load_threads, load_reserved = self._get_load_control()
+            pt.add_row(['Load Control Serialized', ['No', 'Yes'][load_serial]])
+            pt.add_row(['Load Control Both Threads', ['No', 'Yes'][load_threads]])
+            pt.add_row(['Load Control Reserved', '{0:06b}b'.format(load_reserved)])
+        pt.add_row(['Reserved 0x1E', f'0x{self.Reserved_1E:X}'])
+        pt.add_row(['Reserved 0x1F', f'0x{self.Reserved_1F:X}'])
+
         print(pt)
+
+class AMDMicrocodeHeaderLoadControl(ctypes.LittleEndianStructure):
+    _fields_ = [
+        ('SerializedLoad', uint8_t, 1), # Patch must be loaded serially across all cores
+        ('LoadOnBothThreads', uint8_t, 1), # Patch must be loaded on both threads across all cores
+        ('Reserved', uint8_t, 6)
+    ]
+
+class AMDMicrocodeHeaderGetLoadControl(ctypes.Union):
+    _fields_ = [
+        ('b', AMDMicrocodeHeaderLoadControl),
+        ('asbytes', uint8_t)
+    ]
 
 class VIA_MC_Header(ctypes.LittleEndianStructure) :
     _pack_ = 1
@@ -1161,8 +1193,8 @@ if param.get_last :
 # Intel - HeaderType 01-02, Year 1993-2025, Day 01-31, Month 01-12, CPUID xxxxxx00, LoaderRev 00-01, PlatformIDs 000000xx, DataSize xxxxxx00, TotalSize xxxxxx00, MetaSize xxxxxx00
 pat_int = re.compile(br'[\x01\x02]\x00{3}.{4}(([\x00-\x09\x10-\x19\x20-\x25]\x20)|([\x93-\x99]\x19))[\x01-\x09\x10-\x19\x20-\x29\x30-\x31][\x01-\x09\x10-\x12].{3}\x00.{4}[\x01\x00]\x00{3}.\x00{3}.{3}\x00.{3}\x00.{3}\x00', re.DOTALL)
 
-# AMD - Year 20xx, Month 01-13, LoaderID 00-06, NorthBridgeVEN_ID 0000|1022, SouthBridgeVEN_ID 0000|1022, BiosApiREV_ID 00-01, Reserved 00|AA
-pat_amd = re.compile(br'\x20[\x01-\x09\x10-\x19\x20-\x29\x30-\x31][\x01-\x09\x10-\x13].{4}[\x00-\x06]\x80.{6}((\x00{2})|(\x22\x10)).{2}((\x00{2})|(\x22\x10)).{6}[\x00\x01](\x00{3}|\xAA{3})', re.DOTALL)
+# AMD - Year 20xx, Day 01-31, Month 01-13, LoaderID 00-06, NorthBridgeVEN_ID 0000|1022, SouthBridgeVEN_ID 0000|1022, BiosApiRevision 00-01, LoadControl 00-0F|AA
+pat_amd = re.compile(br'\x20[\x01-\x09\x10-\x19\x20-\x29\x30-\x31][\x01-\x09\x10-\x13].{4}[\x00-\x06]\x80.{6}((\x00{2})|(\x22\x10)).{2}((\x00{2})|(\x22\x10)).{6}[\x00\x01]([\x00-x0F]|\xAA)', re.DOTALL)
 
 # VIA - Signature RRAS, Year 2006-2025 (0x07D6-0x07E9), Day 01-31 (0x01-0x1F), Month 01-12 (0x01-0x0C), LoaderRev 01, Reserved, DataSize xxxxxx00, TotalSize xxxxxx00
 pat_via = re.compile(br'\x52\x52\x41\x53.{4}[\xD6-\xE9]\x07[\x01-\x1F][\x01-\x0C].{3}\x00.{4}\x01\x00{3}.{7}\x00.{3}\x00', re.DOTALL)
@@ -1643,7 +1675,7 @@ for in_file in source :
         elif cpu_id[2:4] in ['68','69'] : mc_len = 0x980
         elif cpu_id[2:4] in ['70','73'] : mc_len = 0xD60
         elif cpu_id[2:4] in ['80','81','82','83','85','86','87','8A'] : mc_len = 0xC80
-        elif cpu_id[2:4] in ['A0','A1','A2','A3','A4','A5','A6','AA'] : mc_len = 0x15C0
+        elif cpu_id[2:4] in ['A0','A1','A2','A3','A4','A5','A6','A7','AA'] : mc_len = 0x15C0
         else :
             msg_a.append(col_r + '\nError: Skipped potential AMD Microcode #%d at 0x%X, unknown %s size!%s' % (mc_nr, mc_bgn, cpu_id, report_msg(7)) + col_e)
             copy_file_with_warn()
