@@ -7,7 +7,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2023 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.92.1'
+title = 'MC Extractor v1.94.2'
 
 import sys
 
@@ -669,7 +669,12 @@ def mce_exit(code) :
     try :
         # Before exiting, print output of MCE & DB update check Thread, if completed/dead
         if not thread_update.is_alive() and thread_update.result : print(thread_update.result)
-        
+
+        # Remove any temporary files
+        for temp_path in temp_mc_paths:
+            if os.path.isfile(temp_path):
+                os.remove(temp_path)
+
         # Before exiting, close DB
         cursor.close() # Close DB Cursor
         connection.close() # Close DB Connection
@@ -821,7 +826,13 @@ def mce_is_latest(ver_before, ver_after) :
         return True
     
     return False
-    
+
+def get_temp_path(temp_input):
+    if not os.path.isdir(temp_path):
+        os.makedirs(temp_path)
+
+    return os.path.join(temp_path, os.path.basename(temp_input))
+
 def chk_mc_mod(mc_nr, msg_vendor, mc_db_note) :
     mod_info = ' (%s)' % mc_db_note if mc_db_note != '' else ''
     msg_vendor.append(col_y + "\nNote: Microcode #%d has an OEM/User modified header%s!" % (mc_nr, mod_info) + col_e)
@@ -990,6 +1001,9 @@ mce_dir = get_script_dir()
 
 # Set DB location
 db_path = os.path.join(mce_dir, 'MCE.db')
+
+# Set temp location
+temp_path = os.path.join(mce_dir, 'Temporary')
 
 # Initialize & Start background Thread for MCE & DB update check
 thread_update = Thread_With_Result(target=mce_upd_check, args=(db_path,), daemon=True)
@@ -1221,6 +1235,7 @@ extr_dir_fsl = os.path.join(mce_dir, 'Extracted', 'Freescale', '')
 known_bad_intel = [
     (0x306C3,0x99,'2013-01-21'),
     (0x506E3,0xFF,'2016-01-05'),
+    (0x606E4,0xC,'2019-01-24'),
     (0x90672,0xFF,'2021-11-11'),
     (0x90675,0xFF,'2021-11-11'),
     ]
@@ -1339,7 +1354,7 @@ for in_file in source :
             pass
         
         if mc_conv_data :
-            cont_path = os.path.join(mce_dir, 'Container_%s_%0.8X.temp' % (os.path.basename(in_file), adler32(mc_conv_data)))
+            cont_path = get_temp_path('Container_%s_%0.8X.temp' % (os.path.basename(in_file), adler32(mc_conv_data)))
             temp_mc_paths.append(cont_path) # Store Intel Container microcode binary path to parse once and delete at the end
             source.append(cont_path) # Add Intel Container microcode binary path to the input files
             with open(cont_path, 'wb') as temp : temp.write(mc_conv_data)
@@ -1412,9 +1427,10 @@ for in_file in source :
         
         if mc_hdr_extra :
             mc_reserved_all += mc_hdr_extra.get_flags()[1]
-            
-            if cpu_id != 0 and cpu_id not in mc_hdr_extra.get_cpuids() : mc_cpuid_chk = False
-            
+
+            if cpu_id != 0 and cpu_id not in mc_hdr_extra.get_cpuids() \
+            and (cpu_id, patch_u, full_date) not in known_bad_intel: mc_cpuid_chk = False
+
             if patch_u != mc_hdr_extra.UpdateRevision and (cpu_id,patch_u,full_date) not in known_bad_intel : mc_patch_chk = False
             
             # RSA Signature cannot be validated, Hash is probably derived from Header + Decrypted Patch
@@ -1423,26 +1439,6 @@ for in_file in source :
         
         mc_at_db = (cursor.execute('SELECT * FROM Intel WHERE type=? AND cpuid=? AND platform=? AND version=? AND yyyymmdd=? AND size=? AND checksum=?',
                    ('%0.8X' % mc_type, '%0.8X' % cpu_id, '%0.8X' % plat, '%0.8X' % patch_u, year + month + day, '%0.8X' % mc_len, '%0.8X' % mc_chk,))).fetchone()
-        
-        # Analyze optional Metadata area (IFS-type)
-        # TODO: UNTESTED, WAITING FOR IFS v2 SAMPLE
-        if mc_len_meta:
-            mc_meta_off = int_hdr_size + mc_len_data - mc_len_meta
-            
-            while mc_meta_off <= int_hdr_size + mc_len_data - int_meta_hdr_size:
-                mc_meta_hdr = get_struct(mc_data, mc_meta_off, IntelMetadataHeader)
-                
-                mc_meta_hdr.mc_print()
-                
-                if (mc_meta_hdr.MetaType, mc_meta_hdr.MetaSize) == (0, int_meta_hdr_size):
-                    break
-                
-                if mc_meta_hdr.MetaType == 1 and mc_meta_hdr.MetaSize >= int_meta_hdr_size + int_meta_mod_size:
-                    mc_meta_mod = get_struct(mc_data, mc_meta_off + int_meta_hdr_size, IntelMetadataEntry)
-                    
-                    mc_meta_mod.mc_print()
-                
-                mc_meta_off += max(mc_meta_hdr.MetaSize, int_meta_hdr_size)
         
         # Analyze, Validate & Extract optional Extended Header, each Entry only once
         if mc_len > mc_len_data + int_hdr_size and in_file not in temp_mc_paths :
@@ -1463,15 +1459,16 @@ for in_file in source :
             for ext_idx in range(ext_fields_count) :
                 mc_hdr_ext_field = get_struct(mc_data, mc_ext_field_off, Intel_MC_Header_Extended_Field)
                 if param.print_hdr : mc_hdr_ext_field.mc_print()
-                
-                if mc_hdr_extra and mc_hdr_ext_field.ProcessorSignature not in mc_hdr_extra.get_cpuids() : mc_cpuid_chk = False
-                
+
+                if mc_hdr_extra and mc_hdr_ext_field.ProcessorSignature not in mc_hdr_extra.get_cpuids() \
+                and (cpu_id, patch_u, full_date) not in known_bad_intel: mc_cpuid_chk = False
+
                 ext_mc_data = bytearray(mc_data) # Duplicate main Microcode container data for Extended replacements
                 ext_mc_data[0xC:0x10] = struct.pack('<I', mc_hdr_ext_field.ProcessorSignature) # Extended CPUID
                 ext_mc_data[0x10:0x14] = struct.pack('<I', mc_hdr_ext_field.Checksum) # Extended Checksum
                 ext_mc_data[0x18:0x1C] = struct.pack('<I', mc_hdr_ext_field.PlatformIDs) # Extended Platform IDs
                 
-                ext_mc_path = os.path.join(mce_dir, 'Extended_%s_%d_%0.8X.temp' % (os.path.basename(in_file), ext_idx + 1, mc_hdr_ext_field.Checksum))
+                ext_mc_path = get_temp_path('Extended_%s_%d_%0.8X.temp' % (os.path.basename(in_file), ext_idx + 1, mc_hdr_ext_field.Checksum))
                 temp_mc_paths.append(ext_mc_path) # Store Extended microcode binary path to parse once and delete at the end
                 source.append(ext_mc_path) # Add Extended microcode binary path to the input files
                 with open(ext_mc_path, 'wb') as ext_mc : ext_mc.write(ext_mc_data)
@@ -1638,8 +1635,8 @@ for in_file in source :
         
         full_date = "%s-%s-%s" % (year, month, day)
         
-        # Remove false results, based on Date (1st MC from 1999 but 2000+ for K7 Erratum and performance)
-        if any(h in year[2:4] for h in ['A','B','C','D','E','F']) or not date_check(year, month, day) or int(year) > 2025 :
+        # Remove false results, based on Date (1st MC from 1999 but 2001+ for K7 Erratum, performance and pattern strength)
+        if any(h in year[2:4] for h in ['A','B','C','D','E','F']) or not date_check(year, month, day) or not (2000 < int(year) < 2025):
             if (full_date,patch) == ('2011-13-09',0x3000027) : pass # Drunk AMD employee 1, Happy 13th month from AMD!
             else :
                 msg_a.append(col_m + '\nWarning: Skipped potential AMD microcode at 0x%X, invalid Date of %s!' % (mc_bgn, full_date) + col_e)
@@ -2033,10 +2030,6 @@ for in_file in source :
         copy_file_with_warn()
     elif total == 0 :
         print('File does not contain CPU microcodes')
-    
-# Remove any temporary Intel Container or Extended files
-for temp_mc in temp_mc_paths :
-    if os.path.isfile(temp_mc) : os.remove(temp_mc)
 
 # Extract Latest from Microcode Blob (-blob -search)
 if param.build_blob and param.search :

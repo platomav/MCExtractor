@@ -1,3 +1,19 @@
+v1.94.2
+
+Improved temporary file handling
+Improved known modified microcodes
+Improved AMD microcode date range
+Removed Intel IFS microcode parsing
+
+r276
+
+AMD cpu00A50F00_ver0A50000F_2023-07-07_72B4B8C6
+AMD cpu00A20F12_ver0A20120E_2023-07-07_E687B1A1
+AMD cpu00A20F10_ver0A20102B_2023-07-07_61F1C59A
+AMD cpu00660F00_ver06006108_2015-03-02_E6EBEFCE
+AMD cpu00700F01_ver07000102_2012-12-04_5A4CBD3C
+AMD cpu00700F00_ver07000026_2012-12-04_F2F51777
+
 v1.92.1
 
 Added AMD AM5+ header structure definitions
