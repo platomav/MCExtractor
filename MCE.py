@@ -4,10 +4,10 @@
 """
 MC Extractor
 Intel, AMD, VIA & Freescale Microcode Extractor
-Copyright (C) 2016-2023 Plato Mavropoulos
+Copyright (C) 2016-2024 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.96.0'
+title = 'MC Extractor v1.97.0'
 
 import sys
 
@@ -88,7 +88,7 @@ def mce_help() :
           '-blob   : Builds a Microcode Blob (MCB) from input'
           )
     
-    print(col_g + '\nCopyright (C) 2016-2023 Plato Mavropoulos' + col_e)
+    print(col_g + '\nCopyright (C) 2016-2024 Plato Mavropoulos' + col_e)
     
     if getattr(sys, 'frozen', False) : print(col_c + '\nRunning in frozen state!' + col_e)
     
@@ -1700,7 +1700,7 @@ for in_file in source :
         elif cpu_id[2:4] in ['60','61','63','66','67'] : mc_len = 0xA20
         elif cpu_id[2:4] in ['68','69'] : mc_len = 0x980
         elif cpu_id[2:4] in ['70','73'] : mc_len = 0xD60
-        elif cpu_id[2:4] in ['80','81','82','83','85','86','87','89','8A'] : mc_len = 0xC80
+        elif cpu_id[2:4] in ['80','81','82','83','85','86','87','88','89','8A'] : mc_len = 0xC80
         elif cpu_id[2:4] in ['A0','A1','A2','A3','A4','A5','A6','A7','AA'] : mc_len = 0x15C0
         else :
             msg_a.append(col_r + '\nError: Skipped potential AMD Microcode #%d at 0x%X, unknown %s size!%s' % (mc_nr, mc_bgn, cpu_id, report_msg(7)) + col_e)
