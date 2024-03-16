@@ -7,7 +7,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2024 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.97.0'
+title = 'MC Extractor v1.97.1'
 
 import sys
 
@@ -1659,6 +1659,7 @@ for in_file in source :
         
         nbsb_rev_id = '%0.2X' % mc_hdr.NorthBridgeREV_ID + '%0.2X' % mc_hdr.SouthBridgeREV_ID
         
+        if (cpu_id,patch,month) == ('00300F10',0x3000027,'13') : month = '12' # Drunk AMD employee 1, happy 13th month!
         if (cpu_id,patch,year) == ('00800F11',0x8001105,'2016') : year = '2017' # Drunk AMD employee 2, Zen in January 2016!
         if (cpu_id,patch,month,day) == ('00730F01',0x7030106,'09','02') : month,day = '02','09' # Drunk AMD employee 3, 2018-09 in 2018-02!
         
@@ -1666,11 +1667,9 @@ for in_file in source :
         
         # Remove false results, based on Date (1st MC from 1999 but 2001+ for K7 Erratum, performance and pattern strength)
         if any(h in year[2:4] for h in ['A','B','C','D','E','F']) or not date_check(year, month, day) or not (2000 < int(year) < 2025):
-            if (full_date,patch) == ('2011-13-09',0x3000027) : pass # Drunk AMD employee 1, Happy 13th month from AMD!
-            else :
-                total -= 1
+            total -= 1
 
-                continue # Next microcode
+            continue # Next microcode
         
         # Remove false results, based on data
         if reading[mc_bgn + 0x40:mc_bgn + 0x44] == b'\x00' * 4 : # 0x40 has non-null data

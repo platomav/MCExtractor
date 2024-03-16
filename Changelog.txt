@@ -1,3 +1,13 @@
+v1.97.1
+
+Improved handling of a known bad AMD microcode
+
+r291
+
+Intel cpuC06F2_plat87_ver21000170_2023-09-11_PRD_AC8019A6
+Intel cpuC06F1_plat87_ver21000170_2023-09-11_PRD_AC8019A7
+AMD cpu00A70FC0_ver0A70C002_2023-07-13_0A12A8E0
+
 r290
 
 Intel cpu806F8_plat87_ver2B000590_2024-01-03_PRD_48DCA703
