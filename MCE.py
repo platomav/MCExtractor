@@ -7,7 +7,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2024 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.98.0'
+title = 'MC Extractor v1.101.0'
 
 import sys
 
@@ -422,7 +422,7 @@ class AMD_MC_Header(ctypes.LittleEndianStructure):
         ('Day',                     uint8_t),       # 0x02
         ('Month',                   uint8_t),       # 0x03
         ('UpdateRevision',          uint32_t),      # 0x04
-        ('LoaderID',                uint16_t),      # 0x08 00-05 80
+        ('LoaderID',                uint16_t),      # 0x08 00-05|10|15 80
         ('DataSize',                uint8_t),       # 0x0A 00 or 10 or 20 or AM5+ DataSize [16:31]
         ('InitializationFlag',      uint8_t),       # 0x0B 00 or 01 or AM5+ DataSize [00:15]
         ('DataChecksum',            uint32_t),      # 0x0C OEM validation only
@@ -446,17 +446,21 @@ class AMD_MC_Header(ctypes.LittleEndianStructure):
 
         return load_ctrl.b.SerializedLoad, load_ctrl.b.LoadOnBothThreads, load_ctrl.b.Reserved
 
+    def get_data_size(self):
+        if self.LoaderID >= 0x8005:
+            return int(f'0x{self.InitializationFlag:X}{self.DataSize:X}', 16) * 0x10
+
+        return self.DataSize
+
     def mc_print(self):
-        pt, _ = mc_table(['Field', 'Value'], False, 1)
+        pt, _ = mc_table(['Field', 'Value'], False, 1) 
 
         pt.title = col_r + 'AMD Header' + col_e
         pt.add_row(['Date', '%0.4X-%0.2X-%0.2X' % (self.Year, self.Month, self.Day)])
         pt.add_row(['Update Version', '%X' % self.UpdateRevision])
         pt.add_row(['Loader ID', '0x%X' % self.LoaderID])
-        if self.LoaderID >= 0x8005:
-            pt.add_row(['Data Size', f'0x{int(f"0x{self.InitializationFlag:X}{self.DataSize:X}", 16) * 0x10:X}'])
-        else:
-            pt.add_row(['Data Size', f'0x{self.DataSize:X}'])
+        pt.add_row(['Data Size', f'0x{self.get_data_size():X}'])
+        if self.LoaderID < 0x8005:
             pt.add_row(['Initialization Flag', f'0x{self.InitializationFlag:X}'])
         pt.add_row(['Checksum', f'0x{self.DataChecksum:08X}'])
         pt.add_row(['NorthBridge Vendor ID', f'0x{self.NorthBridgeVEN_ID:04X}'])
@@ -1228,8 +1232,8 @@ if param.get_last :
 # Intel - HeaderType 01-02, Year 1993-2026, Day 01-31, Month 01-12, CPUID xxxxxx00, LoaderRev 00-01, PlatformIDs 000000xx, DataSize xxxxxx00, TotalSize xxxxxx00, MetaSize xxxxxx00
 pat_int = re.compile(br'[\x01\x02]\x00{3}.{4}(([\x00-\x09\x10-\x19\x20-\x26]\x20)|([\x93-\x99]\x19))[\x01-\x09\x10-\x19\x20-\x29\x30-\x31][\x01-\x09\x10-\x12].{3}\x00.{4}[\x01\x00]\x00{3}.\x00{3}.{3}\x00.{3}\x00.{3}\x00', re.DOTALL)
 
-# AMD - Year 20xx, Day 01-31, Month 01-13, LoaderID 00-06, NorthBridgeVEN_ID 0000|1022, SouthBridgeVEN_ID 0000|1022, BiosApiRevision 00-01, LoadControl 00-0F|AA
-pat_amd = re.compile(br'\x20[\x01-\x09\x10-\x19\x20-\x29\x30-\x31][\x01-\x09\x10-\x13].{4}[\x00-\x06]\x80.{6}((\x00{2})|(\x22\x10)).{2}((\x00{2})|(\x22\x10)).{6}[\x00\x01]([\x00-x0F]|\xAA)', re.DOTALL)
+# AMD - Year 20xx, Day 01-31, Month 01-13, NorthBridgeVEN_ID 0000|1022, SouthBridgeVEN_ID 0000|1022, BiosApiRevision 00-01, LoadControl 00-0F|AA
+pat_amd = re.compile(br'\x20[\x01-\x09\x10-\x19\x20-\x29\x30-\x31][\x01-\x09\x10-\x13].{5}\x80.{6}((\x00{2})|(\x22\x10)).{2}((\x00{2})|(\x22\x10)).{6}[\x00\x01]([\x00-x0F]|\xAA)', re.DOTALL)
 
 # VIA - Signature RRAS, Year 2006-2026 (0x07D6-0x07EA), Day 01-31 (0x01-0x1F), Month 01-12 (0x01-0x0C), LoaderRev 01, Reserved, DataSize xxxxxx00, TotalSize xxxxxx00
 pat_via = re.compile(br'\x52\x52\x41\x53.{4}[\xD6-\xEA]\x07[\x01-\x1F][\x01-\x0C].{3}\x00.{4}\x01\x00{3}.{7}\x00.{3}\x00', re.DOTALL)
@@ -1641,7 +1645,7 @@ for in_file in source :
         
         patch = mc_hdr.UpdateRevision
         
-        mc_len_data = '%0.2X' % mc_hdr.DataSize
+        mc_len_data = mc_hdr.get_data_size()
         
         year = '%0.4X' % mc_hdr.Year
         
@@ -1679,7 +1683,7 @@ for in_file in source :
             continue # Next microcode
 
         # Remove false positive CPUID 00000F00 w/o mc_len_data
-        if cpu_id == '00000F00' and mc_len_data not in ['10', '20']:
+        if cpu_id == '00000F00' and mc_len_data not in [0x10, 0x20]:
             total -= 1
 
             continue # Next microcode
@@ -1693,8 +1697,9 @@ for in_file in source :
         mc_nr += 1
         
         # Determine size based on generation
-        if mc_len_data == '20' : mc_len = 0x3C0
-        elif mc_len_data == '10' : mc_len = 0x200
+        if mc_len_data == 0x20 : mc_len = 0x3C0
+        elif mc_len_data == 0x10 : mc_len = 0x200
+        elif mc_len_data : mc_len = mc_len_data
         elif cpu_id[2:4] in ['50'] : mc_len = 0x620
         elif cpu_id[2:4] in ['58'] : mc_len = 0x567
         elif cpu_id[2:4] in ['60','61','63','66','67'] : mc_len = 0xA20
@@ -1702,6 +1707,7 @@ for in_file in source :
         elif cpu_id[2:4] in ['70','73'] : mc_len = 0xD60
         elif cpu_id[2:4] in ['80','81','82','83','85','86','87','88','89','8A'] : mc_len = 0xC80
         elif cpu_id[2:4] in ['A0','A1','A2','A3','A4','A5','A6','A7','AA'] : mc_len = 0x15C0
+        elif cpu_id[2:4] in ['B4'] : mc_len = 0x3820
         else :
             msg_a.append(col_r + '\nError: Skipped potential AMD Microcode #%d at 0x%X, unknown %s size!%s' % (mc_nr, mc_bgn, cpu_id, report_msg(7)) + col_e)
             copy_file_with_warn()
