@@ -1,8 +1,19 @@
+r294
+
+Intel cpuA06A4_platE6_ver0000001A_2023-12-21_PRD_9D10B87F
+Intel cpuB0671_plat32_ver00000121_2023-11-30_PRD_5A70448B
+Intel cpu50654_platB7_ver02007108_2023-07-23_PRD_FE927D02
+Intel cpuB06A3_platC0_ver00004103_2022-05-26_PRD_254C0DF2
+Intel cpuB06A2_platC0_ver00004103_2022-05-26_PRD_254C0DF3
+Intel cpu206A7_plat12_ver00000011_2010-12-26_PRD_1BA2DCF2
+AMD cpu00860F01_ver0860010C_2023-10-07_3D4A6C3D
+AMD cpu008A0F00_ver08A00009_2023-08-14_92BE2FA6
+
 v1.101.0
 
-Added AMD AM5+ automatic data size detection
+Added AMD AM5 automatic data size detection
 Added AMD microcode CPUID 00B40Fxx detection
-Adjusted AMD microcode pattern for AM5+
+Adjusted AMD microcode pattern for AM5
 
 r293
 
@@ -265,7 +276,7 @@ AMD cpu00700F00_ver07000026_2012-12-04_F2F51777
 
 v1.92.1
 
-Added AMD AM5+ header structure definitions
+Added AMD AM5 header structure definitions
 Added AMD microcode CPUID 00A70Fxx detection
 Fixed Intel Extra header Flags bits parsing
 
