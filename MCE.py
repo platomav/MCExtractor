@@ -1233,7 +1233,7 @@ if param.get_last :
 pat_int = re.compile(br'[\x01\x02]\x00{3}.{4}(([\x00-\x09\x10-\x19\x20-\x26]\x20)|([\x93-\x99]\x19))[\x01-\x09\x10-\x19\x20-\x29\x30-\x31][\x01-\x09\x10-\x12].{3}\x00.{4}[\x01\x00]\x00{3}.\x00{3}.{3}\x00.{3}\x00.{3}\x00', re.DOTALL)
 
 # AMD - Year 20xx, Day 01-31, Month 01-13, NorthBridgeVEN_ID 0000|1022, SouthBridgeVEN_ID 0000|1022, BiosApiRevision 00-01, LoadControl 00-0F|AA
-pat_amd = re.compile(br'\x20[\x01-\x09\x10-\x19\x20-\x29\x30-\x31][\x01-\x09\x10-\x13].{5}\x80.{6}((\x00{2})|(\x22\x10)).{2}((\x00{2})|(\x22\x10)).{6}[\x00\x01]([\x00-x0F]|\xAA)', re.DOTALL)
+pat_amd = re.compile(br'\x20[\x01-\x09\x10-\x19\x20-\x29\x30-\x31][\x01-\x09\x10-\x13].{5}\x80.{6}((\x00{2})|(\x22\x10)).{2}((\x00{2})|(\x22\x10)).{6}[\x00\x01]([\x00-\x0F]|\xAA)', re.DOTALL)
 
 # VIA - Signature RRAS, Year 2006-2026 (0x07D6-0x07EA), Day 01-31 (0x01-0x1F), Month 01-12 (0x01-0x0C), LoaderRev 01, Reserved, DataSize xxxxxx00, TotalSize xxxxxx00
 pat_via = re.compile(br'\x52\x52\x41\x53.{4}[\xD6-\xEA]\x07[\x01-\x1F][\x01-\x0C].{3}\x00.{4}\x01\x00{3}.{7}\x00.{3}\x00', re.DOTALL)
