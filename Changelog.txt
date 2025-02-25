@@ -1,3 +1,7 @@
+v1.102.0
+
+Fixed missing backslash in AMD pattern (#73)
+
 r324
 
 Intel cpuA06D1_plat20_ver0A0000C0_2024-12-09_PRD_ED01D951

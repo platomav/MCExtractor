@@ -4,10 +4,10 @@
 """
 MC Extractor
 Intel, AMD, VIA & Freescale Microcode Extractor
-Copyright (C) 2016-2024 Plato Mavropoulos
+Copyright (C) 2016-2025 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.101.0'
+title = 'MC Extractor v1.102.0'
 
 import sys
 
@@ -88,7 +88,7 @@ def mce_help() :
           '-blob   : Builds a Microcode Blob (MCB) from input'
           )
     
-    print(col_g + '\nCopyright (C) 2016-2024 Plato Mavropoulos' + col_e)
+    print(col_g + '\nCopyright (C) 2016-2025 Plato Mavropoulos' + col_e)
     
     if getattr(sys, 'frozen', False) : print(col_c + '\nRunning in frozen state!' + col_e)
     
