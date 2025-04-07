@@ -39,7 +39,8 @@ import ctypes
 import hashlib
 import inspect
 import sqlite3
-import threading
+import multiprocessing
+import queue
 import traceback
 import urllib.request
 import importlib.util
@@ -127,17 +128,6 @@ class MCE_Param :
         if '-duc' in source : self.upd_dis = True
             
         if self.mass_scan or self.search or self.build_repo or self.build_blob or self.get_last : self.skip_intro = True
-
-# https://stackoverflow.com/a/65447493 by Shail-Shouryya
-class Thread_With_Result(threading.Thread) :
-    def __init__(self, group=None, target=None, name=None, args=(), kwargs=None, *, daemon=None) :
-        self.result = None
-        if kwargs is None : kwargs = {}
-
-        def function() :
-            self.result = target(*args, **kwargs)
-
-        super().__init__(group=group, target=function, name=name, daemon=daemon)
 
 class Intel_MC_Header(ctypes.LittleEndianStructure) :
     _pack_ = 1
@@ -688,7 +678,14 @@ class MCB_Entry(ctypes.LittleEndianStructure) :
 def mce_exit(code) :
     try :
         # Before exiting, print output of MCE & DB update check Thread, if completed/dead
-        if not thread_update.is_alive() and thread_update.result : print(thread_update.result)
+        if not update_process.is_alive():
+            try:
+                update_process_result = update_result_queue.get(block=False)
+                if update_process_result is not None:
+                    print(update_process_result)
+            # This should not happen if the update process ended
+            except queue.Empty:
+                pass
 
         # Remove temporary microcode files
         for temp_mc_path in temp_mc_paths:
@@ -803,8 +800,8 @@ def date_check(year, month, day) :
         if month == 2 and day > 28 : return False
     
     return True
-    
-def mce_upd_check(db_path) :
+
+def mce_upd_check(db_path, update_result_queue) :
     result = None
     
     try :
@@ -842,9 +839,9 @@ def mce_upd_check(db_path) :
         elif not db_is_upd : result = col_m + '\nWarning: Outdated Database %s!' % db_print + git_link + col_e
     except :
         result = None
-    
-    return result
-    
+
+    update_result_queue.put(result)
+
 def mce_is_latest(ver_before, ver_after) :
     # ver_before/ver_after = [X.X.X]
     
@@ -1028,9 +1025,11 @@ db_path = os.path.join(mce_dir, 'MCE.db')
 # Set temp location
 temp_path = os.path.join(mce_dir, 'Temporary')
 
-# Initialize & Start background Thread for MCE & DB update check
-thread_update = Thread_With_Result(target=mce_upd_check, args=(db_path,), daemon=True)
-if not param.upd_dis : thread_update.start() # Start as soon as possible (mce_dir, db_path)
+# Initialize & Start background process + queue for MCE & DB update check
+update_result_queue = multiprocessing.Queue()
+# Use daemon=True to make sure the update check process is terminated on exit
+update_process = multiprocessing.Process(target=mce_upd_check, args=(db_path, update_result_queue), daemon=True)
+if not param.upd_dis : update_process.start() # Start as soon as possible (mce_dir, db_path)
 
 # Set MCB location
 mcb_path = os.path.join(mce_dir, 'MCB.bin')
