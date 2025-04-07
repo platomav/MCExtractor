@@ -1090,7 +1090,7 @@ mce_title = '%s r%d%s' % (title, rev_dev[0], ' Dev' if rev_dev[1] else '')
 
 # Set console/shell window title
 if sys_os == 'win32' : ctypes.windll.kernel32.SetConsoleTitleW(mce_title)
-elif sys_os.startswith('linux') or sys_os == 'darwin' or sys_os.find('bsd') != -1 : sys.stdout.write('\x1b]2;' + mce_title + '\x07')
+elif (sys_os.startswith('linux') or sys_os == 'darwin' or sys_os.find('bsd') != -1) and sys.stdout.isatty() : sys.stdout.write('\x1b]2;' + mce_title + '\x07')
 
 if not param.skip_intro :
     mce_hdr(mce_title)
