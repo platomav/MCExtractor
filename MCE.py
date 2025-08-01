@@ -7,7 +7,7 @@ Intel, AMD, VIA & Freescale Microcode Extractor
 Copyright (C) 2016-2025 Plato Mavropoulos
 """
 
-title = 'MC Extractor v1.102.0'
+title = 'MC Extractor v1.103.0'
 
 import sys
 
@@ -425,7 +425,7 @@ class AMD_MC_Header(ctypes.LittleEndianStructure):
         ('LoaderID',                uint16_t),      # 0x08 00-05|10|15 80
         ('DataSize',                uint8_t),       # 0x0A 00 or 10 or 20 or AM5+ DataSize [16:31]
         ('InitializationFlag',      uint8_t),       # 0x0B 00 or 01 or AM5+ DataSize [00:15]
-        ('DataChecksum',            uint32_t),      # 0x0C OEM validation only
+        ('DataChecksum',            uint32_t),      # 0x0C Checksum (<= 00300Fxx) or Minimum Required Version
         ('NorthBridgeVEN_ID',       uint16_t),      # 0x10 0000 or 1022
         ('NorthBridgeDEV_ID',       uint16_t),      # 0x12
         ('SouthBridgeVEN_ID',       uint16_t),      # 0x14 0000 or 1022
@@ -452,6 +452,9 @@ class AMD_MC_Header(ctypes.LittleEndianStructure):
 
         return self.DataSize
 
+    def is_min_ver(self):
+        return int(f'{self.Year:04X}') >= 2024 and self.DataChecksum != 0
+
     def mc_print(self):
         pt, _ = mc_table(['Field', 'Value'], False, 1) 
 
@@ -462,7 +465,10 @@ class AMD_MC_Header(ctypes.LittleEndianStructure):
         pt.add_row(['Data Size', f'0x{self.get_data_size():X}'])
         if self.LoaderID < 0x8005:
             pt.add_row(['Initialization Flag', f'0x{self.InitializationFlag:X}'])
-        pt.add_row(['Checksum', f'0x{self.DataChecksum:08X}'])
+        if self.is_min_ver():
+            pt.add_row(['Minimum Version', f'{self.DataChecksum:X}'])
+        else:
+            pt.add_row(['Checksum', f'{self.DataChecksum:08X}'])
         pt.add_row(['NorthBridge Vendor ID', f'0x{self.NorthBridgeVEN_ID:04X}'])
         pt.add_row(['NorthBridge Device ID', f'0x{self.NorthBridgeDEV_ID:04X}'])
         pt.add_row(['SouthBridge Vendor ID', f'0x{self.SouthBridgeVEN_ID:04X}'])
@@ -1785,7 +1791,7 @@ for in_file in source :
         
         # Check Microcode Checksum (Adler32 > Checksum32 > None)
         if mc_at_db and mc_chk_mce == int(mc_at_db[8], 16) : mc_chk_ok = 0
-        elif mc_chk : mc_chk_ok = (checksum32(mc_data[0x40:]) + mc_chk) & 0xFFFFFFFF
+        elif mc_chk and not mc_hdr.is_min_ver() : mc_chk_ok = (checksum32(mc_data[0x40:]) + mc_chk) & 0xFFFFFFFF
         else : mc_chk_ok = 0
         
         if mc_chk_ok != 0 :
